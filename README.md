@@ -27,11 +27,7 @@ MTT (MilkToastTaco) is a multi-industry sandbox game focused on deep, satisfying
 
 The visual style is inspired by **Farming Simulator 22** - detailed, well-modeled assets with clean textures, but lighting and post-processing are kept simple to maintain performance. The goal is a "clean" look where everything is readable and distinct, not photorealistic. Think of it like a really polished PS3/PS4-era game - everything looks good, nothing looks fake, but we're not trying to trick you into thinking it's real life.
 
-- **Resolution scaling** - the game should run well at 1080p on a GTX 1060 or equivalent, with optional 1440p and 4K support
-- **Draw distance** - large maps with aggressive LOD (Level of Detail) systems so distant objects still look decent
-- **Asset quality** - vehicles and equipment are high-poly and detailed up close, gracefully degrade at distance
-- **No unnecessary post-processing** - no motion blur, no chromatic aberration, no film grain. Clean image, always.
-- **UI style** - functional and readable, inspired by FS22's clean HUD. Quick-access menus for tools, clear damage indicators, simple but effective.
+- **Rendering configuration** - Milk Toast Taco will offer multiple rendering style options that can be configured to match user preferences and hardware capabilities.
 
 ### Mud Physics System
 
