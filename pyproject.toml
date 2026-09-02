@@ -26,11 +26,16 @@ classifiers = [
 dashboard = ["rich>=13"]
 # Phase 2: browser-based dashboard skin over the same command registry.
 web = ["Flask>=3"]
+# XMB desktop application with pywebview.
+xmb = ["pywebview>=5"]
 # Development tooling: building distributions.
 dev = ["build>=1.2"]
 
 [project.urls]
 Homepage = "https://github.com/FunnyTom777/MilkToastTaco"
+
+[project.scripts]
+milk-toast-taco = "main:run"
 
 [tool.setuptools.packages.find]
 include = ["core*"]

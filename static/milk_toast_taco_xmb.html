@@ -360,6 +360,36 @@
         const catWidth = 240;
         const itemHeight = 50;
 
+        // Handle menu selection and call Python API methods
+        async function handleMenuSelection() {
+            const catId = xmbData[activeCatIndex].id;
+            const itemIndex = activeItemIndices[activeCatIndex];
+            const selectedItem = xmbData[activeCatIndex].items[itemIndex];
+            
+            // Check if we're in pywebview context
+            if (typeof window.pywebview === 'undefined' || !window.pywebview.api) {
+                console.log(`Selected: ${catId} > ${selectedItem.name} (pywebview not available)`);
+                return;
+            }
+            
+            try {
+                // Route to appropriate Python API method
+                if (catId === 'overview' && selectedItem.name === 'Core Philosophy') {
+                    await window.pywebview.api.start_game();
+                } else if (catId === 'industries') {
+                    await window.pywebview.api.load_player(selectedItem.name);
+                } else if (catId === 'options' && selectedItem.name === 'Exit Game') {
+                    await window.pywebview.api.quit_game();
+                } else {
+                    // Get game status for other selections
+                    const status = await window.pywebview.api.get_game_status();
+                    console.log('Game Status:', status);
+                }
+            } catch (error) {
+                console.error('Error calling Python API:', error);
+            }
+        }
+
         function buildDOM() {
             xmbData.forEach((cat, cIdx) => {
                 const catGroup = document.createElement('div');
@@ -492,6 +522,9 @@
                             activeItemEl.style.color = '';
                         }, 200);
                     }
+                     
+                    // Call corresponding Python API method
+                    handleMenuSelection();
                     break;
             }
 
