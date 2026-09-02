@@ -254,8 +254,15 @@
     </div>
 
     <script>
-        // Data derived directly from the Milk Toast Taco Design Document
-        const xmbData = [
+        // Menu data - will be populated dynamically from Python API
+        let xmbData = [];
+        
+        let activeCatIndex = 0;
+        let activeItemIndices = [];
+        let isMoving = false;
+        
+        // Fallback menu structure in case pywebview is not available
+        const fallbackXmbData = [
             {
                 id: "overview",
                 title: "Overview",
@@ -324,10 +331,32 @@
                 ]
             }
         ];
-
-        let activeCatIndex = 0;
-        let activeItemIndices = new Array(xmbData.length).fill(0);
-        let isMoving = false;
+        
+        // Initialize menu structure from Python API or use fallback
+        async function initializeMenuStructure() {
+            try {
+                // Check if pywebview is available
+                if (typeof window.pywebview !== 'undefined' && window.pywebview.api) {
+                    const menuStructure = await window.pywebview.api.get_menu_structure();
+                    xmbData = menuStructure;
+                    console.log('Menu structure loaded from Python API');
+                } else {
+                    xmbData = fallbackXmbData;
+                    console.log('Using fallback menu structure (pywebview not available)');
+                }
+            } catch (error) {
+                console.error('Error loading menu structure:', error);
+                xmbData = fallbackXmbData;
+                console.log('Using fallback menu structure due to error');
+            }
+            
+            // Initialize activeItemIndices based on loaded data
+            activeItemIndices = new Array(xmbData.length).fill(0);
+            
+            // Build the DOM after menu is loaded
+            buildDOM();
+            setupNavigation();
+        }
 
         // Simple synth for XMB navigation 'tick' sound
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -479,64 +508,67 @@
             }, 150); // wait slightly to change text
         }
 
-        window.addEventListener('keydown', (e) => {
-            if (isMoving) return; // Prevent rapid firing causing glitches
-            
-            let moved = false;
-
-            switch(e.key) {
-                case 'ArrowRight':
-                    if (activeCatIndex < xmbData.length - 1) {
-                        activeCatIndex++;
-                        moved = true;
-                    }
-                    break;
-                case 'ArrowLeft':
-                    if (activeCatIndex > 0) {
-                        activeCatIndex--;
-                        moved = true;
-                    }
-                    break;
-                case 'ArrowDown':
-                    const maxItems = xmbData[activeCatIndex].items.length - 1;
-                    if (activeItemIndices[activeCatIndex] < maxItems) {
-                        activeItemIndices[activeCatIndex]++;
-                        moved = true;
-                    }
-                    break;
-                case 'ArrowUp':
-                    if (activeItemIndices[activeCatIndex] > 0) {
-                        activeItemIndices[activeCatIndex]--;
-                        moved = true;
-                    }
-                    break;
-                case 'Enter':
-                    playTick('select');
-                    // Add a visual flash to the active item
-                    const activeItemEl = document.getElementById(`item-${activeCatIndex}-${activeItemIndices[activeCatIndex]}`);
-                    if(activeItemEl) {
-                        activeItemEl.style.transform = 'translateX(20px) scale(1.1)';
-                        activeItemEl.style.color = '#fff';
-                        setTimeout(() => {
-                            activeItemEl.style.transform = '';
-                            activeItemEl.style.color = '';
-                        }, 200);
-                    }
-                     
-                    // Call corresponding Python API method
-                    handleMenuSelection();
-                    break;
-            }
-
-            if (moved) {
-                playTick('move');
-                updateUI();
+        
+        function setupNavigation() {
+            window.addEventListener('keydown', (e) => {
+                if (isMoving) return; // Prevent rapid firing causing glitches
                 
-                // Debounce movement slightly to match CSS transitions
-                isMoving = true;
-                setTimeout(() => { isMoving = false; }, 100); 
-            }
-        });
+                let moved = false;
+
+                switch(e.key) {
+                    case 'ArrowRight':
+                        if (activeCatIndex < xmbData.length - 1) {
+                            activeCatIndex++;
+                            moved = true;
+                        }
+                        break;
+                    case 'ArrowLeft':
+                        if (activeCatIndex > 0) {
+                            activeCatIndex--;
+                            moved = true;
+                        }
+                        break;
+                    case 'ArrowDown':
+                        const maxItems = xmbData[activeCatIndex].items.length - 1;
+                        if (activeItemIndices[activeCatIndex] < maxItems) {
+                            activeItemIndices[activeCatIndex]++;
+                            moved = true;
+                        }
+                        break;
+                    case 'ArrowUp':
+                        if (activeItemIndices[activeCatIndex] > 0) {
+                            activeItemIndices[activeCatIndex]--;
+                            moved = true;
+                        }
+                        break;
+                    case 'Enter':
+                        playTick('select');
+                        // Add a visual flash to the active item
+                        const activeItemEl = document.getElementById(`item-${activeCatIndex}-${activeItemIndices[activeCatIndex]}`);
+                        if(activeItemEl) {
+                            activeItemEl.style.transform = 'translateX(20px) scale(1.1)';
+                            activeItemEl.style.color = '#fff';
+                            setTimeout(() => {
+                                activeItemEl.style.transform = '';
+                                activeItemEl.style.color = '';
+                            }, 200);
+                        }
+                         
+                        // Call corresponding Python API method
+                        handleMenuSelection();
+                        break;
+                }
+
+                if (moved) {
+                    playTick('move');
+                    updateUI();
+                    
+                    // Debounce movement slightly to match CSS transitions
+                    isMoving = true;
+                    setTimeout(() => { isMoving = false; }, 100); 
+                }
+            });
+        }
 
         function updateClock() {
             const now = new Date();
@@ -551,16 +583,17 @@
             document.getElementById('clock').innerText = `${hours}:${minutes} ${ampm}`;
         }
 
-        // Init
-        buildDOM();
-        updateUI();
-        updateClock();
-        setInterval(updateClock, 10000); // Update clock every 10s
+        // Initialize when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            initializeMenuStructure();
+            updateClock();
+            setInterval(updateClock, 10000); // Update clock every 10s
 
-        // Fix audio context requiring interaction
-        document.body.addEventListener('click', () => {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-        }, { once: true });
+            // Fix audio context requiring interaction
+            document.body.addEventListener('click', () => {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+            }, { once: true });
+        });
 
     </script>
 </body>
