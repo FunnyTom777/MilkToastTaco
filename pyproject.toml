@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "milk-toast-taco"
+version = "0.1.0"
+description = "Milk Toast Taco - a multi-industry sandbox simulation game by WoofWorks Inc"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+authors = [
+    { name = "WoofWorks Inc" },
+    { name = "FunnyTom777" },
+]
+keywords = ["game", "simulation", "sandbox", "career"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Games/Entertainment :: Simulation",
+    "Development Status :: 2 - Pre-Alpha",
+]
+
+[project.optional-dependencies]
+# Terminal dev dashboard (V1). Core systems depend only on the standard library.
+dashboard = ["rich>=13"]
+# Phase 2: browser-based dashboard skin over the same command registry.
+web = ["Flask>=3"]
+# Development tooling: building distributions.
+dev = ["build>=1.2"]
+
+[project.urls]
+Homepage = "https://github.com/FunnyTom777/MilkToastTaco"
+
+[tool.setuptools.packages.find]
+include = ["core*"]
+
+[tool.unittest]
+# Run with: python -m unittest discover -s core -p "test_*.py"

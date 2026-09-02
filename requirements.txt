@@ -1,0 +1,11 @@
+# Core Milk Toast Taco dependencies.
+#
+# The core systems (xml_loader, player_manager, orchestrator, economy, etc.)
+# depend ONLY on the Python standard library - no third-party packages required.
+#
+# The dev dashboard (V1) and the web dashboard (Phase 2) need extra packages.
+# Install everything with:
+#     pip install -e ".[dashboard,web]"
+#
+# Or just the dashboard for now:
+#     pip install -e ".[dashboard]"

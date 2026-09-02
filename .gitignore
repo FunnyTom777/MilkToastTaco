@@ -216,3 +216,17 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Milk Toast Taco — runtime artifacts
+# Runtime logs produced by core/systems/orchestrator.py
+logs/*.txt
+logs/*.log
+
+# Local dev / test scratch
+.scratch/
+*.tmp
+
+# Built distributions
+dist/
+*.whl
+*.tar.gz
