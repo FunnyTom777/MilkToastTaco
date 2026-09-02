@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Milk Toast Taco - XMB Interface</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600&display=swap');
+
+        :root {
+            --xmb-highlight: rgba(255, 255, 255, 0.9);
+            --xmb-dim: rgba(255, 255, 255, 0.4);
+            --cat-width: 240px;
+            --item-height: 50px;
+            --transition-speed: 0.25s;
+            --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background-color: #050914;
+            color: white;
+            user-select: none;
+        }
+
+        .bg-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            overflow: hidden;
+            background: linear-gradient(135deg, #050914 0%, #0a1128 100%);
+        }
+
+        .wave {
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            background: radial-gradient(ellipse at center, rgba(30, 80, 150, 0.15) 0%, transparent 60%);
+            animation: rotateWave 30s linear infinite;
+            transform-origin: center center;
+        }
+
+        .wave:nth-child(2) {
+            background: radial-gradient(ellipse at center, rgba(80, 30, 150, 0.1) 0%, transparent 50%);
+            animation: rotateWave 45s linear infinite reverse;
+        }
+
+        @keyframes rotateWave {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.2); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+
+        #xmb-viewport {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* The main horizontal track */
+        #xmb-row {
+            position: absolute;
+            top: 40vh; /* Intersection Y */
+            left: 30vw; /* Intersection X */
+            display: flex;
+            transition: transform var(--transition-speed) var(--ease);
+            will-change: transform;
+        }
+
+        .category-group {
+            width: var(--cat-width);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            opacity: 0.5;
+            transition: opacity var(--transition-speed) var(--ease), transform var(--transition-speed) var(--ease);
+            transform: scale(0.85);
+        }
+
+        .category-group.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .category-icon-container {
+            display: flex;
+            align-items: center;
+            height: 60px;
+            margin-bottom: 20px;
+            transition: text-shadow var(--transition-speed);
+        }
+
+        .category-group.active .category-icon-container {
+            text-shadow: 0 0 15px rgba(255,255,255,0.8);
+        }
+
+        .category-icon {
+            font-size: 2.5rem;
+            margin-right: 15px;
+            width: 50px;
+            text-align: center;
+        }
+
+        .category-title {
+            font-size: 1.5rem;
+            font-weight: 300;
+            white-space: nowrap;
+            opacity: 0;
+            transform: translateX(-15px);
+            transition: all 0.3s var(--ease);
+        }
+
+        .category-group.active .category-title {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .items-column-wrapper {
+            position: absolute;
+            top: 80px; /* Below the icon */
+            left: 0;
+            width: 100%;
+            height: 60vh; /* Give it space to move */
+            overflow: visible;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity calc(var(--transition-speed) * 1.5) var(--ease);
+        }
+
+        .category-group.active .items-column-wrapper {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .items-column {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            transition: transform var(--transition-speed) var(--ease);
+            will-change: transform;
+        }
+
+        .item {
+            height: var(--item-height);
+            display: flex;
+            align-items: center;
+            font-size: 1.1rem;
+            font-weight: 300;
+            color: var(--xmb-dim);
+            transition: all var(--transition-speed) var(--ease);
+            padding-left: 65px; /* Align with text, pass icon */
+            white-space: nowrap;
+        }
+
+        .item.active {
+            color: var(--xmb-highlight);
+            font-size: 1.3rem;
+            font-weight: 400;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+            transform: translateX(10px);
+        }
+
+        #info-panel {
+            position: absolute;
+            bottom: 10vh;
+            right: 5vw;
+            width: 40vw;
+            max-width: 600px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 24px;
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.4s var(--ease);
+            pointer-events: none;
+        }
+
+        #info-panel.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #info-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+
+        #info-desc {
+            font-size: 0.95rem;
+            color: #ccc;
+            line-height: 1.5;
+        }
+
+        /* Clock */
+        #clock {
+            position: absolute;
+            top: 5vh;
+            right: 5vw;
+            font-size: 1.2rem;
+            font-weight: 200;
+            letter-spacing: 2px;
+        }
+        
+        .controls-hint {
+            position: absolute;
+            bottom: 3vh;
+            left: 3vw;
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.5);
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Background -->
+    <div class="bg-container">
+        <div class="wave"></div>
+        <div class="wave"></div>
+    </div>
+
+    <!-- UI Overlays -->
+    <div id="clock">00:00 AM</div>
+    <div class="controls-hint">USE ARROW KEYS TO NAVIGATE • ENTER TO SELECT</div>
+
+    <div id="info-panel">
+        <div id="info-title">Title</div>
+        <div id="info-desc">Description goes here...</div>
+    </div>
+
+    <!-- Main XMB Viewport -->
+    <div id="xmb-viewport">
+        <!-- The row that translates horizontally -->
+        <div id="xmb-row">
+            <!-- Categories injected here -->
+        </div>
+    </div>
+
+    <script>
+        // Data derived directly from the Milk Toast Taco Design Document
+        const xmbData = [
+            {
+                id: "overview",
+                title: "Overview",
+                icon: "fa-book",
+                items: [
+                    { name: "Core Philosophy", desc: "Gameplay first. Deep, satisfying systems rather than flashy visuals. No complex NPC economy, just physics and dynamic prices." },
+                    { name: "Mud Physics System", desc: "Mud depth layers, tire interactions, vehicle weight effects. Get stuck? Grab a winch. Mud accumulates physically on vehicles." },
+                    { name: "Terrain Deformation", desc: "Full voxel-style editing. Digging, flattening, mounding, paving. Exposed soil erodes over time." },
+                    { name: "Dynamic Weather", desc: "Rain creates mud, frost freezes it solid. Fog reduces visibility, storms cause damage. Seasons affect everything." }
+                ]
+            },
+            {
+                id: "industries",
+                title: "Industries",
+                icon: "fa-briefcase",
+                items: [
+                    { name: "Farming", desc: "From backyard chickens to industrial large-acre farming. Soil prep, planting, harvesting, and dynamic seasonal cycles." },
+                    { name: "Trucking", desc: "Local deliveries to cross-continental road trains. Manage fuel, cargo types (dry, reefer, livestock), and off-road hazards." },
+                    { name: "Fishing & Maritime", desc: "Shore fishing, crab pots, deep-sea trawlers, and container shipping. Mind the weather, piracy, and maritime law." },
+                    { name: "Mining", desc: "Gold panning to open pit blasting. Drill, load, haul, process. Underground operations require strict ventilation management." },
+                    { name: "Construction", desc: "Residential, commercial, civil. Site prep, framing, electrical, HVAC. Material sourcing is key to profit margins." }
+                ]
+            },
+            {
+                id: "vehicles",
+                title: "Vehicles & Tech",
+                icon: "fa-wrench",
+                items: [
+                    { name: "Damage Model", desc: "Part-by-part breakdown. 40-80+ damageable components per car. Consequential damage: bad shocks ruin tires." },
+                    { name: "Mechanic System", desc: "Bolt-by-bolt manual installation. Use hand tools, power tools, or specialty tools. Torque specs matter." },
+                    { name: "Parts & Tuning", desc: "Engine internals, suspension, body kits. Parts have quality tiers and compatibility. ECU tuning available." },
+                    { name: "Economy & Sales", desc: "Dealerships, online markets, auctions. Vehicle history affects resale value. Don't forget registration paperwork." }
+                ]
+            },
+            {
+                id: "military",
+                title: "Military Ops",
+                icon: "fa-fighter-jet",
+                items: [
+                    { name: "WWI (1914-1918)", desc: "Sopwith Camels and Fokker Dr.I. Intimate dogfights, no radar, synchronized machine guns." },
+                    { name: "WWII (1939-1945)", desc: "Mustangs, Spitfires, B-17s. Strategic bombing, carrier operations with arrested landings." },
+                    { name: "Vietnam & Cold War", desc: "Helicopter insertions, SAM threats, F-14 Tomcat patrols. Early radar and guided munitions." },
+                    { name: "Modern Combat", desc: "A-10 Warthog CAS, stealth operations, network-centric warfare. Earn campaign and skill badges." }
+                ]
+            },
+            {
+                id: "modding",
+                title: "Modding",
+                icon: "fa-code",
+                items: [
+                    { name: "Data Driven", desc: "All game data lives in YAML and CSV files. Mod prices, specs, soil types without touching code." },
+                    { name: "Custom Assets", desc: "Import custom 3D models for vehicles, maps, and equipment. Define stats in vehicle_stats.yaml." },
+                    { name: "No Compilation", desc: "Drop mods in a folder, enable in launcher. Game scans and loads automatically." }
+                ]
+            },
+            {
+                id: "options",
+                title: "Settings",
+                icon: "fa-cog",
+                items: [
+                    { name: "Display", desc: "Adjust resolution, rendering styles, and UI scaling. Prioritizes buttery smooth framerates." },
+                    { name: "Audio", desc: "Engine sounds, environment volumes, and UI tick adjustments." },
+                    { name: "Controls", desc: "Keybinds, steering wheel calibration, flight stick setup." },
+                    { name: "Multiplayer", desc: "Server browser, friend list, and cooperative permissions." },
+                    { name: "Exit Game", desc: "Return to desktop." }
+                ]
+            }
+        ];
+
+        let activeCatIndex = 0;
+        let activeItemIndices = new Array(xmbData.length).fill(0);
+        let isMoving = false;
+
+        // Simple synth for XMB navigation 'tick' sound
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playTick(type = 'move') {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            if (type === 'move') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.03);
+                gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            } else if (type === 'select') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            }
+
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        const rowEl = document.getElementById('xmb-row');
+        const catWidth = 240;
+        const itemHeight = 50;
+
+        function buildDOM() {
+            xmbData.forEach((cat, cIdx) => {
+                const catGroup = document.createElement('div');
+                catGroup.className = `category-group ${cIdx === 0 ? 'active' : ''}`;
+                catGroup.id = `cat-${cIdx}`;
+
+                const iconContainer = document.createElement('div');
+                iconContainer.className = 'category-icon-container';
+                iconContainer.innerHTML = `
+                    <i class="category-icon fas ${cat.icon}"></i>
+                    <div class="category-title">${cat.title}</div>
+                `;
+                catGroup.appendChild(iconContainer);
+
+                const columnWrapper = document.createElement('div');
+                columnWrapper.className = 'items-column-wrapper';
+                
+                const itemsColumn = document.createElement('div');
+                itemsColumn.className = 'items-column';
+                itemsColumn.id = `col-${cIdx}`;
+
+                cat.items.forEach((item, iIdx) => {
+                    const itemEl = document.createElement('div');
+                    itemEl.className = `item ${cIdx === 0 && iIdx === 0 ? 'active' : ''}`;
+                    itemEl.id = `item-${cIdx}-${iIdx}`;
+                    itemEl.innerText = item.name;
+                    itemsColumn.appendChild(itemEl);
+                });
+
+                columnWrapper.appendChild(itemsColumn);
+                catGroup.appendChild(columnWrapper);
+                rowEl.appendChild(catGroup);
+            });
+        }
+
+        function updateUI() {
+            // 1. Move Horizontal Row
+            // 30vw is handled by CSS left property. We just translate by negative catWidths.
+            const rowOffset = -(activeCatIndex * catWidth);
+            rowEl.style.transform = `translateX(${rowOffset}px)`;
+
+            // 2. Update Category Classes
+            document.querySelectorAll('.category-group').forEach((el, idx) => {
+                if (idx === activeCatIndex) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                }
+            });
+
+            // 3. Move Active Vertical Column
+            const activeCol = document.getElementById(`col-${activeCatIndex}`);
+            if (activeCol) {
+                const currentItemIndex = activeItemIndices[activeCatIndex];
+                const colOffset = -(currentItemIndex * itemHeight);
+                activeCol.style.transform = `translateY(${colOffset}px)`;
+            }
+
+            // 4. Update Item Classes in Active Column
+            document.querySelectorAll(`#col-${activeCatIndex} .item`).forEach((el, idx) => {
+                if (idx === activeItemIndices[activeCatIndex]) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                }
+            });
+
+            // 5. Update Info Panel
+            updateInfoPanel();
+        }
+
+        function updateInfoPanel() {
+            const panel = document.getElementById('info-panel');
+            const titleEl = document.getElementById('info-title');
+            const descEl = document.getElementById('info-desc');
+            
+            const currentItemIndex = activeItemIndices[activeCatIndex];
+            const activeData = xmbData[activeCatIndex].items[currentItemIndex];
+
+            // Brief fade out/in effect
+            panel.classList.remove('visible');
+            
+            setTimeout(() => {
+                titleEl.innerText = activeData.name;
+                descEl.innerText = activeData.desc;
+                panel.classList.add('visible');
+            }, 150); // wait slightly to change text
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (isMoving) return; // Prevent rapid firing causing glitches
+            
+            let moved = false;
+
+            switch(e.key) {
+                case 'ArrowRight':
+                    if (activeCatIndex < xmbData.length - 1) {
+                        activeCatIndex++;
+                        moved = true;
+                    }
+                    break;
+                case 'ArrowLeft':
+                    if (activeCatIndex > 0) {
+                        activeCatIndex--;
+                        moved = true;
+                    }
+                    break;
+                case 'ArrowDown':
+                    const maxItems = xmbData[activeCatIndex].items.length - 1;
+                    if (activeItemIndices[activeCatIndex] < maxItems) {
+                        activeItemIndices[activeCatIndex]++;
+                        moved = true;
+                    }
+                    break;
+                case 'ArrowUp':
+                    if (activeItemIndices[activeCatIndex] > 0) {
+                        activeItemIndices[activeCatIndex]--;
+                        moved = true;
+                    }
+                    break;
+                case 'Enter':
+                    playTick('select');
+                    // Add a visual flash to the active item
+                    const activeItemEl = document.getElementById(`item-${activeCatIndex}-${activeItemIndices[activeCatIndex]}`);
+                    if(activeItemEl) {
+                        activeItemEl.style.transform = 'translateX(20px) scale(1.1)';
+                        activeItemEl.style.color = '#fff';
+                        setTimeout(() => {
+                            activeItemEl.style.transform = '';
+                            activeItemEl.style.color = '';
+                        }, 200);
+                    }
+                    break;
+            }
+
+            if (moved) {
+                playTick('move');
+                updateUI();
+                
+                // Debounce movement slightly to match CSS transitions
+                isMoving = true;
+                setTimeout(() => { isMoving = false; }, 100); 
+            }
+        });
+
+        function updateClock() {
+            const now = new Date();
+            let hours = now.getHours();
+            let minutes = now.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            
+            hours = hours % 12;
+            hours = hours ? hours : 12; 
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            
+            document.getElementById('clock').innerText = `${hours}:${minutes} ${ampm}`;
+        }
+
+        // Init
+        buildDOM();
+        updateUI();
+        updateClock();
+        setInterval(updateClock, 10000); // Update clock every 10s
+
+        // Fix audio context requiring interaction
+        document.body.addEventListener('click', () => {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }, { once: true });
+
+    </script>
+</body>
+</html>
