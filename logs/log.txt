@@ -1,0 +1,12 @@
+[2026-09-02 11:37:11] WARNING: XML parsing error in C:\Users\FUNNYT~1\AppData\Local\Temp\tmpllqoogf8\malformed.xml: mismatched tag: line 4, column 2
+[2026-09-02 11:37:11] WARNING: File not found: \nonexistent\path\file.xml
+[2026-09-02 11:37:11] WARNING: Directory not found: /nonexistent/path
+[2026-09-02 11:37:11] WARNING: XML parsing error: no element found: line 1, column 16
+[2026-09-02 11:38:23] WARNING: XML parsing error in C:\Users\FUNNYT~1\AppData\Local\Temp\tmpfrh6btqg\malformed.xml: mismatched tag: line 4, column 2
+[2026-09-02 11:38:23] WARNING: File not found: \nonexistent\path\file.xml
+[2026-09-02 11:38:23] WARNING: Directory not found: /nonexistent/path
+[2026-09-02 11:38:23] WARNING: XML parsing error: no element found: line 1, column 16
+[2026-09-02 11:38:27] WARNING: XML parsing error in C:\Users\FUNNYT~1\AppData\Local\Temp\tmpvemfittw\malformed.xml: mismatched tag: line 4, column 2
+[2026-09-02 11:38:27] WARNING: File not found: \nonexistent\path\file.xml
+[2026-09-02 11:38:27] WARNING: Directory not found: /nonexistent/path
+[2026-09-02 11:38:27] WARNING: XML parsing error: no element found: line 1, column 16
