@@ -1,5 +1,5 @@
 import unittest
-from core.systems.economy import player_manager
+from core.systems import player_manager
 
 
 class TestPlayerManager(unittest.TestCase):
