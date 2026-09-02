@@ -12,7 +12,7 @@ MTT (MilkToastTaco) is a multi-industry sandbox game focused on deep, satisfying
 
 - **Gameplay first** - every system exists because it's fun, not because it looks cool
 - **Performance over graphics** - buttery smooth framerates on mid-range hardware, no ray tracing required
-- **Deep modding** - the community is the lifeblood, everything loaded from YAML/CSV/local data files
+- **Deep modding** - the community is the lifeblood, everything loaded from YAML/CSV/local data files. See the [XML loader documentation](core/xml_loader.py) and examples in [core/xml_loader_examples.py].
 - **Career mode** - start with nothing, build a fortune across 8+ industries
 - **Dynamic prices** - simple supply/demand loaded from data files, no complex NPC economy simulation
 - **No NPCs** - the world reacts through physics, economy, weather, and player actions only
