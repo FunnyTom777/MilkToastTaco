@@ -5,6 +5,7 @@ Release date: 2026-09-02
 Summary
 - Added multi-player support via player_manager refactor (PR #4)
 - Cleaned README to remove premature technical/hardware specs (PR #2)
+- Added XML loading system + Documentation for it. ([#6](https://github.com/FunnyTom777/MilkToastTaco/issues/6))
 
 Merged PRs
 
@@ -22,4 +23,3 @@ Merged PRs
 
 Notes
 - Unit tests were added for the player_manager changes; run the test suite locally to validate.
-- If you want a longer changelog style or to include contributors/labels, say so and it will be expanded.
