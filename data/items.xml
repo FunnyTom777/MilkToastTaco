@@ -1,24 +1,359 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+    items.xml - MTT (WoofWorks) master item list
+    weight is always in KG
+
+    There is no Minecraft-style inventory stack system. Carrying capacity
+    is weight-based: the player has a max carry weight, and every item's
+    <weight> counts against it (a pile of bread loaves is fine, two car
+    batteries might not be). This can later be expanded via equippable
+    storage like a backpack.
+
+    perishable="true" items should have a spoil_time_hours value
+-->
 <items>
+
+    <!-- ================= FOOD ================= -->
+
     <item>
         <item_name>bread loaf</item_name>
         <item_id>1</item_id>
         <value>4</value>
         <item_description>Its bread. What do you expect?</item_description>
-        <weight>0.5</weight> <!--in KG-->
+        <weight>0.5</weight>
+        <category>food</category>
+        <perishable>true</perishable>
+        <spoil_time_hours>72</spoil_time_hours>
+        <tags>
+            <tag>food</tag>
+            <tag>raw</tag>
+            <tag>cookable</tag>
+        </tags>
     </item>
+
     <item>
-        <item_name>mayonaise</item_name>
+        <item_name>mayonnaise</item_name>
         <item_id>2</item_id>
         <value>2</value>
-        <item_description>none</item_description>
+        <item_description>A jar of something vaguely edible.</item_description>
         <weight>0.3</weight>
+        <category>food</category>
+        <perishable>true</perishable>
+        <spoil_time_hours>240</spoil_time_hours>
+        <tags>
+            <tag>food</tag>
+            <tag>condiment</tag>
+        </tags>
     </item>
+
+    <item>
+        <item_name>raw egg</item_name>
+        <item_id>4</item_id>
+        <value>1</value>
+        <item_description>Handle with care, or don't. Your mess.</item_description>
+        <weight>0.06</weight>
+        <category>food</category>
+        <perishable>true</perishable>
+        <spoil_time_hours>168</spoil_time_hours>
+        <tags>
+            <tag>food</tag>
+            <tag>raw</tag>
+            <tag>cookable</tag>
+            <tag>ingredient</tag>
+        </tags>
+    </item>
+
+    <item>
+        <item_name>canned beans</item_name>
+        <item_id>5</item_id>
+        <value>3</value>
+        <item_description>Never goes bad. Never tastes good either.</item_description>
+        <weight>0.4</weight>
+        <category>food</category>
+        <perishable>false</perishable>
+        <tags>
+            <tag>food</tag>
+            <tag>canned</tag>
+            <tag>ready_to_eat</tag>
+        </tags>
+    </item>
+
+    <item>
+        <item_name>water bottle</item_name>
+        <item_id>6</item_id>
+        <value>2</value>
+        <item_description>Plastic, reusable, currently full.</item_description>
+        <weight>0.6</weight>
+        <category>food</category>
+        <perishable>false</perishable>
+        <tags>
+            <tag>drink</tag>
+            <tag>hydration</tag>
+        </tags>
+    </item>
+
+    <!-- ================= TOOLS ================= -->
+
+    <item>
+        <item_name>claw hammer</item_name>
+        <item_id>10</item_id>
+        <value>15</value>
+        <item_description>For driving nails in, and occasionally pulling them back out.</item_description>
+        <weight>0.9</weight>
+        <category>tool</category>
+        <tags>
+            <tag>tool</tag>
+            <tag>construction</tag>
+        </tags>
+    </item>
+
+    <item>
+        <item_name>cordless drill</item_name>
+        <item_id>11</item_id>
+        <value>45</value>
+        <item_description>Battery included. Bits sold separately, apparently.</item_description>
+        <weight>1.6</weight>
+        <category>tool</category>
+        <tags>
+            <tag>tool</tag>
+            <tag>construction</tag>
+            <tag>powered</tag>
+        </tags>
+    </item>
+
+    <item>
+        <item_name>chainsaw</item_name>
+        <item_id>12</item_id>
+        <value>80</value>
+        <item_description>Handle it wrong and it will remind you why.</item_description>
+        <weight>5.2</weight>
+        <category>tool</category>
+        <tags>
+            <tag>tool</tag>
+            <tag>forestry</tag>
+            <tag>powered</tag>
+        </tags>
+    </item>
+
+    <item>
+        <item_name>spirit level</item_name>
+        <item_id>13</item_id>
+        <value>12</value>
+        <item_description>Little bubble, big responsibility.</item_description>
+        <weight>0.7</weight>
+        <category>tool</category>
+        <tags>
+            <tag>tool</tag>
+            <tag>construction</tag>
+        </tags>
+    </item>
+
+    <item>
+        <item_name>laser sight square</item_name>
+        <item_id>14</item_id>
+        <value>35</value>
+        <item_description>Projects a straight line so you don't have to trust your eyes.</item_description>
+        <weight>0.4</weight>
+        <category>tool</category>
+        <tags>
+            <tag>tool</tag>
+            <tag>construction</tag>
+        </tags>
+    </item>
+
+    <!-- ================= BUILDING MATERIALS ================= -->
+
+    <item>
+        <item_name>timber plank (1.8m)</item_name>
+        <item_id>20</item_id>
+        <value>6</value>
+        <item_description>Standard framing timber. Measure twice.</item_description>
+        <weight>2.5</weight>
+        <category>building_material</category>
+        <tags>
+            <tag>construction</tag>
+            <tag>timber</tag>
+            <tag>cuttable</tag>
+        </tags>
+    </item>
+
+    <item>
+        <item_name>timber plank (3.6m)</item_name>
+        <item_id>21</item_id>
+        <value>11</value>
+        <item_description>Same as the shorter one, just more of it.</item_description>
+        <weight>5</weight>
+        <category>building_material</category>
+        <tags>
+            <tag>construction</tag>
+            <tag>timber</tag>
+            <tag>cuttable</tag>
+        </tags>
+    </item>
+
+    <item>
+        <item_name>steel box channel (2m)</item_name>
+        <item_id>22</item_id>
+        <value>18</value>
+        <item_description>For when timber won't cut it. Pun intended.</item_description>
+        <weight>4.1</weight>
+        <category>building_material</category>
+        <tags>
+            <tag>construction</tag>
+            <tag>metal</tag>
+            <tag>cuttable</tag>
+        </tags>
+    </item>
+
+    <item>
+        <item_name>box of screws</item_name>
+        <item_id>23</item_id>
+        <value>5</value>
+        <item_description>100 count. You'll still run out mid-job.</item_description>
+        <weight>0.8</weight>
+        <category>building_material</category>
+        <tags>
+            <tag>construction</tag>
+            <tag>fastener</tag>
+        </tags>
+    </item>
+
+    <item>
+        <item_name>box of nails</item_name>
+        <item_id>24</item_id>
+        <value>4</value>
+        <item_description>150 count. Bent ones don't count against the total.</item_description>
+        <weight>1.1</weight>
+        <category>building_material</category>
+        <tags>
+            <tag>construction</tag>
+            <tag>fastener</tag>
+        </tags>
+    </item>
+
+    <!-- ================= VEHICLE PARTS ================= -->
+
     <item>
         <item_name>car battery</item_name>
         <item_id>3</item_id>
         <value>60</value>
-        <item_description>none</item_description>
+        <item_description>Heavier than it looks. Handle the terminals with care.</item_description>
         <weight>7</weight>
+        <category>vehicle_part</category>
+        <tags>
+            <tag>vehicle</tag>
+            <tag>electrical</tag>
+        </tags>
     </item>
+
+    <item>
+        <item_name>spark plug</item_name>
+        <item_id>30</item_id>
+        <value>8</value>
+        <item_description>Small but the engine really cares about this one.</item_description>
+        <weight>0.1</weight>
+        <category>vehicle_part</category>
+        <tags>
+            <tag>vehicle</tag>
+            <tag>engine</tag>
+        </tags>
+    </item>
+
+    <item>
+        <item_name>spare tyre</item_name>
+        <item_id>31</item_id>
+        <value>70</value>
+        <item_description>Full size, not one of those donut ones.</item_description>
+        <weight>12</weight>
+        <category>vehicle_part</category>
+        <tags>
+            <tag>vehicle</tag>
+            <tag>wheel</tag>
+        </tags>
+    </item>
+
+    <item>
+        <item_name>jerry can (fuel)</item_name>
+        <item_id>32</item_id>
+        <value>25</value>
+        <item_description>20L, currently full of unleaded.</item_description>
+        <weight>15</weight>
+        <category>vehicle_part</category>
+        <tags>
+            <tag>vehicle</tag>
+            <tag>fuel</tag>
+            <tag>flammable</tag>
+        </tags>
+    </item>
+
+    <!-- ================= FORESTRY ================= -->
+
+    <item>
+        <item_name>felled log</item_name>
+        <item_id>40</item_id>
+        <value>10</value>
+        <item_description>Fresh cut. Still smells like the forest.</item_description>
+        <weight>25</weight>
+        <category>resource</category>
+        <tags>
+            <tag>forestry</tag>
+            <tag>raw_material</tag>
+            <tag>cuttable</tag>
+        </tags>
+    </item>
+
+    <item>
+        <item_name>firewood bundle</item_name>
+        <item_id>41</item_id>
+        <value>5</value>
+        <item_description>Split, stacked, ready to burn.</item_description>
+        <weight>6</weight>
+        <category>resource</category>
+        <tags>
+            <tag>forestry</tag>
+            <tag>fuel</tag>
+        </tags>
+    </item>
+
+    <!-- ================= MISC / VALUABLES ================= -->
+
+    <item>
+        <item_name>wristwatch</item_name>
+        <item_id>50</item_id>
+        <value>120</value>
+        <item_description>Still ticking. Somehow always five minutes fast.</item_description>
+        <weight>0.05</weight>
+        <category>valuable</category>
+        <tags>
+            <tag>valuable</tag>
+            <tag>sellable</tag>
+        </tags>
+    </item>
+
+    <item>
+        <item_name>paint roller</item_name>
+        <item_id>51</item_id>
+        <value>7</value>
+        <item_description>Cheap, works fine, will shed lint into your first coat.</item_description>
+        <weight>0.3</weight>
+        <category>tool</category>
+        <tags>
+            <tag>tool</tag>
+            <tag>painting</tag>
+        </tags>
+    </item>
+
+    <item>
+        <item_name>paint can</item_name>
+        <item_id>52</item_id>
+        <value>18</value>
+        <item_description>4L, colour depends on what you grabbed.</item_description>
+        <weight>4.5</weight>
+        <category>building_material</category>
+        <tags>
+            <tag>painting</tag>
+            <tag>construction</tag>
+        </tags>
+    </item>
+
 </items>
