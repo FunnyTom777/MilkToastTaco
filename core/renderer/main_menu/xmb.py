@@ -7,7 +7,23 @@ via JavaScript using pywebview.api.* methods.
 
 from functools import wraps
 from collections import defaultdict
+from pathlib import Path
 from typing import Dict, List, Any
+
+
+# Path to the XMB HTML dashboard located in static/ next to this module
+# After refactor moved from project-root /static/ to core/renderer/main_menu/static/
+STATIC_DIR = Path(__file__).parent / "static"
+XMB_HTML_PATH = STATIC_DIR / "milk_toast_taco_xmb.html"
+
+
+def get_xmb_html_path() -> str:
+    """Get absolute path to the XMB HTML dashboard.
+
+    Returns:
+        str: Absolute path to milk_toast_taco_xmb.html
+    """
+    return str(XMB_HTML_PATH.resolve())
 
 
 # Global registry to store menu options

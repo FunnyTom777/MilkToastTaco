@@ -29,14 +29,16 @@ def get_xmb_html_path():
     Returns:
         str: Path to milk_toast_taco_xmb.html
     """
-    # Get the directory where this script is located
-    script_dir = Path(__file__).parent.absolute()
-    html_path = script_dir / "static" / "milk_toast_taco_xmb.html"
-    
+    # HTML now lives next to xmb.py: core/renderer/main_menu/static/
+    # Keep resolution via XMBDashboardAPI to avoid duplication.
+    from core.renderer.main_menu.xmb import get_xmb_html_path as _get_path
+
+    html_path = Path(_get_path())
+
     if not html_path.exists():
         raise FileNotFoundError(
             f"XMB HTML dashboard not found at {html_path}\n"
-            f"Please ensure static/milk_toast_taco_xmb.html exists."
+            f"Please ensure core/renderer/main_menu/static/milk_toast_taco_xmb.html exists."
         )
     
     return str(html_path)
