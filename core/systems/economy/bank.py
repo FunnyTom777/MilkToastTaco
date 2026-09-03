@@ -40,3 +40,19 @@ def apply_bank_membership(player_id, bank_name):  # Banks should be loaded from 
     else:
         warning("Error when attempting to determine bank membership status.")
         return False
+
+
+
+
+current_bank_supports_loans = True
+
+
+
+def get_bank_load():
+    if current_bank_supports_loans == True:
+        # continue
+        request_player_input("This Bank Supports loans! Though i havent implemented the loan system yet... check back later :D")
+    elif current_bank_supports_loans == False:
+        warning("Your Current Bank does NOT support Loans! Please try with another bank!")
+    else:
+        warning("Error when detirming if current bank supports loan.")
