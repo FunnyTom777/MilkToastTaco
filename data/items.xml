@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<items>
+    <item>
+        <item_name>bread loaf</item_name>
+        <item_id>1</item_id>
+        <value>4</value>
+        <item_description>Its bread. What do you expect?</item_description>
+    </item>
+    <item>
+        <item_name>mayonaise</item_name>
+        <item_id>2</item_id>
+        <value>2</value>
+        <item_description>none</item_description>
+    </item>
+</items>

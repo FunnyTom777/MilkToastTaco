@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<npcs>
+    <!-- Hubert -->
+    <npc id="1" name="Hubert" discription="Hubert, Your Roommate. He dosent leave the house much. Always working on his Austin Mini Cooper">
+        <dialogues> <!--I guess Dialouge/Question/Option 'ID's should be seperate? Maybe i should make them the same.. I dont know... Who knows...-->
+            <dialouge id="1">I heard the General store has a 30% of sale this weekend... You can go if you want... I'll just... stay here... Im very busy.. Yes...</dialouge>
+            <question id="1">
+                <option id="1" user_input="Why dont you come with me?" quest_activation="1">WHAT? I mean.. No thank you, im .. very busy doing... Dish washing... Oh hey, can you grab me some Red Spraypaint while your out? Its for a.. Project.. Thanks!</option>
+                <option id="2" user_input="Alright, Im going there now, see you later" quest_activation="1">Ok. ill be.. here.. like i always am.. Oh also, could you grab me some Red Spraypaint while your out? Its for a.. Project.. Thanks!</option>
+            </question>
+        </dialogues>
+    </npc>
+    <npc id="2" name="Robby" discription="Robby, The General Store owner. Kind of Grumpy. Always walks Poppy, His Dog, down by the lake.">
+        <dialouge id="1">Welcome... We have 30% off everything if you want... Stop asking for more discounts.</dialouge> <!-- Dialouge IDs are seperate per NPC...-->
+    </npc>
+    <npc id="3" name="Phil" discription="Phil. Always at the pub. Dont leave your drink alone, He'll snatch it. Not very smart.">
+        <dialouge id="1">The sign at the front said Free drinks! 30 pints please! ... What do you mean there not free?! Where are my free Drinks!... Fine ill have a lemonade... ... 50 cents? You said they were Free!!"</dialouge>
+    </npc>
+</npcs>
