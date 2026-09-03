@@ -5,11 +5,20 @@
         <item_id>1</item_id>
         <value>4</value>
         <item_description>Its bread. What do you expect?</item_description>
+        <weight>0.5</weight> <!--in KG-->
     </item>
     <item>
         <item_name>mayonaise</item_name>
         <item_id>2</item_id>
         <value>2</value>
         <item_description>none</item_description>
+        <weight>0.3</weight>
+    </item>
+    <item>
+        <item_name>car battery</item_name>
+        <item_id>3</item_id>
+        <value>60</value>
+        <item_description>none</item_description>
+        <weight>7</weight>
     </item>
 </items>
