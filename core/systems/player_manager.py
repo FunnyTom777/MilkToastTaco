@@ -28,6 +28,12 @@ def add_player(player_id, pos):
 
     _players[player_id] = tuple(pos)
     _sync_player_pos1()
+    # Auto-create inventory for new player (lazy import to avoid cycles)
+    try:
+        from core.systems.inventory.manager import ensure_inventory
+        ensure_inventory(player_id)
+    except Exception:
+        pass
     return True
 
 
@@ -64,7 +70,20 @@ def remove_player(player_id):
         raise ValueError(f"Player {player_id} does not exist")
     del _players[player_id]
     _sync_player_pos1()
+    # Clean up inventory as well
+    try:
+        from core.systems.inventory.manager import remove_inventory
+        remove_inventory(player_id)
+    except Exception:
+        pass
     return True
 
+
+# Ensure initial player has an inventory (best-effort, ignore if inventory not yet importable)
+try:
+    from core.systems.inventory.manager import ensure_inventory as _ensure_inv
+    _ensure_inv(1)
+except Exception:
+    pass
 
 __all__ = ["add_player", "update_player_pos", "get_player_pos", "remove_player", "player_pos1"]
