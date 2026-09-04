@@ -661,15 +661,35 @@
             updateSettingsFocusUI();
         }
 
+        function whenPywebviewReady() {
+            return new Promise(resolve => {
+                if (window.pywebview && window.pywebview.api) { resolve(true); return; }
+                let settled = false;
+                const done = () => { if (settled) return; settled = true; resolve(true); };
+                window.addEventListener('pywebviewready', done, { once: true });
+                let tries = 0;
+                const iv = setInterval(() => {
+                    if (window.pywebview && window.pywebview.api) { clearInterval(iv); done(); }
+                    else if (++tries > 50) { clearInterval(iv); if (!settled) { settled = true; resolve(false); } }
+                }, 100);
+            });
+        }
+
         async function loadXmbSettings() {
+            let loadedFromPython = false;
             try {
                 if (window.pywebview && window.pywebview.api && window.pywebview.api.get_xmb_settings) {
                     const res = await window.pywebview.api.get_xmb_settings();
                     if (res && res.settings) {
                         fullscreenEnabled = !!res.settings.fullscreen;
-                        currentTheme = res.settings.theme || 'default';
+                        // strip whitespace, ensure valid
+                        let t = (res.settings.theme || 'default').trim();
+                        if (THEMES[t]) currentTheme = t;
+                        else currentTheme = 'default';
+                        loadedFromPython = true;
                     }
-                } else {
+                }
+                if (!loadedFromPython) {
                     const fs = localStorage.getItem('xmb_fullscreen');
                     if (fs !== null) fullscreenEnabled = fs === 'true';
                     const th = localStorage.getItem('xmb_theme');
@@ -1251,6 +1271,25 @@
             document.body.addEventListener('click', () => {
                 if (audioCtx.state === 'suspended') audioCtx.resume();
             }, { once: true });
+
+            // Re-load from Python once pywebview is actually ready (fixes theme not loading on startup)
+            whenPywebviewReady().then(async (ready) => {
+                if (!ready) return;
+                console.log('pywebview ready - reloading settings/menu from Python');
+                try {
+                    const menuStructure = await window.pywebview.api.get_menu_structure();
+                    // Only rebuild if structure changed
+                    if (JSON.stringify(menuStructure) !== JSON.stringify(xmbData)) {
+                        xmbData = menuStructure;
+                        activeItemIndices = new Array(xmbData.length).fill(0);
+                        buildDOM();
+                        updateUI();
+                    }
+                } catch(e) { console.error('menu reload failed', e); }
+                try {
+                    await loadXmbSettings();
+                } catch(e) { console.error('settings reload failed', e); }
+            });
         });
 
     </script>
