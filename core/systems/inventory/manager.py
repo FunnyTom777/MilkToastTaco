@@ -235,3 +235,33 @@ def set_max_weight(player_id: int, new_max: float) -> None:
     if new_max <= 0:
         raise ValueError("new_max must be > 0")
     inv.max_weight = float(new_max)
+
+
+# ---- save/load provider ----
+def _save_inventories():
+    """Return JSON-serializable inventory state (string keys -> Inventory.to_dict)."""
+    return {str(pid): inv.to_dict() for pid, inv in _inventories.items()}
+
+
+def _load_inventories(state):
+    """Restore inventories from save state. Replaces current registry."""
+    if not isinstance(state, dict):
+        warning(f"_load_inventories: expected dict, got {type(state).__name__}")
+        return
+    _inventories.clear()
+    for key, inv_data in state.items():
+        try:
+            pid = int(key)
+            if not isinstance(inv_data, dict):
+                warning(f"_load_inventories: invalid data for player {pid}: {inv_data!r}")
+                continue
+            _inventories[pid] = Inventory.from_dict(inv_data)
+        except Exception as e:
+            warning(f"_load_inventories: failed to restore inventory for '{key}': {e}")
+
+
+try:
+    from core.systems.save.registry import register_save_provider as _reg_inv
+    _reg_inv("inventory", _save_inventories, _load_inventories)
+except Exception:
+    pass

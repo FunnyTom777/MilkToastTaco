@@ -86,4 +86,44 @@ try:
 except Exception:
     pass
 
+# ---- save/load provider (registry mirrors dev-console @command pattern) ----
+def _save_players():
+    """Return JSON-serializable player state (string keys -> list positions)."""
+    return {str(pid): list(pos) for pid, pos in _players.items()}
+
+
+def _load_players(state):
+    """Restore player positions from save state."""
+    if not isinstance(state, dict):
+        warning(f"_load_players: expected dict, got {type(state).__name__}")
+        return
+    _players.clear()
+    for key, pos in state.items():
+        try:
+            pid = int(key)
+            if not (hasattr(pos, "__len__") and len(pos) == 3):
+                warning(f"_load_players: invalid pos for player {pid}: {pos!r}")
+                continue
+            _players[pid] = tuple(pos)
+        except Exception as e:
+            warning(f"_load_players: failed to restore player '{key}': {e}")
+    _sync_player_pos1()
+    # Re-ensure inventories for restored players (best-effort)
+    try:
+        from core.systems.inventory.manager import ensure_inventory as _ei
+        for pid in list(_players.keys()):
+            try:
+                _ei(pid)
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+
+try:
+    from core.systems.save.registry import register_save_provider as _reg
+    _reg("players", _save_players, _load_players)
+except Exception:
+    pass
+
 __all__ = ["add_player", "update_player_pos", "get_player_pos", "remove_player", "player_pos1"]

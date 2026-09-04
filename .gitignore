@@ -225,6 +225,9 @@ __marimo__/
 # Runtime logs produced by core/systems/orchestrator.py
 logs/*.txt
 logs/*.log
+# Save files are local player state (XML under saves/), not source — see core/systems/save/manager.py
+saves/*
+!saves/.gitkeep
 
 # Local dev / test scratch
 .scratch/
