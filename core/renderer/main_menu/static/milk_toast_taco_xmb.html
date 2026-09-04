@@ -301,6 +301,7 @@
             cursor: pointer;
             transition: all 0.2s var(--ease);
             box-shadow: 0 4px 15px rgba(59,130,246,0.3);
+            outline: none;
         }
         .btn-primary:hover {
             transform: translateY(-1px);
@@ -308,6 +309,10 @@
         }
         .btn-primary:active {
             transform: translateY(0);
+        }
+        .btn-primary.kb-focus {
+            box-shadow: 0 0 0 2px rgba(255,255,255,0.9), 0 6px 20px rgba(59,130,246,0.5);
+            transform: translateY(-1px) scale(1.02);
         }
         .btn-secondary {
             background: rgba(255,255,255,0.08);
@@ -343,9 +348,16 @@
             justify-content: space-between;
             padding: 16px 0;
             border-bottom: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            transition: background 0.2s var(--ease), box-shadow 0.2s var(--ease);
+            padding-left: 12px;
+            padding-right: 12px;
+            margin-left: -12px;
+            margin-right: -12px;
         }
-        .setting-row:last-of-type {
-            border-bottom: none;
+        .setting-row.kb-focus {
+            background: rgba(255,255,255,0.08);
+            box-shadow: 0 0 0 1px rgba(129,140,248,0.4), 0 0 15px rgba(99,102,241,0.15);
         }
         .setting-label {
             display: flex;
@@ -373,7 +385,7 @@
             background: rgba(255,255,255,0.15);
             border-radius: 999px;
             cursor: pointer;
-            transition: background 0.3s var(--ease);
+            transition: background 0.3s var(--ease), box-shadow 0.3s var(--ease);
             border: 1px solid rgba(255,255,255,0.1);
             flex-shrink: 0;
         }
@@ -381,6 +393,12 @@
             background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
             border-color: rgba(99,102,241,0.5);
             box-shadow: 0 0 12px rgba(99,102,241,0.4);
+        }
+        .toggle.kb-focus {
+            box-shadow: 0 0 0 2px rgba(255,255,255,0.9), 0 0 12px rgba(99,102,241,0.5);
+        }
+        .toggle.kb-focus.on {
+            box-shadow: 0 0 0 2px rgba(255,255,255,0.9), 0 0 16px rgba(99,102,241,0.6);
         }
         .toggle-knob {
             position: absolute;
@@ -422,6 +440,16 @@
             border-color: #6366f1;
             box-shadow: 0 0 15px rgba(99,102,241,0.25);
         }
+        .theme-option.kb-focus {
+            border-color: rgba(255,255,255,0.9);
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.9), 0 0 18px rgba(255,255,255,0.18);
+            transform: translateY(-1px) scale(1.02);
+            background: rgba(255,255,255,0.12);
+        }
+        .theme-option.kb-focus.active {
+            border-color: #fff;
+            box-shadow: 0 0 0 1px #fff, 0 0 20px rgba(99,102,241,0.4);
+        }
         .theme-swatch {
             width: 100%;
             height: 36px;
@@ -448,6 +476,24 @@
             margin-top: 24px;
             gap: 10px;
         }
+        .kbd-hint {
+            text-align: center;
+            margin-top: 14px;
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.35);
+            letter-spacing: 0.6px;
+            font-weight: 300;
+        }
+        .kbd-hint kbd {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-bottom-width: 2px;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 0.65rem;
+            margin: 0 1px;
+        }
         @media (max-width: 600px) {
             .theme-grid { grid-template-columns: repeat(2, 1fr); }
         }
@@ -463,7 +509,7 @@
 
     <!-- UI Overlays -->
     <div id="clock">00:00 AM</div>
-    <div class="controls-hint">USE ARROW KEYS TO NAVIGATE • ENTER TO SELECT • ESC TO CLOSE POPUPS</div>
+    <div class="controls-hint" id="controls-hint">USE ARROW KEYS TO NAVIGATE • ENTER TO SELECT • BACKSPACE / ESC TO CLOSE</div>
 
     <div id="info-panel">
         <div id="info-title">Title</div>
@@ -481,7 +527,8 @@
             <div class="modal-icon"><i class="fas fa-tools"></i></div>
             <h2>Not Implemented Yet</h2>
             <p>This feature is not implemented yet.<br><strong>Try using the Dashboard</strong> for now — it's where all the real magic happens. <i class="fas fa-wand-magic-sparkles" style="color:#a78bfa"></i></p>
-            <button class="btn-primary" onclick="hidePopup()"><i class="fas fa-check" style="margin-right:6px"></i> Got it</button>
+            <button id="popup-btn" class="btn-primary kb-focus" onclick="hidePopup()"><i class="fas fa-check" style="margin-right:6px"></i> Got it</button>
+            <div class="kbd-hint"><kbd>ENTER</kbd> / <kbd>BACKSPACE</kbd> / <kbd>ESC</kbd> to close</div>
         </div>
     </div>
 
@@ -492,12 +539,12 @@
             <h2>XMB Options</h2>
             <p style="text-align:center; margin-bottom:18px; color:#aaa; font-size:0.9rem;">Personalize your XMB experience. Settings save to <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px; font-size:0.8rem;">xmbsettings.xml</code></p>
             
-            <div class="setting-row">
+            <div id="setting-row-fullscreen" class="setting-row">
                 <div class="setting-label">
                     <span><i class="fas fa-expand"></i> Open in Fullscreen</span>
                     <span>Launch the XMB directly in fullscreen mode</span>
                 </div>
-                <div id="fullscreen-toggle" class="toggle" onclick="toggleFullscreenSetting()" role="switch" aria-checked="false" tabindex="0">
+                <div id="fullscreen-toggle" class="toggle" onclick="toggleFullscreenSetting()" role="switch" aria-checked="false" tabindex="-1">
                     <div class="toggle-knob"></div>
                 </div>
             </div>
@@ -513,8 +560,9 @@
             </div>
 
             <div class="settings-actions">
-                <button class="btn-primary" onclick="hideSettings()"><i class="fas fa-check" style="margin-right:6px"></i> Done</button>
+                <button id="settings-done-btn" class="btn-primary" onclick="hideSettings()"><i class="fas fa-check" style="margin-right:6px"></i> Done</button>
             </div>
+            <div class="kbd-hint"><kbd>↑</kbd><kbd>↓</kbd> navigate • <kbd>←</kbd><kbd>→</kbd> theme grid • <kbd>ENTER</kbd> select • <kbd>BACKSPACE</kbd>/<kbd>ESC</kbd> close</div>
         </div>
     </div>
 
@@ -528,8 +576,13 @@
             ocean_blue:    { name: "Ocean Blue",    desc: "Abyssal teal",    bg: "#05141a", to: "#0a2830", wave1: "rgba(20, 140, 160, 0.16)", wave2: "rgba(30, 80, 150, 0.11)" },
             sunset_orange: { name: "Sunset Orange", desc: "Dusk ember",      bg: "#140a05", to: "#2e1a0a", wave1: "rgba(200, 90, 20, 0.15)", wave2: "rgba(160, 40, 80, 0.11)" },
         };
+        const THEME_IDS = Object.keys(THEMES);
         let currentTheme = "default";
         let fullscreenEnabled = false;
+
+        // --- Settings keyboard navigation state ---
+        let settingsFocusRow = 0; // 0=fullscreen toggle, 1=theme grid, 2=done button
+        let settingsThemeIndex = 0; // index into THEME_IDS when row==1
 
         function applyTheme(themeId) {
             const t = THEMES[themeId] || THEMES.default;
@@ -539,43 +592,52 @@
             r.style.setProperty('--bg-to', t.to);
             r.style.setProperty('--wave1', t.wave1);
             r.style.setProperty('--wave2', t.wave2);
-            // also persist bg color on body
             document.body.style.backgroundColor = t.bg;
-            // update active state in grid
             document.querySelectorAll('.theme-option').forEach(el => {
                 el.classList.toggle('active', el.dataset.theme === themeId);
             });
+            // sync keyboard theme index to newly selected theme
+            const idx = THEME_IDS.indexOf(themeId);
+            if (idx !== -1) settingsThemeIndex = idx;
         }
 
         function buildThemeGrid() {
             const grid = document.getElementById('theme-grid');
             grid.innerHTML = '';
-            Object.entries(THEMES).forEach(([id, t]) => {
+            THEME_IDS.forEach((id, idx) => {
+                const t = THEMES[id];
                 const opt = document.createElement('div');
                 opt.className = 'theme-option' + (id === currentTheme ? ' active' : '');
                 opt.dataset.theme = id;
+                opt.dataset.index = String(idx);
                 opt.innerHTML = `
                     <div class="theme-swatch" style="background: linear-gradient(135deg, ${t.bg} 0%, ${t.to} 100%);"></div>
                     <div class="theme-name">${t.name}</div>
                     <div class="theme-desc">${t.desc}</div>
                 `;
-                opt.onclick = () => selectTheme(id);
+                opt.onclick = () => {
+                    settingsFocusRow = 1;
+                    settingsThemeIndex = idx;
+                    updateSettingsFocusUI();
+                    selectTheme(id);
+                };
                 grid.appendChild(opt);
             });
+            updateSettingsFocusUI();
         }
 
         async function selectTheme(themeId) {
             applyTheme(themeId);
             playTick('select');
-            // persist via python
             try {
                 if (window.pywebview && window.pywebview.api && window.pywebview.api.set_theme) {
                     await window.pywebview.api.set_theme(themeId);
                 } else {
-                    // fallback: localStorage for browser-only preview
                     localStorage.setItem('xmb_theme', themeId);
                 }
             } catch(e) { console.error('set_theme failed', e); }
+            // re-apply focus highlight after re-render side effects
+            updateSettingsFocusUI();
         }
 
         function updateFullscreenToggleUI() {
@@ -596,6 +658,7 @@
                     localStorage.setItem('xmb_fullscreen', String(fullscreenEnabled));
                 }
             } catch(e) { console.error('set_fullscreen failed', e); }
+            updateSettingsFocusUI();
         }
 
         async function loadXmbSettings() {
@@ -607,16 +670,41 @@
                         currentTheme = res.settings.theme || 'default';
                     }
                 } else {
-                    // browser fallback
                     const fs = localStorage.getItem('xmb_fullscreen');
                     if (fs !== null) fullscreenEnabled = fs === 'true';
                     const th = localStorage.getItem('xmb_theme');
                     if (th && THEMES[th]) currentTheme = th;
                 }
             } catch(e) { console.error('load settings failed', e); }
+            const idx = THEME_IDS.indexOf(currentTheme);
+            settingsThemeIndex = idx === -1 ? 0 : idx;
             applyTheme(currentTheme);
             updateFullscreenToggleUI();
             buildThemeGrid();
+        }
+
+        function updateSettingsFocusUI() {
+            const rowEl = document.getElementById('setting-row-fullscreen');
+            const toggleEl = document.getElementById('fullscreen-toggle');
+            const doneBtn = document.getElementById('settings-done-btn');
+            // clear all kb-focus
+            rowEl.classList.remove('kb-focus');
+            if (toggleEl) toggleEl.classList.remove('kb-focus');
+            if (doneBtn) doneBtn.classList.remove('kb-focus');
+            document.querySelectorAll('.theme-option').forEach(el => el.classList.remove('kb-focus'));
+
+            if (settingsFocusRow === 0) {
+                rowEl.classList.add('kb-focus');
+                if (toggleEl) toggleEl.classList.add('kb-focus');
+            } else if (settingsFocusRow === 1) {
+                const grid = document.getElementById('theme-grid');
+                const items = grid ? grid.querySelectorAll('.theme-option') : [];
+                if (items[settingsThemeIndex]) items[settingsThemeIndex].classList.add('kb-focus');
+                // also highlight row context subtly
+                rowEl.classList.remove('kb-focus');
+            } else if (settingsFocusRow === 2) {
+                if (doneBtn) doneBtn.classList.add('kb-focus');
+            }
         }
 
         // --- Popup helpers ---
@@ -626,19 +714,202 @@
             if (msg) p.innerHTML = msg;
             else p.innerHTML = 'This feature is not implemented yet.<br><strong>Try using the Dashboard</strong> for now — it\'s where all the real magic happens. <i class="fas fa-wand-magic-sparkles" style="color:#a78bfa"></i>';
             overlay.classList.remove('hidden');
+            // popup has only one focusable button
+            const btn = document.getElementById('popup-btn');
+            if (btn) { btn.classList.add('kb-focus'); }
             playTick('select');
         }
         function hidePopup() {
-            document.getElementById('popup-overlay').classList.add('hidden');
+            const overlay = document.getElementById('popup-overlay');
+            if (overlay.classList.contains('hidden')) return;
+            overlay.classList.add('hidden');
+            const btn = document.getElementById('popup-btn');
+            if (btn) btn.classList.remove('kb-focus');
             playTick('move');
         }
         function showSettings() {
-            document.getElementById('settings-overlay').classList.remove('hidden');
+            const overlay = document.getElementById('settings-overlay');
+            overlay.classList.remove('hidden');
+            // init focus: start on fullscreen toggle
+            settingsFocusRow = 0;
+            // sync theme index to current theme
+            const idx = THEME_IDS.indexOf(currentTheme);
+            settingsThemeIndex = idx === -1 ? 0 : idx;
+            updateSettingsFocusUI();
             playTick('select');
         }
         function hideSettings() {
-            document.getElementById('settings-overlay').classList.add('hidden');
+            const overlay = document.getElementById('settings-overlay');
+            if (overlay.classList.contains('hidden')) return;
+            overlay.classList.add('hidden');
+            // clear focus
+            document.getElementById('setting-row-fullscreen').classList.remove('kb-focus');
+            document.getElementById('fullscreen-toggle').classList.remove('kb-focus');
+            document.getElementById('settings-done-btn').classList.remove('kb-focus');
+            document.querySelectorAll('.theme-option').forEach(el => el.classList.remove('kb-focus'));
             playTick('move');
+        }
+
+        function isPopupOpen() {
+            return !document.getElementById('popup-overlay').classList.contains('hidden');
+        }
+        function isSettingsOpen() {
+            return !document.getElementById('settings-overlay').classList.contains('hidden');
+        }
+        function isOverlayOpen() {
+            return isPopupOpen() || isSettingsOpen();
+        }
+
+        function getThemeGridCols() {
+            // match CSS: 3 cols normally, 2 cols under 600px
+            return window.innerWidth <= 600 ? 2 : 3;
+        }
+
+        function handlePopupKey(e) {
+            const key = e.key;
+            if (key === 'Escape' || key === 'Backspace' || key === 'Enter' || key === ' ' || key === 'Spacebar') {
+                e.preventDefault();
+                hidePopup();
+                return true;
+            }
+            // arrow keys also dismiss (XMB style: any confirm/back closes)
+            if (key === 'ArrowLeft' || key === 'ArrowRight' || key === 'ArrowUp' || key === 'ArrowDown') {
+                // give subtle feedback but not close? Keep close on back-like keys only
+                // do nothing, but prevent XMB navigation underneath
+                e.preventDefault();
+                return true;
+            }
+            return false;
+        }
+
+        function handleSettingsKey(e) {
+            const key = e.key;
+            const cols = getThemeGridCols();
+            const themeCount = THEME_IDS.length;
+
+            // Back / close
+            if (key === 'Escape' || key === 'Backspace') {
+                e.preventDefault();
+                hideSettings();
+                return true;
+            }
+
+            // Navigation within settings
+            if (key === 'ArrowUp') {
+                e.preventDefault();
+                if (settingsFocusRow === 1) {
+                    // if in theme grid, try move up within grid first
+                    if (settingsThemeIndex >= cols) {
+                        settingsThemeIndex -= cols;
+                        playTick('move');
+                        updateSettingsFocusUI();
+                    } else {
+                        // top row of grid -> go to toggle row
+                        settingsFocusRow = 0;
+                        playTick('move');
+                        updateSettingsFocusUI();
+                    }
+                } else if (settingsFocusRow === 2) {
+                    // Done -> go to theme grid, focus last row's same column
+                    settingsFocusRow = 1;
+                    // keep same column as before, or last item
+                    if (settingsThemeIndex >= themeCount) settingsThemeIndex = themeCount - 1;
+                    playTick('move');
+                    updateSettingsFocusUI();
+                } else if (settingsFocusRow === 0) {
+                    // toggle -> wrap to Done
+                    settingsFocusRow = 2;
+                    playTick('move');
+                    updateSettingsFocusUI();
+                }
+                return true;
+            }
+            if (key === 'ArrowDown') {
+                e.preventDefault();
+                if (settingsFocusRow === 0) {
+                    settingsFocusRow = 1;
+                    // when entering grid, keep current theme index (already synced)
+                    playTick('move');
+                    updateSettingsFocusUI();
+                } else if (settingsFocusRow === 1) {
+                    if (settingsThemeIndex + cols < themeCount) {
+                        settingsThemeIndex += cols;
+                        playTick('move');
+                        updateSettingsFocusUI();
+                    } else {
+                        // past bottom -> go to Done
+                        settingsFocusRow = 2;
+                        playTick('move');
+                        updateSettingsFocusUI();
+                    }
+                } else if (settingsFocusRow === 2) {
+                    settingsFocusRow = 0;
+                    playTick('move');
+                    updateSettingsFocusUI();
+                }
+                return true;
+            }
+            if (key === 'ArrowLeft') {
+                e.preventDefault();
+                if (settingsFocusRow === 1) {
+                    // move left within grid with wrap per row
+                    const row = Math.floor(settingsThemeIndex / cols);
+                    const rowStart = row * cols;
+                    const rowEnd = Math.min(rowStart + cols - 1, themeCount - 1);
+                    if (settingsThemeIndex > rowStart) {
+                        settingsThemeIndex--;
+                    } else {
+                        // wrap to end of row
+                        settingsThemeIndex = rowEnd;
+                    }
+                    playTick('move');
+                    updateSettingsFocusUI();
+                } else if (settingsFocusRow === 0) {
+                    // Left on toggle = turn off
+                    if (fullscreenEnabled) {
+                        toggleFullscreenSetting();
+                    } else {
+                        playTick('move');
+                    }
+                }
+                return true;
+            }
+            if (key === 'ArrowRight') {
+                e.preventDefault();
+                if (settingsFocusRow === 1) {
+                    const row = Math.floor(settingsThemeIndex / cols);
+                    const rowStart = row * cols;
+                    const rowEnd = Math.min(rowStart + cols - 1, themeCount - 1);
+                    if (settingsThemeIndex < rowEnd) {
+                        settingsThemeIndex++;
+                    } else {
+                        settingsThemeIndex = rowStart;
+                    }
+                    playTick('move');
+                    updateSettingsFocusUI();
+                } else if (settingsFocusRow === 0) {
+                    // Right on toggle = turn on
+                    if (!fullscreenEnabled) {
+                        toggleFullscreenSetting();
+                    } else {
+                        playTick('move');
+                    }
+                }
+                return true;
+            }
+            if (key === 'Enter' || key === ' ' || key === 'Spacebar') {
+                e.preventDefault();
+                if (settingsFocusRow === 0) {
+                    toggleFullscreenSetting();
+                } else if (settingsFocusRow === 1) {
+                    const tid = THEME_IDS[settingsThemeIndex];
+                    if (tid) selectTheme(tid);
+                } else if (settingsFocusRow === 2) {
+                    hideSettings();
+                }
+                return true;
+            }
+            return false;
         }
 
         // Menu data - will be populated dynamically from Python API
@@ -743,11 +1014,6 @@
         const catWidth = 240;
         const itemHeight = 50;
 
-        function isOverlayOpen() {
-            return !document.getElementById('popup-overlay').classList.contains('hidden') ||
-                   !document.getElementById('settings-overlay').classList.contains('hidden');
-        }
-
         async function handleMenuSelection() {
             const catId = xmbData[activeCatIndex].id;
             const itemIndex = activeItemIndices[activeCatIndex];
@@ -758,7 +1024,6 @@
 
             if (catId === 'game_modes' && (selectedItem.name === 'Play Career Mode' || selectedItem.name === 'Play Sandbox Mode' || selectedItem.name === 'View Military Campaigns')) {
                 showPopup(notImplementedMsg);
-                // still call python for state but not needed
                 if (window.pywebview && window.pywebview.api) {
                     try {
                         if (selectedItem.name === 'Play Career Mode') await window.pywebview.api.play_career_mode();
@@ -782,7 +1047,6 @@
             if (catId === 'misc' && selectedItem.name === 'Quit') {
                 if (typeof window.pywebview !== 'undefined' && window.pywebview.api && window.pywebview.api.quit_game) {
                     try { await window.pywebview.api.quit_game(); } catch(e){ console.error(e); }
-                    // fallback: try close window
                     setTimeout(()=>window.close(), 300);
                 } else {
                     console.log('Quit (no pywebview) - would close window');
@@ -791,10 +1055,8 @@
                 return;
             }
 
-            // For other items, try python API
             if (typeof window.pywebview === 'undefined' || !window.pywebview.api) {
                 console.log(`Selected: ${catId} > ${selectedItem.name} (pywebview not available)`);
-                // show generic not-implemented for options that aren't xmb_options
                 if (catId === 'options') showPopup(notImplementedMsg);
                 return;
             }
@@ -895,13 +1157,13 @@
         
         function setupNavigation() {
             window.addEventListener('keydown', (e) => {
-                // If overlay open, handle overlay keys first
-                if (isOverlayOpen()) {
-                    if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        if (!document.getElementById('popup-overlay').classList.contains('hidden')) hidePopup();
-                        else hideSettings();
-                    }
+                // Overlay priority: popup first, then settings
+                if (isPopupOpen()) {
+                    handlePopupKey(e);
+                    return;
+                }
+                if (isSettingsOpen()) {
+                    handleSettingsKey(e);
                     return;
                 }
 
@@ -936,6 +1198,7 @@
                         }
                         break;
                     case 'Enter':
+                        e.preventDefault();
                         playTick('select');
                         const activeItemEl = document.getElementById(`item-${activeCatIndex}-${activeItemIndices[activeCatIndex]}`);
                         if(activeItemEl) {
@@ -947,6 +1210,11 @@
                             }, 200);
                         }
                         handleMenuSelection();
+                        break;
+                    case 'Backspace':
+                        // XMB-style back: if in overlay would have been handled, otherwise no-op (could add future hierarchy)
+                        e.preventDefault();
+                        playTick('move');
                         break;
                     case 'Escape':
                         // no op when no overlay
@@ -974,15 +1242,6 @@
             
             document.getElementById('clock').innerText = `${hours}:${minutes} ${ampm}`;
         }
-
-        // Keyboard accessibility for toggle
-        document.addEventListener('keydown', (e) => {
-            const tog = document.getElementById('fullscreen-toggle');
-            if (document.activeElement === tog && (e.key === 'Enter' || e.key === ' ')) {
-                e.preventDefault();
-                toggleFullscreenSetting();
-            }
-        });
 
         window.addEventListener('DOMContentLoaded', () => {
             initializeMenuStructure();
