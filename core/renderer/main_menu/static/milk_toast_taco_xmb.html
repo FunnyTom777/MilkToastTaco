@@ -1156,6 +1156,26 @@
                 showSettings();
                 return;
             }
+            // Dashboard V2 — XMB-themed debugger (new)
+            if (catId === 'misc' && selectedItem.name === 'Dashboard V2') {
+                if (window.pywebview && window.pywebview.api && window.pywebview.api.launch_dashboard_v2) {
+                    try {
+                        const res = await window.pywebview.api.launch_dashboard_v2();
+                        if (res && res.status === 'success') {
+                            showPopup(`<strong>Dashboard V2</strong> launching...<br><span style="opacity:0.7">Game System Debugger — XMB theme synced • fullscreen follows <code>xmbsettings.xml</code>. XMB is closing — V2 will appear. <i class="fas fa-rocket" style="color:#60a5fa"></i></span>`);
+                            setTimeout(()=>{ try{ window.close(); }catch(e){} }, 900);
+                            return;
+                        } else if (res && res.status === 'error') {
+                            showPopup(`Failed to launch Dashboard V2:<br><code style="background:rgba(255,255,255,0.08); padding:4px 8px; border-radius:6px;">${res.message||'unknown error'}</code>`);
+                            return;
+                        }
+                    } catch(e){ console.error(e); }
+                    showPopup('Failed to launch Dashboard V2 — check console/py logs.<br><span style="opacity:0.7">You can also run <code>python -m core.renderer.dashboard_v2.dashboard_v2</code></span>');
+                } else {
+                    showPopup('Dashboard V2 launch needs the desktop app (pywebview).<br>Preview: run <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">python -m core.renderer.dashboard_v2.dashboard_v2</code> in your terminal. <i class="fas fa-terminal" style="color:#34d399"></i>');
+                }
+                return;
+            }
             // Dashboard — spawns separate pywebview process and closes XMB. Keep popup to 0.6s then the window self-closes.
             if (catId === 'misc' && (selectedItem.name === 'Launch MTT Dashboard' || selectedItem.name === 'Launch MTT Dashboard (Dev Mode)')) {
                 const isDev = selectedItem.name.includes('(Dev Mode)');

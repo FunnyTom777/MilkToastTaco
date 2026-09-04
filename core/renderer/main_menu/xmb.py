@@ -213,6 +213,32 @@ class XMBDashboardAPI:
         """Launch Dashboard (player mode)."""
         return self._spawn_dashboard()
 
+    def _spawn_dashboard_v2(self):
+        """Helper: spawn dashboard_v2 as independent process and close XMB."""
+        try:
+            project_root = Path(__file__).resolve().parents[3]
+            cmd = [sys.executable, "-m", "core.renderer.dashboard_v2.dashboard_v2"]
+            subprocess.Popen(cmd, cwd=str(project_root), close_fds=True)  # noqa: S603
+        except Exception as e:
+            return {"status": "error", "message": f"Failed to launch Dashboard V2: {e}"}
+        try:
+            import webview
+            if webview.windows:
+                for w in list(webview.windows):
+                    try:
+                        w.destroy()
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+        return {"status": "success", "message": "Dashboard V2 launched"}
+
+    @menu_option("misc", "Misc", "fa-ellipsis-h", "Dashboard V2",
+                 "Open MTT Dashboard V2 — Game System Debugger with XMB themes. Fullscreen follows XMB settings. Uses the same pywebview engine.")
+    def launch_dashboard_v2(self):
+        """Launch Dashboard V2 (Debugger — XMB-themed)."""
+        return self._spawn_dashboard_v2()
+
     @menu_option("misc", "Misc", "fa-ellipsis-h", "Quit",
                  "Save progress and return to desktop.")
     def quit_game(self):

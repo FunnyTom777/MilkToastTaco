@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<!-- MTT Dashboard V2 — Milk Toast Taco -->
+<!-- Location: core/renderer/dashboard_v2/static/dashboard_v2.html -->
+<!-- Served via: core/renderer/dashboard_v2/dashboard_v2.py:get_dashboard_v2_html_path() -->
+<!-- Based on Game System Debugger (provided HTML) + XMB theme loading (xmbsettings.xml) -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Milk Toast Taco — Dashboard V2</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+    /* Base XMB-themable vars — overridden by applyTheme() */
+    :root {
+      --bg-dark: #121316;
+      --bg-to: #1A1C23;
+      --panel-bg: #1A1C23;
+      --panel-border: #2E323D;
+      --text-main: #E2E8F0;
+      --text-muted: #94A3B8;
+      --accent: #F97316;
+      --accent-hover: #EA580C;
+      --accent-subtle: rgba(249, 115, 22, 0.12);
+      --accent-border: rgba(249, 115, 22, 0.3);
+      --user-bg: #262933;
+      --user-border: #3A3F4D;
+      --game-bg: rgba(249, 115, 22, 0.08);
+      --game-border: rgba(249, 115, 22, 0.3);
+      --status-green: #22C55E;
+      --font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', Consolas, Monaco, monospace;
+      --ease: cubic-bezier(0.25,0.1,0.25,1);
+      /* wave colors (from XMB) */
+      --wave1: rgba(30,80,150,0.12);
+      --wave2: rgba(80,30,150,0.08);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-dark);
+      background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-to) 100%);
+      color: var(--text-main);
+      font-family: var(--font-family);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: background 0.6s var(--ease), color 0.3s var(--ease);
+    }
+    /* subtle XMB waves behind */
+    .bg-container { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+    .wave { position: absolute; width: 200%; height: 200%; top: -50%; left: -50%;
+      background: radial-gradient(ellipse at center, var(--wave1) 0%, transparent 60%);
+      animation: rotateWave 30s linear infinite; transform-origin: center; transition: background 0.6s var(--ease); }
+    .wave:nth-child(2){ background: radial-gradient(ellipse at center, var(--wave2) 0%, transparent 50%); animation: rotateWave 45s linear infinite reverse; }
+    @keyframes rotateWave{0%{transform:rotate(0deg) scale(1)}50%{transform:rotate(180deg) scale(1.2)}100%{transform:rotate(360deg) scale(1)}}
+
+    /* Industrial Top Header — now XMB-aware */
+    header {
+      height: 56px;
+      background-color: var(--panel-bg);
+      border-bottom: 1px solid var(--panel-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.5rem;
+      flex-shrink: 0;
+      backdrop-filter: blur(10px);
+    }
+    .brand { display: flex; align-items: center; gap: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; font-size: 0.9rem; }
+    .brand-icon { width: 12px; height: 12px; background-color: var(--accent); box-shadow: 0 0 8px var(--accent); border-radius: 2px; transition: background 0.4s var(--ease); }
+    .brand small { font-weight: 300; opacity: 0.7; letter-spacing: 1px; margin-left: 6px; text-transform: none; font-size: 0.75rem; }
+    .system-status { display: flex; align-items: center; gap: 0.6rem; font-size: 0.8rem; color: var(--text-muted); font-family: var(--font-mono); }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: var(--status-green); box-shadow: 0 0 6px var(--status-green); }
+    .theme-badge { font-size: 0.7rem; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--panel-border); background: rgba(255,255,255,0.06); letter-spacing: 0.5px; display:flex; align-items:center; gap:6px; }
+    #clock { font-weight: 300; letter-spacing: 1px; }
+
+    /* Main Container Grid */
+    .dashboard-container { display: grid; grid-template-columns: 260px 1fr; flex: 1; overflow: hidden; }
+
+    /* Sidebar Controls */
+    aside {
+      background-color: var(--panel-bg);
+      border-right: 1px solid var(--panel-border);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      overflow-y: auto;
+    }
+    .section-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); font-weight: 600; margin-bottom: 0.5rem; display:flex; align-items:center; gap:6px; }
+    .stat-card {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 0.7rem 0.75rem;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      margin-bottom: 0.45rem;
+      display:flex; justify-content:space-between; align-items:center;
+    }
+    .stat-card span { color: var(--accent); font-weight: 600; }
+    .quick-btn {
+      width: 100%;
+      background-color: transparent;
+      border: 1px solid var(--panel-border);
+      color: var(--text-main);
+      padding: 0.6rem 0.8rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.4rem;
+    }
+    .quick-btn:hover { background-color: var(--accent-subtle); border-color: var(--accent); color: var(--accent); transform: translateX(2px); }
+    .quick-btn.kb-focus { outline:none; border-color: #fff; box-shadow: 0 0 0 2px rgba(255,255,255,0.9); }
+    .theme-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px; }
+    .theme-opt { background: rgba(255,255,255,0.04); border: 1px solid var(--panel-border); border-radius: 8px; padding: 6px; cursor:pointer; text-align:center; transition: all 0.18s var(--ease); }
+    .theme-opt.active { background: var(--accent-subtle); border-color: var(--accent); box-shadow: 0 0 10px var(--accent-subtle); }
+    .theme-opt.kb-focus { border-color:#fff; box-shadow:0 0 0 1px #fff; }
+    .theme-swatch { width:100%; height:22px; border-radius:6px; border:1px solid rgba(255,255,255,0.1); margin-bottom:4px; }
+    .theme-opt div:last-child { font-size:0.65rem; font-weight:600; }
+    .pill { font-size:0.65rem; letter-spacing:0.4px; padding:3px 7px; border-radius:999px; background:rgba(255,255,255,0.06); border:1px solid var(--panel-border); }
+    .kbd { font-size:0.6rem; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-bottom-width:2px; padding:1px 4px; border-radius:4px; margin:0 1px; font-family:var(--font-mono); }
+
+    /* Chat / Terminal Workspace */
+    main { display: flex; flex-direction: column; background-color: transparent; position: relative; overflow: hidden; }
+    .chat-history { flex: 1; padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1.1rem; }
+    .log-row { display: flex; width: 100%; }
+    .log-row.user-command { justify-content: flex-start; }
+    .user-bubble {
+      background-color: var(--user-bg);
+      border: 1px solid var(--user-border);
+      border-left: 3px solid var(--text-muted);
+      padding: 0.7rem 1rem;
+      border-radius: 0 8px 8px 8px;
+      max-width: 70%;
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      color: var(--text-main);
+    }
+    .log-row.game-response { justify-content: flex-end; }
+    .game-bubble {
+      background-color: var(--game-bg);
+      border: 1px solid var(--game-border);
+      border-right: 3px solid var(--accent);
+      padding: 1rem 1.2rem;
+      border-radius: 8px 0 8px 8px;
+      max-width: 75%;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      backdrop-filter: blur(4px);
+    }
+    .game-bubble p { margin-bottom: 0.5rem; } .game-bubble p:last-child { margin-bottom: 0; }
+    .game-bubble code { background: rgba(0, 0, 0, 0.35); padding: 0.15rem 0.4rem; border-radius: 4px; font-family: var(--font-mono); font-size: 0.82rem; color: var(--accent); border:1px solid var(--panel-border); }
+    .game-bubble pre { background: rgba(0, 0, 0, 0.45); padding: 0.75rem; border-radius: 6px; overflow-x: auto; margin: 0.5rem 0; border: 1px solid var(--panel-border); }
+    .game-bubble pre code { padding: 0; color: inherit; background: none; border:none; }
+    .game-bubble ul, .game-bubble ol { margin-left: 1.2rem; margin-bottom: 0.5rem; }
+
+    /* Input Footer & Suggestions */
+    .input-wrapper { padding: 1rem 1.5rem; background-color: var(--panel-bg); border-top: 1px solid var(--panel-border); position: relative; }
+    .suggestions-popup {
+      position: absolute; bottom: calc(100% + 6px); left: 1.5rem; right: 1.5rem;
+      background-color: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 8px;
+      box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.5); max-height: 200px; overflow-y: auto; display: none; z-index: 100;
+    }
+    .suggestions-popup.active { display: block; }
+    .suggestion-item { padding: 0.6rem 1rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-family: var(--font-mono); font-size: 0.84rem; border-bottom: 1px solid rgba(255, 255, 255, 0.04); }
+    .suggestion-item:hover, .suggestion-item.selected { background-color: var(--accent-subtle); color: var(--accent); }
+    .suggestion-desc { font-family: var(--font-family); color: var(--text-muted); font-size: 0.74rem; }
+    .command-form { display: flex; gap: 0.7rem; }
+    .input-container { position: relative; flex: 1; }
+    .command-input {
+      width: 100%; background-color: var(--bg-dark); border: 1px solid var(--panel-border); border-radius: 8px;
+      padding: 0.8rem 1rem; color: var(--text-main); font-family: var(--font-mono); font-size: 0.9rem; outline: none; transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .command-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-subtle); }
+    .send-btn {
+      background-color: var(--accent); color: #000; font-weight: 700; border: none; border-radius: 8px; padding: 0 1.2rem; cursor: pointer; transition: background-color 0.15s ease, transform 0.1s ease; font-size: 0.84rem; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .send-btn:hover { background-color: var(--accent-hover); transform: translateY(-1px); }
+    .send-btn.kb-focus { box-shadow: 0 0 0 2px #fff; }
+    .footer-bar { display:flex; align-items:center; justify-content:space-between; padding:0.5rem 1rem; font-size:0.68rem; color:var(--text-muted); background: var(--panel-bg); border-top:1px solid var(--panel-border); letter-spacing:0.3px; }
+  </style>
+</head>
+<body>
+  <div class="bg-container"><div class="wave"></div><div class="wave"></div></div>
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon"></div>
+      <span>Core System // Debug Console</span>
+      <small id="dbg-subtitle">Dashboard V2</small>
+      <span class="theme-badge" id="theme-badge"><i class="fas fa-palette"></i> <span id="theme-label">default</span></span>
+    </div>
+    <div class="system-status">
+      <span id="save-indicator" class="pill" style="font-family:var(--font-mono)"><i class="fas fa-save"></i> <span id="save-name">live</span></span>
+      <span id="clock">00:00 AM</span>
+      <div class="status-dot" title="SYS_READY"></div>
+      <span id="sys-ready">SYS_READY</span>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <div class="dashboard-container">
+    <aside>
+      <div>
+        <div class="section-label"><i class="fas fa-satellite-dish"></i> State Monitor</div>
+        <div class="stat-card">Player HP <span id="stat-hp">100/100</span></div>
+        <div class="stat-card">Mana <span id="stat-mana">45/100</span></div>
+        <div class="stat-card">Zone <span id="stat-zone">sector_09</span></div>
+        <div class="stat-card">Players <span id="stat-players">—</span></div>
+        <div class="stat-card">Inventory <span id="stat-inv">—</span></div>
+        <div class="stat-card">Pos <span id="stat-pos" style="font-size:0.7rem">0.0, 0.0, 0.0</span></div>
+      </div>
+
+      <div>
+        <div class="section-label"><i class="fas fa-bolt"></i> Quick Actions</div>
+        <button class="quick-btn" onclick="executeQuick('/stats')"><span><i class="fas fa-chart-bar"></i> /stats</span><span style="opacity:0.5;">↵</span></button>
+        <button class="quick-btn" onclick="executeQuick('/help')"><span><i class="fas fa-question"></i> /help</span><span style="opacity:0.5;">↵</span></button>
+        <button class="quick-btn" onclick="executeQuick('/clear')"><span><i class="fas fa-trash"></i> /clear</span><span style="opacity:0.5;">↵</span></button>
+      </div>
+
+      <div>
+        <div class="section-label"><i class="fas fa-palette"></i> XMB Theme</div>
+        <div class="theme-grid" id="theme-grid"></div>
+        <div style="margin-top:8px; font-size:0.68rem; color:var(--text-muted); text-align:center;"><span class="kbd">↑</span><span class="kbd">↓</span> quick cmds • <span class="kbd">Tab</span> focus • theme saves to <code style="opacity:0.7">xmbsettings.xml</code></div>
+      </div>
+
+      <div style="display:flex; gap:8px; margin-top:4px;">
+        <button id="btn-refresh" class="quick-btn" style="flex:1; justify-content:center;"><i class="fas fa-sync"></i> Refresh</button>
+        <button id="btn-quit" class="quick-btn" style="justify-content:center; width:auto; padding:0.6rem 0.9rem;"><i class="fas fa-power-off"></i></button>
+      </div>
+      <div id="gamepad-hint" style="font-size:0.68rem; color:var(--text-muted); letter-spacing:0.3px;"><i class="fas fa-gamepad"></i> <span id="gp-status">No controller — keyboard ready</span></div>
+    </aside>
+
+    <!-- Main Command Area -->
+    <main>
+      <div class="chat-history" id="chatHistory">
+        <div class="log-row game-response">
+          <div class="game-bubble">
+            <p><strong>System initialized.</strong> Dashboard V2 ready. Type <code>/</code> to open available system hooks or test options. Theme is synced from <code>xmbsettings.xml</code>.</p>
+          </div>
+        </div>
+      </div>
+      <div class="input-wrapper">
+        <div class="suggestions-popup" id="suggestionsBox"></div>
+        <form class="command-form" id="commandForm" onsubmit="handleSend(event)">
+          <div class="input-container">
+            <input type="text" id="cmdInput" class="command-input" placeholder="Enter command starting with '/'..." autocomplete="off" oninput="handleInput(event)" onkeydown="handleKeyDown(event)" />
+          </div>
+          <button type="submit" class="send-btn">Execute</button>
+        </form>
+      </div>
+    </main>
+  </div>
+  <div class="footer-bar">
+    <span><i class="fas fa-circle" style="color:var(--status-green); font-size:0.55rem;"></i> MTT Dashboard V2 • <span id="footer-theme">default</span> • XMB-synced</span>
+    <span><span class="kbd">↑</span><span class="kbd">↓</span> nav • <span class="kbd">A</span>/<span class="kbd">Enter</span> select • <span class="kbd">→</span> input</span>
+  </div>
+
+  <script>
+    // --- XMB Themes (mirrors python xmb_settings.THEMES) with Dashboard V2 palettes ---
+    // Each XMB theme maps to a debugger palette so V2 feels consistent with XMB.
+    const THEMES = {
+      default:       { name:"Default", bg:"#0f172a", to:"#1e293b", panel:"#1A1C23", border:"#2E323D", text:"#E2E8F0", muted:"#94A3B8", accent:"#3b82f6", hover:"#2563eb", wave1:"rgba(30,80,150,0.14)", wave2:"rgba(80,30,150,0.09)" },
+      dark_purple:   { name:"Dark Purple", bg:"#0d0514", to:"#1a0a2e", panel:"#1c1426", border:"#3a2d4d", text:"#ede9fe", muted:"#a78bfa", accent:"#8b5cf6", hover:"#7c3aed", wave1:"rgba(120,40,180,0.16)", wave2:"rgba(60,20,120,0.10)" },
+      crimson_red:   { name:"Crimson Red", bg:"#140505", to:"#2e0a0a", panel:"#1f1414", border:"#4d2d2d", text:"#fee2e2", muted:"#fca5a5", accent:"#ef4444", hover:"#dc2626", wave1:"rgba(180,30,30,0.15)", wave2:"rgba(120,20,60,0.10)" },
+      midnight_green:{ name:"Midnight Green", bg:"#05140a", to:"#0a2814", panel:"#141f14", border:"#2d4d2d", text:"#dcfce7", muted:"#86efac", accent:"#22c55e", hover:"#16a34a", wave1:"rgba(30,150,80,0.13)", wave2:"rgba(20,100,60,0.09)" },
+      ocean_blue:    { name:"Ocean Blue", bg:"#05141a", to:"#0a2830", panel:"#142026", border:"#2d4d5a", text:"#e0f2fe", muted:"#7dd3fc", accent:"#06b6d4", hover:"#0891b2", wave1:"rgba(20,140,160,0.14)", wave2:"rgba(30,80,150,0.09)" },
+      sunset_orange: { name:"Sunset Orange", bg:"#140a05", to:"#2e1a0a", panel:"#1f1610", border:"#4d3a2d", text:"#ffedd5", muted:"#fed7aa", accent:"#F97316", hover:"#EA580C", wave1:"rgba(200,90,20,0.14)", wave2:"rgba(160,40,80,0.09)" },
+    };
+    const THEME_IDS = Object.keys(THEMES);
+    let currentTheme = "default";
+    let savesList = [];
+    let currentSave = null;
+
+    const COMMANDS = [
+      { cmd: '/stats', desc: 'Display player current statistics' },
+      { cmd: '/teleport', desc: 'Warp player: /teleport [x] [y] [z]' },
+      { cmd: '/clear', desc: 'Clear console logs' },
+      { cmd: '/help', desc: 'List available debug hooks' },
+      { cmd: '/saves', desc: 'List saves/*.xml' },
+      { cmd: '/load', desc: 'Load save: /load [name]' },
+      { cmd: '/quit', desc: 'Close Dashboard V2' },
+    ];
+    const MOCK_RESPONSES = {
+      '/stats': `### Player State
+* **HP:** \`100 / 100\`
+* **Level:** 12 (EXP: \`3,450 / 5,000\`)
+* **Buffs Active:**
+  1. *Haste II* (02:14)
+  2. *Iron Skin* (00:45)`,
+      '/teleport': `**Sector Shift**
+Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
+      '/help': `### Available Debug Tools
+* \`/stats\` — Reads live state (via \`get_state\` when pywebview is available).
+* \`/saves\` — Lists \`saves/*.xml\`.
+* \`/load <name>\` — Loads a save and refreshes State Monitor.
+* \`/clear\` — Clears console. \`/quit\` — Closes Dashboard V2.`,
+    };
+
+    function applyTheme(id){
+      const t = THEMES[id] || THEMES.default;
+      currentTheme = id;
+      const r = document.documentElement;
+      r.style.setProperty('--bg-dark', t.bg);
+      r.style.setProperty('--bg-to', t.to);
+      r.style.setProperty('--panel-bg', t.panel);
+      r.style.setProperty('--panel-border', t.border);
+      r.style.setProperty('--text-main', t.text);
+      r.style.setProperty('--text-muted', t.muted);
+      r.style.setProperty('--accent', t.accent);
+      r.style.setProperty('--accent-hover', t.hover);
+      r.style.setProperty('--accent-subtle', t.accent + '22'); // ~13% opacity hex
+      r.style.setProperty('--accent-border', t.accent + '4d');
+      r.style.setProperty('--game-bg', t.accent + '14');
+      r.style.setProperty('--game-border', t.accent + '4d');
+      r.style.setProperty('--wave1', t.wave1);
+      r.style.setProperty('--wave2', t.wave2);
+      document.body.style.backgroundColor = t.bg;
+      const lbl = document.getElementById('theme-label'); if(lbl) lbl.textContent = t.name;
+      const foot = document.getElementById('footer-theme'); if(foot) foot.textContent = t.name;
+      document.querySelectorAll('.theme-opt').forEach(el=> el.classList.toggle('active', el.dataset.theme===id));
+    }
+
+    function buildThemeGrid(){
+      const grid = document.getElementById('theme-grid');
+      if(!grid) return;
+      grid.innerHTML = '';
+      THEME_IDS.forEach(id=>{
+        const t = THEMES[id];
+        const div = document.createElement('div');
+        div.className = 'theme-opt' + (id===currentTheme?' active':'');
+        div.dataset.theme = id;
+        div.setAttribute('role','button');
+        div.setAttribute('tabindex','0');
+        div.innerHTML = `<div class="theme-swatch" style="background:linear-gradient(135deg, ${t.bg} 0%, ${t.to} 100%);"></div><div>${t.name}</div>`;
+        div.onclick = ()=> selectTheme(id);
+        div.onkeydown = (e)=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); selectTheme(id); } };
+        grid.appendChild(div);
+      });
+    }
+
+    function whenPywebviewReady(){
+      return new Promise(res=>{
+        if(window.pywebview && window.pywebview.api){ res(true); return; }
+        let settled=false; const done=()=>{ if(settled) return; settled=true; res(true); };
+        window.addEventListener('pywebviewready', done, {once:true});
+        let tries=0; const iv=setInterval(()=>{
+          if(window.pywebview && window.pywebview.api){ clearInterval(iv); done(); }
+          else if(++tries>50){ clearInterval(iv); if(!settled){ settled=true; res(false); } }
+        }, 100);
+      });
+    }
+    async function apiCall(name,...args){
+      try{
+        if(window.pywebview && window.pywebview.api && window.pywebview.api[name]){
+          return await window.pywebview.api[name](...args);
+        }
+      }catch(e){ console.error(name,e); }
+      return null;
+    }
+    async function loadSettings(){
+      let res = await apiCall('get_xmb_settings');
+      if(res && res.settings){
+        let t = (res.settings.theme||'default').trim();
+        if(THEMES[t]) currentTheme = t;
+      } else {
+        try{
+          const th = localStorage.getItem('xmb_theme');
+          if(th && THEMES[th]) currentTheme = th;
+        }catch(e){}
+      }
+      applyTheme(currentTheme);
+      buildThemeGrid();
+    }
+    async function selectTheme(id){
+      applyTheme(id);
+      try{ localStorage.setItem('xmb_theme', id); }catch(e){}
+      await apiCall('set_theme', id);
+    }
+
+    // --- State Monitor (live via get_state) ---
+    async function refreshStateMonitor(){
+      const res = await apiCall('get_state', currentSave||null);
+      if(!res || res.status!=='success'){
+        document.getElementById('stat-players').textContent = '—';
+        document.getElementById('stat-inv').textContent = '—';
+        return;
+      }
+      const hud = res.hud||{};
+      savesList = res.saves||[];
+      currentSave = res.current_save||currentSave;
+      const pos = hud.player_pos || [0,0,0];
+      document.getElementById('stat-players').textContent = String(hud.player_count ?? '—');
+      document.getElementById('stat-inv').textContent = `${hud.inventory_stacks||0} stacks / ${hud.inventory_items||0} items`;
+      document.getElementById('stat-pos').textContent = pos.map(n=>Number(n).toFixed(1)).join(', ');
+      document.getElementById('save-name').textContent = currentSave || 'live';
+      // zone from world or fallback
+      const zone = (res.systems && res.systems.world && (res.systems.world.zone||res.systems.world.biome)) || 'sector_09';
+      document.getElementById('stat-zone').textContent = String(zone).slice(0,18);
+      if(savesList.length){
+        document.getElementById('sys-ready').textContent = `SYS_READY // ${savesList.length} saves`;
+      }
+    }
+
+    const chatHistory = document.getElementById('chatHistory');
+    const cmdInput = document.getElementById('cmdInput');
+    const suggestionsBox = document.getElementById('suggestionsBox');
+    let selectedIndex = -1;
+
+    function handleInput(e){
+      const val = e.target.value;
+      if(val.startsWith('/')){
+        const query = val.toLowerCase();
+        const matches = COMMANDS.filter(c=> c.cmd.toLowerCase().startsWith(query));
+        renderSuggestions(matches);
+      } else {
+        hideSuggestions();
+      }
+    }
+    function renderSuggestions(matches){
+      if(matches.length===0){ hideSuggestions(); return; }
+      suggestionsBox.innerHTML='';
+      matches.forEach((item,index)=>{
+        const div=document.createElement('div');
+        div.className=`suggestion-item ${index===selectedIndex?'selected':''}`;
+        div.innerHTML=`<span>${item.cmd}</span><span class="suggestion-desc">${item.desc}</span>`;
+        div.onclick=()=> selectSuggestion(item.cmd);
+        suggestionsBox.appendChild(div);
+      });
+      suggestionsBox.classList.add('active');
+    }
+    function hideSuggestions(){ suggestionsBox.classList.remove('active'); selectedIndex=-1; }
+    function selectSuggestion(cmdText){ cmdInput.value=cmdText+' '; cmdInput.focus(); hideSuggestions(); }
+    function handleKeyDown(e){
+      const items=suggestionsBox.querySelectorAll('.suggestion-item');
+      if(!suggestionsBox.classList.contains('active') || items.length===0) return;
+      if(e.key==='ArrowDown'){ e.preventDefault(); selectedIndex=(selectedIndex+1)%items.length; updateSelection(items); }
+      else if(e.key==='ArrowUp'){ e.preventDefault(); selectedIndex=(selectedIndex-1+items.length)%items.length; updateSelection(items); }
+      else if(e.key==='Enter' && selectedIndex>=0){ e.preventDefault(); items[selectedIndex].click(); }
+      else if(e.key==='Escape'){ hideSuggestions(); }
+    }
+    function updateSelection(items){
+      items.forEach((item,i)=> item.classList.toggle('selected', i===selectedIndex));
+      if(selectedIndex >= 0 && items[selectedIndex]){
+        items[selectedIndex].scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      }
+    }
+
+    async function handleSend(e){
+      e.preventDefault();
+      const text=cmdInput.value.trim();
+      if(!text) return;
+      if(text==='/clear'){ chatHistory.innerHTML=''; cmdInput.value=''; hideSuggestions(); return; }
+      if(text==='/quit'){ await apiCall('quit_dashboard'); setTimeout(()=>window.close(),250); return; }
+      if(text.startsWith('/saves')){
+        appendUserMessage(text);
+        const res=await apiCall('list_saves');
+        if(res && res.saves){
+          savesList=res.saves;
+          const md = savesList.length ? `**Saves** (${savesList.length})\n`+savesList.map(s=>`- \`${s}.xml\``).join('\n') : '*No saves found in `saves/`.*';
+          appendGameResponse(md);
+        } else {
+          appendGameResponse(`*No bridge — mock:* \`saves/\` empty.`);
+        }
+        cmdInput.value=''; hideSuggestions(); return;
+      }
+      if(text.startsWith('/load')){
+        const name=text.split(/\s+/)[1];
+        appendUserMessage(text);
+        if(!name){ appendGameResponse(`**Usage:** \`/load [save_name]\` — e.g. \`/load my_save\``); cmdInput.value=''; hideSuggestions(); return; }
+        const res=await apiCall('load_save', name) || await apiCall('get_state', name);
+        if(res && res.status==='success'){
+          currentSave=name;
+          await refreshStateMonitor();
+          appendGameResponse(`**Loaded** \`${name}.xml\` — State Monitor updated.`);
+        } else {
+          appendGameResponse(`**Load failed:** ${res?res.message:'no bridge'} — \`${name}\``);
+        }
+        cmdInput.value=''; hideSuggestions(); return;
+      }
+      appendUserMessage(text);
+      setTimeout(async ()=>{
+        const baseCmd=text.split(' ')[0];
+        // prefer live backend for /stats
+        if(baseCmd==='/stats'){
+          const res=await apiCall('get_state', currentSave||null);
+          if(res && res.status==='success'){
+            const hud=res.hud||{}; const sysKeys=Object.keys(res.systems||{}).join(', ')||'—';
+            const pos=(hud.player_pos||[0,0,0]).map(n=>Number(n).toFixed(1)).join(', ');
+            appendGameResponse(`### Live State — \`${currentSave||'live'}\`\n* **Players:** \`${hud.player_count??0}\`  •  **Pos:** \`${pos}\`\n* **Inventory:** \`${hud.inventory_stacks||0} stacks / ${hud.inventory_items||0} items\`\n* **Systems:** \`${sysKeys}\``);
+            await refreshStateMonitor();
+            return;
+          }
+        }
+        const responseMD=MOCK_RESPONSES[baseCmd] || `**System Output:** Processed input \`${text}\`.\n\n*No specific response wire defined for this test string.*`;
+        appendGameResponse(responseMD);
+      }, 120);
+      cmdInput.value=''; hideSuggestions();
+    }
+    function executeQuick(commandText){ cmdInput.value=commandText; handleSend(new Event('submit')); }
+    function appendUserMessage(text){
+      const row=document.createElement('div'); row.className='log-row user-command';
+      const bubble=document.createElement('div'); bubble.className='user-bubble'; bubble.textContent=text;
+      row.appendChild(bubble); chatHistory.appendChild(row); scrollToBottom();
+    }
+    function appendGameResponse(markdownText){
+      const row=document.createElement('div'); row.className='log-row game-response';
+      const bubble=document.createElement('div'); bubble.className='game-bubble';
+      try{ bubble.innerHTML=marked.parse(markdownText); }catch(e){ bubble.textContent=markdownText; }
+      row.appendChild(bubble); chatHistory.appendChild(row); scrollToBottom();
+    }
+    function scrollToBottom(){ chatHistory.scrollTop=chatHistory.scrollHeight; }
+
+    // --- keyboard focus for quick-btns & theme grid (controller friendly) ---
+    function wireFocus(){
+      document.querySelectorAll('.quick-btn, .theme-opt, .send-btn').forEach(el=>{
+        el.addEventListener('focus', ()=> el.classList.add('kb-focus'));
+        el.addEventListener('blur', ()=> el.classList.remove('kb-focus'));
+      });
+    }
+
+    // --- Gamepad (D-Pad -> Arrow, A -> Enter, B -> Backspace) ---
+    let gpRaf=null, lastGP={up:false,down:false,left:false,right:false,a:false,b:false}, repeat={up:0,down:0,left:0,right:0};
+    function simKey(k){ window.dispatchEvent(new KeyboardEvent('keydown',{key:k,bubbles:true,cancelable:true})); }
+    function pollGP(){
+      const pads=navigator.getGamepads? navigator.getGamepads():[];
+      let gp=null; for(let i=0;i<pads.length;i++) if(pads[i]){gp=pads[i]; break;}
+      if(gp){
+        const dead=0.5, ax0=gp.axes[0]||0, ax1=gp.axes[1]||0;
+        const btn=i=>!!(gp.buttons[i]&&gp.buttons[i].pressed);
+        const up=btn(12)||ax1<-dead, down=btn(13)||ax1>dead, left=btn(14)||ax0<-dead, right=btn(15)||ax0>dead, a=btn(0), b=btn(1);
+        const now=performance.now();
+        const h=(pressed,was,name,key)=>{ if(pressed){ if(!was){simKey(key); repeat[name]=now+320;} else if(now>=repeat[name]){simKey(key); repeat[name]=now+130;}}};
+        h(up,lastGP.up,'up','ArrowUp'); h(down,lastGP.down,'down','ArrowDown'); h(left,lastGP.left,'left','ArrowLeft'); h(right,lastGP.right,'right','ArrowRight');
+        if(a&&!lastGP.a) simKey('Enter');
+        if(b&&!lastGP.b) simKey('Backspace');
+        document.getElementById('gp-status').textContent=`Controller: ${gp.id.slice(0,28)}`;
+        lastGP={up,down,left,right,a,b};
+      } else {
+        lastGP={up:false,down:false,left:false,right:false,a:false,b:false};
+        const el=document.getElementById('gp-status'); if(el) el.textContent='No controller — keyboard ready';
+      }
+      gpRaf=requestAnimationFrame(pollGP);
+    }
+    function startGamepad(){
+      if(gpRaf!==null) return;
+      gpRaf=requestAnimationFrame(pollGP);
+      window.addEventListener('gamepadconnected',e=>{ console.log('pad',e.gamepad.id); });
+    }
+
+    document.addEventListener('DOMContentLoaded', async ()=>{
+      buildThemeGrid();
+      wireFocus();
+      await whenPywebviewReady();
+      await loadSettings();
+      await refreshStateMonitor();
+      startGamepad();
+      // clock
+      const tick=()=>{ const el=document.getElementById('clock'); if(el) el.textContent=new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); };
+      tick(); setInterval(tick, 10000);
+      document.getElementById('btn-refresh').onclick=refreshStateMonitor;
+      document.getElementById('btn-quit').onclick=async()=>{ await apiCall('quit_dashboard'); setTimeout(()=>window.close(),250); };
+      // pywebview ready reload (fixes theme race)
+      whenPywebviewReady().then(async (ready)=>{
+        if(!ready) return;
+        try{ await loadSettings(); }catch(e){}
+        try{ await refreshStateMonitor(); }catch(e){}
+      });
+      // allow Tab cycling between quick actions and input
+      document.addEventListener('keydown',(e)=>{
+        const ae=document.activeElement;
+        if(ae && (ae.tagName==='INPUT')) return;
+        if(e.key==='ArrowDown' || e.key==='ArrowUp'){
+          // navigate quick-btns when sidebar focused
+          const btns=[...document.querySelectorAll('aside .quick-btn, aside .theme-opt')];
+          const idx=btns.indexOf(ae);
+          if(idx!==-1){
+            e.preventDefault();
+            let next = e.key==='ArrowDown' ? Math.min(btns.length-1, idx+1) : Math.max(0, idx-1);
+            btns[next].focus();
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>
