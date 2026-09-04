@@ -153,10 +153,24 @@ def request_player_input(
 
 
 def inform_player(text):
+    # Route through universal output bus so dashboards/game see it (also prints fallback)
+    try:
+        from core.output import print_to_user as _ptu
+        _ptu(str(text), level="info", channel="general", source="orchestrator")
+        return
+    except Exception:
+        pass
     print(text)
 
 
 def warning(warning_note):  # Should also eventually save it to a log.txt, with timestamp :D
+    # Route through universal output bus (handles buffer + file + dashboard poll)
+    try:
+        from core.output import warning as _out_warn
+        _out_warn(str(warning_note), channel="general", source="orchestrator")
+        return
+    except Exception:
+        pass
     timestamp = datetime.datetime.now().isoformat(sep=" ", timespec="seconds")
     msg = f"[{timestamp}] WARNING: {warning_note}"
     print(msg)

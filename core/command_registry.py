@@ -293,6 +293,7 @@ def ensure_commands_loaded() -> None:
     # as new systems add @command decorators. Each import is best-effort
     # so a missing optional system doesn't break the registry.
     modules = [
+        "core.output",
         "core.systems.player_manager",
         "core.systems.inventory.manager",
         "core.systems.economy.bank",

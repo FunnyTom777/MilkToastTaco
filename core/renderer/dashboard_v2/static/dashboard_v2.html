@@ -187,10 +187,25 @@
     .send-btn:hover { background-color: var(--accent-hover); transform: translateY(-1px); }
     .send-btn.kb-focus { box-shadow: 0 0 0 2px #fff; }
     .footer-bar { display:flex; align-items:center; justify-content:space-between; padding:0.5rem 1rem; font-size:0.68rem; color:var(--text-muted); background: var(--panel-bg); border-top:1px solid var(--panel-border); letter-spacing:0.3px; }
+    /* Universal output levels — colored per level */
+    .game-bubble.level-info { border-right-color: var(--accent); }
+    .game-bubble.level-success { border-right-color: #22c55e; background: rgba(34,197,94,0.08); }
+    .game-bubble.level-warning { border-right-color: #f59e0b; background: rgba(245,158,11,0.10); }
+    .game-bubble.level-error { border-right-color: #ef4444; background: rgba(239,68,68,0.10); }
+    .game-bubble.level-debug { border-right-color: #8b5cf6; background: rgba(139,92,246,0.08); opacity:0.9; }
+    .game-bubble.level-system { border-right-color: var(--text-muted); background: rgba(255,255,255,0.04); }
+    .output-meta { font-size:0.68rem; opacity:0.6; font-family: var(--font-mono); margin-bottom:0.35rem; letter-spacing:0.3px; display:flex; gap:6px; align-items:center; }
+    .output-meta .lvl { padding:1px 6px; border-radius:999px; border:1px solid currentColor; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.5px; }
+    /* Toast (channel=toast) overlay */
+    #toast-container { position: fixed; top: 64px; right: 16px; z-index: 200; display:flex; flex-direction:column; gap:8px; pointer-events:none; max-width: 380px; }
+    .toast-item { pointer-events:auto; background: var(--panel-bg); border:1px solid var(--panel-border); border-left:3px solid var(--accent); border-radius:8px; padding:0.7rem 0.9rem; font-size:0.84rem; box-shadow: 0 8px 24px rgba(0,0,0,0.35); animation: toastIn 0.22s var(--ease); max-width:100%; }
+    .toast-item.level-success{ border-left-color:#22c55e; } .toast-item.level-warning{ border-left-color:#f59e0b; } .toast-item.level-error{ border-left-color:#ef4444; }
+    @keyframes toastIn{ from{ transform: translateX(12px); opacity:0; } to{ transform:none; opacity:1; } }
   </style>
 </head>
 <body>
   <div class="bg-container"><div class="wave"></div><div class="wave"></div></div>
+  <div id="toast-container" aria-live="polite"></div>
 
   <!-- Header -->
   <header>
@@ -779,6 +794,66 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
       try{ bubble.innerHTML=marked.parse(markdownText); }catch(e){ bubble.textContent=markdownText; }
       row.appendChild(bubble); chatHistory.appendChild(row); scrollToBottom();
     }
+    // --- Universal Output Bus (core/output.py) — polled into chatHistory + toasts ---
+    let lastOutputId = 0;
+    let outputPollTimer = null;
+    const LEVEL_META = {
+      info:    { icon:'fa-info-circle', label:'INFO' },
+      success: { icon:'fa-check-circle', label:'SUCCESS' },
+      warning: { icon:'fa-exclamation-triangle', label:'WARN' },
+      error:   { icon:'fa-times-circle', label:'ERROR' },
+      debug:   { icon:'fa-code', label:'DEBUG' },
+      system:  { icon:'fa-cog', label:'SYSTEM' },
+    };
+    function renderOutputEntry(entry){
+      const lvl = (entry.level||'info').toLowerCase();
+      const ch = (entry.channel||'general').toLowerCase();
+      // toast channel -> floating toast + also chat line
+      if(ch==='toast'){
+        const tc = document.getElementById('toast-container');
+        if(tc){
+          const toast = document.createElement('div');
+          toast.className = 'toast-item level-' + lvl;
+          const icon = (LEVEL_META[lvl]||LEVEL_META.info).icon;
+          let body='';
+          try{ body = marked.parse(entry.message); }catch(e){ body = entry.message; }
+          toast.innerHTML = `<div style="display:flex; gap:8px; align-items:flex-start;"><i class="fas ${icon}" style="margin-top:3px;"></i><div style="flex:1;">${body}<div style="font-size:0.65rem; opacity:0.55; margin-top:4px;">${entry.source||'system'} • ${new Date(entry.timestamp).toLocaleTimeString()}</div></div><button onclick="this.parentElement.parentElement.remove()" style="background:none; border:none; color:inherit; opacity:0.5; cursor:pointer; padding:0 4px;">✕</button></div>`;
+          tc.appendChild(toast);
+          setTimeout(()=>{ toast.style.opacity='0'; toast.style.transform='translateX(8px)'; toast.style.transition='all 0.35s ease'; setTimeout(()=> toast.remove(), 380); }, 4500);
+        }
+      }
+      // chatHistory line — markdown, leve-colored border
+      const row=document.createElement('div'); row.className='log-row game-response';
+      const bubble=document.createElement('div'); bubble.className='game-bubble level-' + lvl;
+      const meta = LEVEL_META[lvl]||LEVEL_META.info;
+      const src = entry.source ? entry.source : 'system';
+      let md = entry.message;
+      // prepend small meta header inside bubble
+      const header = `<div class="output-meta"><span class="lvl" style="color:${lvl==='error'?'#ef4444':lvl==='warning'?'#f59e0b':lvl==='success'?'#22c55e':lvl==='debug'?'#8b5cf6':'var(--accent)'};"><i class="fas ${meta.icon}"></i> ${meta.label}</span> <span>${src}</span> • <span>${new Date(entry.timestamp).toLocaleTimeString()}</span>${ch!=='general' ? ' • <span style="text-transform:uppercase;">'+ch+'</span>':''}</div>`;
+      try{ bubble.innerHTML = header + marked.parse(md); }catch(e){ bubble.textContent = md; bubble.prepend(document.createTextNode(header)); }
+      row.appendChild(bubble); chatHistory.appendChild(row); scrollToBottom();
+    }
+    async function pollOutput(){
+      const res = await apiCall('get_output', lastOutputId, 50);
+      if(!res || res.status!=='success' || !Array.isArray(res.messages) || res.messages.length===0) return;
+      for(const e of res.messages){
+        renderOutputEntry(e);
+        if(e.id > lastOutputId) lastOutputId = e.id;
+      }
+      // keep in sync if server has larger max_id
+      if(res.max_id && res.max_id > lastOutputId) lastOutputId = res.max_id;
+    }
+    function startOutputPolling(){
+      if(outputPollTimer) return;
+      // prime from current max
+      apiCall('get_output', 0, 1).then(res=>{
+        if(res && res.max_id) lastOutputId = res.max_id;
+        // immediately show any backlog? we start after prime, so no spam on load
+      });
+      outputPollTimer = setInterval(pollOutput, 1200);
+    }
+    function stopOutputPolling(){ if(outputPollTimer){ clearInterval(outputPollTimer); outputPollTimer=null; } }
+
     function scrollToBottom(){ chatHistory.scrollTop=chatHistory.scrollHeight; }
 
     // --- keyboard focus for quick-btns & theme grid (controller friendly) ---
@@ -825,6 +900,7 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
       await loadSettings();
       await refreshCommands();
       await refreshStateMonitor();
+      startOutputPolling();
       startGamepad();
       // clock
       const tick=()=>{ const el=document.getElementById('clock'); if(el) el.textContent=new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); };
@@ -837,6 +913,7 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
         try{ await loadSettings(); }catch(e){}
         try{ await refreshCommands(); }catch(e){}
         try{ await refreshStateMonitor(); }catch(e){}
+        try{ startOutputPolling(); }catch(e){}
       });
       // allow Tab cycling between quick actions and input
       document.addEventListener('keydown',(e)=>{

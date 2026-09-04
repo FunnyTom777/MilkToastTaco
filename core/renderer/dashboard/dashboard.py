@@ -489,6 +489,40 @@ class DashboardAPI:
         self._current_data = None
         return self.get_state()
 
+    # -- universal output bus (core/output.py) ------------------------------
+    def get_output(self, since_id: int = 0, limit: int = 100, level: str | None = None, channel: str | None = None):
+        try:
+            from core.output import get_output as _get
+            return _get(since_id=int(since_id) if isinstance(since_id, int) else 0, limit=int(limit) if isinstance(limit, int) else 100, level=level, channel=channel)
+        except Exception as e:
+            return {"status": "error", "message": str(e), "messages": []}
+
+    def poll_output(self, since_id: int = 0, limit: int = 100):
+        return self.get_output(since_id=since_id, limit=limit)
+
+    def push_output(self, message: str, level: str = "info", channel: str = "general", source: str = "dashboard"):
+        try:
+            from core.output import emit as _emit
+            entry = _emit(str(message), level=level or "info", channel=channel or "general", source=source or "dashboard")
+            return {"status": "success", "entry": entry}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    def clear_output(self):
+        try:
+            from core.output import clear as _clear
+            return _clear()
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    def print_to_user(self, text: str, level: str = "info", channel: str = "general"):
+        try:
+            from core.output import print_to_user as _ptu
+            entry = _ptu(str(text), level=level or "info", channel=channel or "general", source="dashboard")
+            return {"status": "success", "entry": entry}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
     def quit_dashboard(self):
         """Close the dashboard window."""
         try:
