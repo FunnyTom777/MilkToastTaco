@@ -179,15 +179,13 @@ class XMBDashboardAPI:
 
     # --- Misc -----------------------------------------------------------
 
-    def _spawn_dashboard(self, dev: bool = False):
+    def _spawn_dashboard(self):
         """Helper: spawn dashboard.py as independent process and close XMB."""
         try:
             # Project root is 3 levels up from this file: core/renderer/main_menu/xmb.py
             project_root = Path(__file__).resolve().parents[3]
             # Prefer module invocation so imports work regardless of cwd
             cmd = [sys.executable, "-m", "core.renderer.dashboard.dashboard"]
-            if dev:
-                cmd.append("--dev")
             # Non-blocking spawn — Dashboard runs as its own pywebview instance
             subprocess.Popen(cmd, cwd=str(project_root), close_fds=True)  # noqa: S603
         except Exception as e:
@@ -206,20 +204,14 @@ class XMBDashboardAPI:
             pass
         return {
             "status": "success",
-            "message": f"Dashboard launched{' (Dev Mode)' if dev else ''}",
+            "message": "Dashboard launched",
         }
 
     @menu_option("misc", "Misc", "fa-ellipsis-h", "Launch MTT Dashboard",
-                 "Open the Milk Toast Taco Dashboard — player view (HUD, map, inventory) in its own window. XMB closes.")
+                 "Open the Milk Toast Taco Dashboard — HUD, map, inventory and saves in its own window. XMB closes.")
     def launch_dashboard(self):
         """Launch Dashboard (player mode)."""
-        return self._spawn_dashboard(dev=False)
-
-    @menu_option("misc", "Misc", "fa-ellipsis-h", "Launch MTT Dashboard (Dev Mode)",
-                 "Open the Dashboard in Dev Mode — raw editable state, saves, and debug tools. XMB closes.")
-    def launch_dashboard_dev(self):
-        """Launch Dashboard straight into Dev Mode."""
-        return self._spawn_dashboard(dev=True)
+        return self._spawn_dashboard()
 
     @menu_option("misc", "Misc", "fa-ellipsis-h", "Quit",
                  "Save progress and return to desktop.")

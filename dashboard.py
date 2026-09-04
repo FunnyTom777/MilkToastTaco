@@ -17,7 +17,6 @@ if __name__ == "__main__":
     # Re-parse args here to avoid double-parse inside dashboard.run
     import argparse
     p = argparse.ArgumentParser(description="MTT Dashboard (root shim)")
-    p.add_argument("--dev", action="store_true", help="Start in Dev Mode")
     p.add_argument("--debug", action="store_true", help="Enable pywebview debug")
     args = p.parse_args()
-    run(dev_mode=args.dev, debug=args.debug)
+    run(debug=args.debug)

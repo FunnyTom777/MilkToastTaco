@@ -46,7 +46,9 @@ class DashboardAPI:
     """Python API for the MTT Dashboard frontend (pywebview bridge)."""
 
     def __init__(self, dev_mode: bool = False):
-        self.dev_mode: bool = bool(dev_mode)
+        # dev_mode kept for backwards compat but not used in player dashboard
+        # (future dev tools will be separate). Always player-facing.
+        self.dev_mode: bool = False
         # in-memory save editing: load once, edit freely, save on demand
         self._current_save: Optional[str] = None
         self._current_data: Optional[Dict[str, Any]] = None
@@ -90,14 +92,14 @@ class DashboardAPI:
         from core.renderer.main_menu.xmb_settings import THEMES
         return {"status": "success", "themes": THEMES}
 
-    # -- dev mode ----------------------------------------------------------
+    # -- dev mode (deprecated, kept for compat) ---------------------------
 
     def get_dev_mode(self):
-        return {"status": "success", "dev_mode": self.dev_mode}
+        return {"status": "success", "dev_mode": False}
 
     def set_dev_mode(self, enabled: bool):
-        self.dev_mode = bool(enabled)
-        return {"status": "success", "dev_mode": self.dev_mode}
+        # no-op: dashboard is player-only; future dev tools will be separate
+        return {"status": "success", "dev_mode": False}
 
     # -- saves (standalone save/load module) -------------------------------
     # Proposed issue API: load_save, save_state, list_saves
@@ -266,7 +268,7 @@ class DashboardAPI:
                 meta = res.get("meta", {})
                 current = save_name
             else:
-                return {"status": "error", "message": res.get("message", "load failed"), "saves": saves, "xmb_settings": xmb_settings, "dev_mode": self.dev_mode}
+                return {"status": "error", "message": res.get("message", "load failed"), "saves": saves, "xmb_settings": xmb_settings, "dev_mode": False}
         elif self._current_data and "systems" in self._current_data:
             systems = self._current_data.get("systems", {})
             meta = self._current_data.get("meta", {})
@@ -293,7 +295,7 @@ class DashboardAPI:
             "systems": systems,
             "hud": hud,
             "xmb_settings": xmb_settings,
-            "dev_mode": self.dev_mode,
+            "dev_mode": False,
         }
 
     def _build_hud_summary(self, systems: Dict[str, Any]) -> Dict[str, Any]:
@@ -434,8 +436,7 @@ class DashboardAPI:
 # -- entrypoint ------------------------------------------------------------
 
 def _parse_args():
-    p = argparse.ArgumentParser(description="MTT Dashboard")
-    p.add_argument("--dev", action="store_true", help="Start in Dev Mode")
+    p = argparse.ArgumentParser(description="MTT Dashboard — player-facing")
     p.add_argument("--debug", action="store_true", help="Enable pywebview debug")
     return p.parse_args()
 
@@ -478,4 +479,4 @@ def run(dev_mode: bool = False, debug: bool = True):
 
 if __name__ == "__main__":
     args = _parse_args()
-    run(dev_mode=args.dev, debug=args.debug)
+    run(debug=args.debug)
