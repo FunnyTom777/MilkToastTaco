@@ -171,3 +171,9 @@ def warning(warning_note):  # Should also eventually save it to a log.txt, with 
         # Don't crash on logging failure, but show debug info if enabled
         if debug_mode:
             print(f"DEBUG: Failed to write warning to log.txt: {e}")
+
+
+
+
+def display_phone_ui():
+    print("*Displayed Phone UI* This dosent exist yet though....")

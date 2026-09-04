@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phone_apps>
+    <app id="1">
+        <name>Messages</name>
+        <app>messages</app> <!--The folder this app is located in, under the phone 'apps' directory.-->
+        <enabled>True</enabled>
+        <author>FunnyTom777</author>
+    </app>
+</phone_apps>
