@@ -509,7 +509,8 @@
 
     <!-- UI Overlays -->
     <div id="clock">00:00 AM</div>
-    <div class="controls-hint" id="controls-hint">USE ARROW KEYS TO NAVIGATE • ENTER TO SELECT • BACKSPACE / ESC TO CLOSE</div>
+    <div class="controls-hint" id="controls-hint">USE ARROW KEYS / D-PAD TO NAVIGATE • ENTER / A TO SELECT • BACKSPACE / B / ESC TO CLOSE</div>
+    <div id="gamepad-hint" style="position:absolute; bottom:3vh; right:3vw; font-size:0.7rem; color:rgba(255,255,255,0.3); display:none; align-items:center; gap:6px; letter-spacing:0.5px;"><i class="fas fa-gamepad"></i> <span id="gamepad-status">Controller connected</span></div>
 
     <div id="info-panel">
         <div id="info-title">Title</div>
@@ -932,6 +933,104 @@
             return false;
         }
 
+        // ---- Gamepad / Controller Support (D-Pad + A/B) ----
+        // Maps to keyboard: D-Pad -> Arrow keys, A (btn 0) -> Enter, B (btn 1) -> Backspace
+        let gamepadRAF = null;
+        let lastGamepadState = { up:false, down:false, left:false, right:false, a:false, b:false };
+        let gamepadRepeat = { up:0, down:0, left:0, right:0 };
+        let gamepadConnectedShown = false;
+
+        function simulateKey(key) {
+            const e = new KeyboardEvent('keydown', { key: key, bubbles: true, cancelable: true });
+            window.dispatchEvent(e);
+        }
+
+        function updateGamepadHint(connected, name) {
+            const hint = document.getElementById('gamepad-hint');
+            const status = document.getElementById('gamepad-status');
+            if (!hint) return;
+            if (connected) {
+                hint.style.display = 'flex';
+                if (status) status.textContent = name ? `Controller: ${name}` : 'Controller connected';
+                // auto-hide after 3s
+                setTimeout(() => { if (hint) hint.style.opacity = '0.6'; }, 100);
+            } else {
+                hint.style.display = 'none';
+            }
+        }
+
+        function pollGamepad() {
+            const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+            let gp = null;
+            for (let i=0; i<pads.length; i++) { if (pads[i]) { gp = pads[i]; break; } }
+            if (gp) {
+                if (!gamepadConnectedShown) {
+                    gamepadConnectedShown = true;
+                    updateGamepadHint(true, gp.id);
+                    console.log('Gamepad connected:', gp.id);
+                }
+                const now = performance.now();
+                const dead = 0.5;
+                const ax0 = gp.axes[0] || 0;
+                const ax1 = gp.axes[1] || 0;
+                const btn = (idx) => !!(gp.buttons[idx] && gp.buttons[idx].pressed);
+                // D-Pad via buttons 12-15 plus left stick axes
+                const up = btn(12) || ax1 < -dead;
+                const down = btn(13) || ax1 > dead;
+                const left = btn(14) || ax0 < -dead;
+                const right = btn(15) || ax0 > dead;
+                const a = btn(0);
+                const b = btn(1);
+
+                const handleDir = (pressed, wasPressed, name, key) => {
+                    if (pressed) {
+                        if (!wasPressed) {
+                            simulateKey(key);
+                            gamepadRepeat[name] = now + 320; // initial hold delay
+                        } else if (now >= gamepadRepeat[name]) {
+                            simulateKey(key);
+                            gamepadRepeat[name] = now + 130; // repeat rate
+                        }
+                    }
+                };
+                handleDir(up, lastGamepadState.up, 'up', 'ArrowUp');
+                handleDir(down, lastGamepadState.down, 'down', 'ArrowDown');
+                handleDir(left, lastGamepadState.left, 'left', 'ArrowLeft');
+                handleDir(right, lastGamepadState.right, 'right', 'ArrowRight');
+
+                if (a && !lastGamepadState.a) simulateKey('Enter');
+                if (b && !lastGamepadState.b) simulateKey('Backspace');
+
+                lastGamepadState = { up, down, left, right, a, b };
+            } else {
+                // No pad - reset state so next connect doesn't think buttons held
+                if (gamepadConnectedShown && !pads.some(p=>p)) {
+                    // keep hint visible but could hide on disconnect event
+                }
+                lastGamepadState = { up:false, down:false, left:false, right:false, a:false, b:false };
+            }
+            gamepadRAF = requestAnimationFrame(pollGamepad);
+        }
+
+        function startGamepadLoop() {
+            if (gamepadRAF !== null) return;
+            gamepadRAF = requestAnimationFrame(pollGamepad);
+        }
+
+        window.addEventListener('gamepadconnected', (e) => {
+            console.log('Gamepad connected event:', e.gamepad.id);
+            gamepadConnectedShown = false; // force hint update next poll
+            updateGamepadHint(true, e.gamepad.id);
+            startGamepadLoop();
+        });
+        window.addEventListener('gamepaddisconnected', (e) => {
+            console.log('Gamepad disconnected:', e.gamepad.id);
+            updateGamepadHint(false);
+            gamepadConnectedShown = false;
+        });
+        // Fallback: start polling anyway (some browsers don't fire connect until button press)
+        // will auto-detect pad on first poll without event
+
         // Menu data - will be populated dynamically from Python API
         let xmbData = [];
         
@@ -1271,6 +1370,9 @@
             document.body.addEventListener('click', () => {
                 if (audioCtx.state === 'suspended') audioCtx.resume();
             }, { once: true });
+
+            // Start gamepad polling (handles both event-driven and poll-fallback)
+            startGamepadLoop();
 
             // Re-load from Python once pywebview is actually ready (fixes theme not loading on startup)
             whenPywebviewReady().then(async (ready) => {
