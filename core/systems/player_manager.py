@@ -1,5 +1,10 @@
 from core.systems.orchestrator import warning
 
+
+
+current_player_id = 1 # Temporary.
+
+
 # Internal storage for player positions: {player_id: (x, y, z)}
 _players = {1: (0, 0, 0)}
 
@@ -127,3 +132,15 @@ except Exception:
     pass
 
 __all__ = ["add_player", "update_player_pos", "get_player_pos", "remove_player", "player_pos1"]
+
+
+
+
+
+
+
+
+
+
+def get_player_id():
+    return current_player_id

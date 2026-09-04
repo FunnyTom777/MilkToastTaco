@@ -48,11 +48,20 @@ current_bank_supports_loans = True
 
 
 
-def get_bank_load():
+def get_bank_loan():
     if current_bank_supports_loans == True:
         # continue
         request_player_input("This Bank Supports loans! Though i havent implemented the loan system yet... check back later :D")
     elif current_bank_supports_loans == False:
         warning("Your Current Bank does NOT support Loans! Please try with another bank!")
     else:
-        warning("Error when detirming if current bank supports loan.")
+        warning("Error when determining if current bank supports loan.")
+
+
+
+def list_active_cards():
+    """
+    Lists active bank cards (Credit/Debit) active on the players current bank account.
+    Only lists ACTIVE cards. Not frozen/etc cards.
+    """
+    print("This does nothing yet...")
