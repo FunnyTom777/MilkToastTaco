@@ -5,6 +5,8 @@ This module provides the Python API that the XMB HTML dashboard can call
 via JavaScript using pywebview.api.* methods.
 """
 
+import subprocess
+import sys
 from functools import wraps
 from collections import defaultdict
 from pathlib import Path
@@ -177,14 +179,47 @@ class XMBDashboardAPI:
 
     # --- Misc -----------------------------------------------------------
 
-    @menu_option("misc", "Misc", "fa-ellipsis-h", "Launch MTT Dashboard",
-                 "Open the Milk Toast Taco developer dashboard (terminal/web).")
-    def launch_dashboard(self):
-        """Launch dashboard placeholder."""
+    def _spawn_dashboard(self, dev: bool = False):
+        """Helper: spawn dashboard.py as independent process and close XMB."""
+        try:
+            # Project root is 3 levels up from this file: core/renderer/main_menu/xmb.py
+            project_root = Path(__file__).resolve().parents[3]
+            # Prefer module invocation so imports work regardless of cwd
+            cmd = [sys.executable, "-m", "core.renderer.dashboard.dashboard"]
+            if dev:
+                cmd.append("--dev")
+            # Non-blocking spawn — Dashboard runs as its own pywebview instance
+            subprocess.Popen(cmd, cwd=str(project_root), close_fds=True)  # noqa: S603
+        except Exception as e:
+            return {"status": "error", "message": f"Failed to launch Dashboard: {e}"}
+
+        # Close XMB window/process ( Dashboard is independent )
+        try:
+            import webview
+            if webview.windows:
+                for w in list(webview.windows):
+                    try:
+                        w.destroy()
+                    except Exception:
+                        pass
+        except Exception:
+            pass
         return {
-            "status": "info",
-            "message": "Dashboard launch not implemented yet",
+            "status": "success",
+            "message": f"Dashboard launched{' (Dev Mode)' if dev else ''}",
         }
+
+    @menu_option("misc", "Misc", "fa-ellipsis-h", "Launch MTT Dashboard",
+                 "Open the Milk Toast Taco Dashboard — player view (HUD, map, inventory) in its own window. XMB closes.")
+    def launch_dashboard(self):
+        """Launch Dashboard (player mode)."""
+        return self._spawn_dashboard(dev=False)
+
+    @menu_option("misc", "Misc", "fa-ellipsis-h", "Launch MTT Dashboard (Dev Mode)",
+                 "Open the Dashboard in Dev Mode — raw editable state, saves, and debug tools. XMB closes.")
+    def launch_dashboard_dev(self):
+        """Launch Dashboard straight into Dev Mode."""
+        return self._spawn_dashboard(dev=True)
 
     @menu_option("misc", "Misc", "fa-ellipsis-h", "Quit",
                  "Save progress and return to desktop.")

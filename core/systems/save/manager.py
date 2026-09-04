@@ -164,3 +164,105 @@ def delete_save(save_name: str, directory: Optional[str] = None) -> bool:
         file_path.unlink()
         return True
     return False
+
+
+# ---------------------------------------------------------------------------
+# Dashboard-facing aliases (issue spec naming)
+# ---------------------------------------------------------------------------
+# The issue describes a standalone save/load API:
+#   load_save(save_name) -> dict, save_state(save_name, data), list_saves()
+# The manager already provides save_game/load_game/list_saves. These aliases
+# keep the issue naming without duplicating logic, and expose a dict-based
+# API that Dashboard.py consumes (read without mutating globals).
+#
+# XML structure (one top-level element per MTT system):
+#   <save version="1" name="slot1" saved_at="...">
+#     <systems>
+#       <system key="players" type="dict"> ... </system>
+#       <system key="inventory" type="dict"> ... </system>
+#       <system key="vehicles" type="dict|list"> ... </system>
+#       <system key="world" type="dict"> ... </system>
+#       <system key="construction" ... />
+#       <!-- future systems just register via register_save_provider() -->
+#     </systems>
+#   </save>
+# Inside each <system> the value_to_element codec handles type fidelity.
+
+
+def load_save(save_name: str, directory: Optional[str] = None, strict: bool = False) -> Optional[dict]:
+    """
+    Dashboard alias: parse XML and return structured dict {key: state}.
+
+    Does NOT restore global providers (unlike load_game). Returns None
+    if the file is missing/corrupt (or raises if strict=True).
+
+    Returns:
+        dict mapping system key -> plain python state (as produced by
+        each provider's save_fn), plus a `_meta` entry for save attrs,
+        or None on failure.
+    """
+    save_dir = _resolve_save_dir(directory)
+    file_path = save_dir / f"{_sanitize_filename(save_name)}.xml"
+    root = load_xml_file(str(file_path), strict=strict)
+    if root is None:
+        return None
+    systems_el = root.find("systems")
+    data: dict = {}
+    if systems_el is not None:
+        for system_el in systems_el.findall("system"):
+            key = system_el.get("key", "")
+            try:
+                data[key] = element_to_value(system_el)
+            except Exception as e:
+                warning(f"load_save: failed to decode system '{key}': {e}")
+                data[key] = {"_error": str(e)}
+    # stash meta under _meta so callers can read version/saved_at without collision
+    data["_meta"] = {
+        "name": root.get("name", save_name),
+        "version": root.get("version"),
+        "saved_at": root.get("saved_at"),
+    }
+    return data
+
+
+def save_state(save_name: str, data: dict, directory: Optional[str] = None) -> str:
+    """
+    Dashboard alias: write structured dict {key: state} to XML.
+
+    Args:
+        save_name: filename without .xml
+        data: mapping system key -> plain python state (JSON-like). May
+              include an optional `_meta` key which is ignored (meta is
+              written from save_name + timestamp/version).
+        directory: optional override (for tests).
+
+    Returns:
+        Path written as string.
+    """
+    import datetime as _dt
+    save_dir = _resolve_save_dir(directory)
+    file_path = save_dir / f"{_sanitize_filename(save_name)}.xml"
+
+    # allow callers to pass {systems: {...}} or flat dict
+    if isinstance(data, dict) and "systems" in data and isinstance(data["systems"], dict):
+        systems_data = {k: v for k, v in data["systems"].items()}
+    else:
+        systems_data = {k: v for k, v in data.items() if k != "_meta"} if isinstance(data, dict) else {}
+
+    root = ET.Element("save", {
+        "version": str(SAVE_VERSION),
+        "name": save_name,
+        "saved_at": _dt.datetime.now(_dt.timezone.utc).isoformat(),
+    })
+    systems_el = ET.SubElement(root, "systems")
+    for key, state in systems_data.items():
+        el = value_to_element("system", state)
+        el.set("key", str(key))
+        systems_el.append(el)
+
+    ET.indent(root, space="  ")
+    tree = ET.ElementTree(root)
+    tmp_path = file_path.with_suffix(".xml.tmp")
+    tree.write(tmp_path, encoding="utf-8", xml_declaration=True)
+    os.replace(tmp_path, file_path)
+    return str(file_path)

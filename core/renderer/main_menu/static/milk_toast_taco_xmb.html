@@ -1156,10 +1156,28 @@
                 showSettings();
                 return;
             }
-            if (catId === 'misc' && selectedItem.name === 'Launch MTT Dashboard') {
-                showPopup('The <strong>MTT Dashboard</strong> is coming soon!<br>This feature is not implemented yet. Try using the Dashboard via terminal for now. <i class="fas fa-terminal" style="color:#34d399"></i>');
-                if (window.pywebview && window.pywebview.api && window.pywebview.api.launch_dashboard) {
-                    try { await window.pywebview.api.launch_dashboard(); } catch(e){}
+            // Dashboard — spawns separate pywebview process and closes XMB. Keep popup to 0.6s then the window self-closes.
+            if (catId === 'misc' && (selectedItem.name === 'Launch MTT Dashboard' || selectedItem.name === 'Launch MTT Dashboard (Dev Mode)')) {
+                const isDev = selectedItem.name.includes('(Dev Mode)');
+                const method = isDev ? 'launch_dashboard_dev' : 'launch_dashboard';
+                if (window.pywebview && window.pywebview.api && window.pywebview.api[method]) {
+                    try {
+                        const res = await window.pywebview.api[method]();
+                        if (res && res.status === 'success') {
+                            showPopup(`<strong>MTT Dashboard</strong> launching${isDev ? ' in <span style="color:#fde68a">Dev Mode</span>' : ''}...<br><span style="opacity:0.7">XMB is closing — dashboard will appear in its own window. <i class="fas fa-rocket" style="color:#60a5fa"></i></span>`);
+                            // XMB will destroy its window shortly; fallback close in browser preview
+                            setTimeout(()=>{ try{ window.close(); }catch(e){} }, 900);
+                            return;
+                        } else if (res && res.status === 'error') {
+                            showPopup(`Failed to launch Dashboard:<br><code style="background:rgba(255,255,255,0.08); padding:4px 8px; border-radius:6px;">${res.message||'unknown error'}</code>`);
+                            return;
+                        }
+                    } catch(e){ console.error(e); }
+                    // fallback if API threw
+                    showPopup('Failed to launch Dashboard — check console/py logs.<br><span style="opacity:0.7">You can also run <code>python -m core.renderer.dashboard.dashboard'+(isDev?' --dev':'')+'</code></span>');
+                } else {
+                    // no pywebview — browser preview hint
+                    showPopup('Dashboard launch needs the desktop app (pywebview).<br>Preview: run <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">python -m core.renderer.dashboard.dashboard'+(isDev?' --dev':'')+'</code> in your terminal. <i class="fas fa-terminal" style="color:#34d399"></i>');
                 }
                 return;
             }

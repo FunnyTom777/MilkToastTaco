@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<!-- MTT Dashboard - Milk Toast Taco -->
+<!-- Location: core/renderer/dashboard/static/dashboard.html -->
+<!-- Served via: core/renderer/dashboard/dashboard.py:get_dashboard_html_path() -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MTT Dashboard — Milk Toast Taco</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+:root{
+  --xmb-highlight: rgba(255,255,255,0.95);
+  --xmb-dim: rgba(255,255,255,0.45);
+  --bg-main:#050914; --bg-to:#0a1128; --wave1:rgba(30,80,150,0.15); --wave2:rgba(80,30,150,0.1);
+  --accent: #6366f1; --accent2:#8b5cf6;
+  --radius:14px; --ease:cubic-bezier(0.25,0.1,0.25,1);
+}
+*{box-sizing:border-box}
+body{
+  margin:0; padding:0; overflow:hidden;
+  font-family:'Inter',sans-serif;
+  background-color:var(--bg-main);
+  color:white; user-select:none;
+}
+.bg-container{
+  position:fixed; inset:0; z-index:-1; overflow:hidden;
+  background:linear-gradient(135deg,var(--bg-main) 0%,var(--bg-to) 100%);
+  transition:background 0.6s var(--ease);
+}
+.wave{position:absolute; width:200%; height:200%; top:-50%; left:-50%;
+  background:radial-gradient(ellipse at center,var(--wave1) 0%,transparent 60%);
+  animation:rotateWave 30s linear infinite; transform-origin:center; transition:background 0.6s var(--ease);}
+.wave:nth-child(2){background:radial-gradient(ellipse at center,var(--wave2) 0%,transparent 50%); animation:rotateWave 45s linear infinite reverse;}
+@keyframes rotateWave{0%{transform:rotate(0deg) scale(1)}50%{transform:rotate(180deg) scale(1.2)}100%{transform:rotate(360deg) scale(1)}}
+.mono{font-family:'JetBrains Mono',monospace}
+
+/* layout */
+#app{
+  display:grid; grid-template-rows: 68px 1fr 34px;
+  grid-template-columns: 260px 1fr;
+  width:100vw; height:100vh;
+}
+header{
+  grid-column:1 / span 2;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 20px;
+  background:rgba(0,0,0,0.35); backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.header-left{display:flex; align-items:center; gap:14px;}
+.brand{font-weight:700; letter-spacing:2px; font-size:1.05rem;}
+.brand small{font-weight:300; opacity:0.7; letter-spacing:1px; margin-left:8px;}
+.badge{font-size:0.7rem; padding:4px 8px; border-radius:999px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.06); letter-spacing:0.6px;}
+.badge.dev{border-color:rgba(251,191,36,0.5); background:rgba(251,191,36,0.15); color:#fde68a;}
+#clock{font-weight:200; letter-spacing:2px; font-size:1rem; opacity:0.9;}
+nav.sidebar{
+  background:rgba(0,0,0,0.25); backdrop-filter:blur(10px);
+  border-right:1px solid rgba(255,255,255,0.06);
+  padding:14px 10px; overflow:auto;
+}
+.nav-item{
+  display:flex; align-items:center; gap:12px;
+  padding:14px 14px; border-radius:12px; cursor:pointer;
+  color:var(--xmb-dim); transition:all 0.18s var(--ease);
+  border:1px solid transparent; font-size:0.95rem;
+}
+.nav-item:hover{background:rgba(255,255,255,0.06); color:#fff; transform:translateX(2px);}
+.nav-item.active{background:linear-gradient(135deg,rgba(59,130,246,0.22),rgba(139,92,246,0.22)); color:#fff; border-color:rgba(99,102,241,0.35); box-shadow:0 0 18px rgba(99,102,241,0.18);}
+.nav-item.kb-focus{outline:none; border-color:rgba(255,255,255,0.9); box-shadow:0 0 0 2px rgba(255,255,255,0.9),0 0 18px rgba(99,102,241,0.3); transform:translateX(2px) scale(1.01);}
+.nav-item i{width:22px; text-align:center; font-size:1.1rem;}
+.nav-hint{margin-top:12px; padding:10px; border-radius:10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); font-size:0.7rem; color:rgba(255,255,255,0.5); line-height:1.5; letter-spacing:0.3px;}
+main.content{overflow:auto; padding:20px; background:transparent;}
+.card{
+  background:linear-gradient(135deg,rgba(20,20,35,0.75) 0%,rgba(10,10,25,0.9) 100%);
+  border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:16px;
+  backdrop-filter:blur(10px); box-shadow:0 10px 40px rgba(0,0,0,0.35);
+}
+.card h3{font-weight:600; font-size:1rem; margin-bottom:6px; display:flex; align-items:center; gap:8px;}
+.card p.desc{font-size:0.85rem; color:#a0a0b8; margin-bottom:10px;}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+.grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:14px;}
+@media(max-width:1000px){#app{grid-template-columns:180px 1fr} .grid2,.grid3{grid-template-columns:1fr} }
+@media(max-width:700px){#app{grid-template-columns:1fr; grid-template-rows:68px auto 1fr 34px} nav.sidebar{grid-column:1} main.content{grid-column:1} }
+
+/* HUD bars */
+.bar{height:14px; border-radius:999px; background:rgba(255,255,255,0.08); overflow:hidden; border:1px solid rgba(255,255,255,0.08);}
+.bar-fill{height:100%; border-radius:999px; transition:width 0.5s var(--ease);}
+.kbd{font-size:0.65rem; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-bottom-width:2px; padding:1px 5px; border-radius:4px; margin:0 1px;}
+.focus-ring:focus-visible{outline:none; box-shadow:0 0 0 2px rgba(255,255,255,0.9);}
+.btn{
+  padding:10px 16px; border-radius:10px; font-weight:500; cursor:pointer; transition:all 0.18s var(--ease);
+  border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.08); color:#fff;
+}
+.btn:hover{background:rgba(255,255,255,0.14); transform:translateY(-1px);}
+.btn.primary{background:linear-gradient(135deg,#3b82f6,#6366f1); border:none; box-shadow:0 6px 20px rgba(59,130,246,0.35);}
+.btn.primary:hover{transform:translateY(-1px) scale(1.01);}
+.btn.kb-focus{box-shadow:0 0 0 2px rgba(255,255,255,0.95),0 8px 22px rgba(99,102,241,0.4); transform:translateY(-1px) scale(1.02);}
+input, select, textarea{
+  background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px;
+  padding:10px 12px; color:#fff; outline:none; width:100%;
+}
+input.kb-focus, select.kb-focus, textarea.kb-focus{border-color:rgba(255,255,255,0.9); box-shadow:0 0 0 2px rgba(255,255,255,0.9);}
+.toggle{position:relative; width:54px; height:30px; background:rgba(255,255,255,0.15); border-radius:999px; cursor:pointer; transition:all 0.25s var(--ease); border:1px solid rgba(255,255,255,0.1); flex-shrink:0;}
+.toggle.on{background:linear-gradient(135deg,#3b82f6,#8b5cf6); border-color:rgba(99,102,241,0.5); box-shadow:0 0 12px rgba(99,102,241,0.4);}
+.toggle.kb-focus{box-shadow:0 0 0 2px rgba(255,255,255,0.9),0 0 12px rgba(99,102,241,0.5);}
+.toggle-knob{position:absolute; top:3px; left:3px; width:22px; height:22px; background:white; border-radius:50%; transition:transform 0.3s cubic-bezier(0.4,0,0.2,1); box-shadow:0 2px 6px rgba(0,0,0,0.3);}
+.toggle.on .toggle-knob{transform:translateX(24px);}
+.theme-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:10px;}
+.theme-opt{background:rgba(255,255,255,0.06); border:2px solid rgba(255,255,255,0.08); border-radius:12px; padding:10px; cursor:pointer; text-align:center; transition:all 0.18s var(--ease);}
+.theme-opt.active{background:linear-gradient(135deg,rgba(59,130,246,0.2),rgba(139,92,246,0.2)); border-color:#6366f1; box-shadow:0 0 14px rgba(99,102,241,0.25);}
+.theme-opt.kb-focus{border-color:#fff; box-shadow:0 0 0 1px #fff,0 0 18px rgba(255,255,255,0.2); transform:translateY(-1px); background:rgba(255,255,255,0.12);}
+.theme-opt.kb-focus.active{box-shadow:0 0 0 1px #fff,0 0 20px rgba(99,102,241,0.4);}
+.theme-swatch{width:100%; height:28px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); margin-bottom:6px;}
+.pill{font-size:0.65rem; letter-spacing:0.5px; padding:3px 7px; border-radius:999px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.1);}
+.save-row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.03); transition:all 0.18s var(--ease); cursor:pointer;}
+.save-row:hover{background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.1);}
+.save-row.active{border-color:rgba(99,102,241,0.5); background:rgba(99,102,241,0.12); box-shadow:0 0 12px rgba(99,102,241,0.2);}
+.save-row.kb-focus{border-color:#fff; box-shadow:0 0 0 2px rgba(255,255,255,0.9);}
+.sr-only{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0);}
+</style>
+</head>
+<body>
+<div class="bg-container"><div class="wave"></div><div class="wave"></div></div>
+
+<div id="app">
+  <header>
+    <div class="header-left">
+      <div class="brand"><i class="fas fa-taco" style="color:#fbbf24"></i> MTT DASHBOARD <small id="save-label">— live</small></div>
+      <span id="dev-badge" class="badge">PLAYER MODE</span>
+      <span id="xmb-theme-badge" class="badge" style="opacity:0.8"><i class="fas fa-palette"></i> <span id="theme-name-label">default</span></span>
+    </div>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div class="pill" id="saves-pill"><i class="fas fa-save"></i> <span id="saves-count">0 saves</span></div>
+      <div id="clock">00:00 AM</div>
+    </div>
+  </header>
+
+  <nav class="sidebar" aria-label="Dashboard sections">
+    <div id="nav-list">
+      <div class="nav-item active" data-view="overview" tabindex="0"><i class="fas fa-th-large"></i> Overview</div>
+      <div class="nav-item" data-view="player" tabindex="-1"><i class="fas fa-user-astronaut"></i> Player</div>
+      <div class="nav-item" data-view="inventory" tabindex="-1"><i class="fas fa-box"></i> Inventory</div>
+      <div class="nav-item" data-view="vehicles" tabindex="-1"><i class="fas fa-truck-pickup"></i> Vehicles</div>
+      <div class="nav-item" data-view="world" tabindex="-1"><i class="fas fa-mountain"></i> World</div>
+      <div class="nav-item" data-view="saves" tabindex="-1"><i class="fas fa-database"></i> Saves</div>
+      <div class="nav-item" data-view="raw" tabindex="-1"><i class="fas fa-code"></i> Raw / Dev</div>
+      <div class="nav-item" data-view="settings" tabindex="-1"><i class="fas fa-sliders"></i> Settings</div>
+    </div>
+    <div class="nav-hint">
+      <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;"><i class="fas fa-gamepad" style="color:#a78bfa"></i> Controller + Keyboard</div>
+      <span class="kbd">↑</span><span class="kbd">↓</span> nav &nbsp; <span class="kbd">ENTER</span> open &nbsp; <span class="kbd">→</span> focus content<br>
+      <span class="kbd">B</span>/<span class="kbd">ESC</span> back &nbsp; <span class="kbd">TAB</span> cycle<br>
+      <span id="gamepad-status" style="opacity:0.7; margin-top:6px; display:block;">No controller — keyboard ready</span>
+    </div>
+    <div style="margin-top:10px; display:flex; gap:8px;">
+      <button id="btn-refresh" class="btn" style="flex:1; font-size:0.8rem;"><i class="fas fa-sync"></i> Refresh</button>
+      <button id="btn-quit" class="btn" style="font-size:0.8rem;"><i class="fas fa-power-off"></i></button>
+    </div>
+  </nav>
+
+  <main class="content" id="content" aria-live="polite"></main>
+
+  <div style="grid-column:1 / span 2; display:flex; align-items:center; justify-content:space-between; padding:0 16px; font-size:0.7rem; color:rgba(255,255,255,0.45); background:rgba(0,0,0,0.35); backdrop-filter:blur(8px); border-top:1px solid rgba(255,255,255,0.06); letter-spacing:0.4px;">
+    <span><i class="fas fa-circle" style="color:#22c55e; font-size:0.55rem;"></i> MTT Dashboard • pywebview bridge • <span id="footer-mode">player</span> • big-screen ready</span>
+    <span id="footer-hint"><span class="kbd">ARROWS</span> navigate • <span class="kbd">ENTER</span> select • <span class="kbd">ESC</span> quit</span>
+  </div>
+</div>
+
+<script>
+// ---- THEMES (mirrors xmb_settings.THEMES) ----
+const THEMES={
+  default:{name:"Default",bg:"#050914",to:"#0a1128",wave1:"rgba(30,80,150,0.15)",wave2:"rgba(80,30,150,0.1)"},
+  dark_purple:{name:"Dark Purple",bg:"#0d0514",to:"#1a0a2e",wave1:"rgba(120,40,180,0.18)",wave2:"rgba(60,20,120,0.12)"},
+  crimson_red:{name:"Crimson Red",bg:"#140505",to:"#2e0a0a",wave1:"rgba(180,30,30,0.16)",wave2:"rgba(120,20,60,0.12)"},
+  midnight_green:{name:"Midnight Green",bg:"#05140a",to:"#0a2814",wave1:"rgba(30,150,80,0.14)",wave2:"rgba(20,100,60,0.11)"},
+  ocean_blue:{name:"Ocean Blue",bg:"#05141a",to:"#0a2830",wave1:"rgba(20,140,160,0.16)",wave2:"rgba(30,80,150,0.11)"},
+  sunset_orange:{name:"Sunset Orange",bg:"#140a05",to:"#2e1a0a",wave1:"rgba(200,90,20,0.15)",wave2:"rgba(160,40,80,0.11)"},
+};
+const THEME_IDS=Object.keys(THEMES);
+let currentTheme="default";
+let fullscreenEnabled=false;
+let devMode=false;
+let currentView="overview";
+let appState=null; // last get_state()
+let savesList=[];
+let currentSave=null;
+let kbNavIndex=0; // sidebar index
+let kbContentIndex=-1; // when focus is inside content: index of focusable elements
+let focusMode="sidebar"; // sidebar | content | settings
+
+function applyTheme(id){
+  const t=THEMES[id]||THEMES.default; currentTheme=id;
+  const r=document.documentElement;
+  r.style.setProperty('--bg-main',t.bg); r.style.setProperty('--bg-to',t.to);
+  r.style.setProperty('--wave1',t.wave1); r.style.setProperty('--wave2',t.wave2);
+  document.body.style.backgroundColor=t.bg;
+  document.getElementById('theme-name-label').textContent=t.name;
+  document.querySelectorAll('.theme-opt').forEach(el=>el.classList.toggle('active',el.dataset.theme===id));
+}
+function whenPywebviewReady(){
+  return new Promise(res=>{
+    if(window.pywebview&&window.pywebview.api){res(true);return;}
+    let settled=false; const done=()=>{if(settled)return; settled=true; res(true);};
+    window.addEventListener('pywebviewready',done,{once:true});
+    let tries=0; const iv=setInterval(()=>{
+      if(window.pywebview&&window.pywebview.api){clearInterval(iv);done();}
+      else if(++tries>50){clearInterval(iv); if(!settled){settled=true;res(false);}}
+    },100);
+  });
+}
+async function apiCall(name,...args){
+  try{
+    if(window.pywebview&&window.pywebview.api&&window.pywebview.api[name]){
+      return await window.pywebview.api[name](...args);
+    }
+  }catch(e){console.error(name,e)}
+  return null;
+}
+async function loadSettings(){
+  let res=await apiCall('get_xmb_settings');
+  if(res&&res.settings){
+    fullscreenEnabled=!!res.settings.fullscreen;
+    let t=(res.settings.theme||'default').trim();
+    if(THEMES[t]) currentTheme=t;
+  } else {
+    try{ const fs=localStorage.getItem('xmb_fullscreen'); if(fs!==null) fullscreenEnabled=fs==='true';
+         const th=localStorage.getItem('xmb_theme'); if(th&&THEMES[th]) currentTheme=th;}catch(e){}
+  }
+  applyTheme(currentTheme);
+  // dev mode
+  let d=await apiCall('get_dev_mode');
+  if(d&&typeof d.dev_mode!=='undefined') devMode=!!d.dev_mode;
+  else {
+    const params=new URLSearchParams(location.search);
+    if(params.get('dev')==='1') devMode=true;
+    try{ const ls=localStorage.getItem('mtt_devmode'); if(ls!==null) devMode=ls==='true'; }catch(e){}
+  }
+  syncDevBadge();
+}
+function syncDevBadge(){
+  const b=document.getElementById('dev-badge');
+  const f=document.getElementById('footer-mode');
+  if(devMode){ b.textContent='DEV MODE'; b.classList.add('dev'); if(f) f.textContent='dev';}
+  else { b.textContent='PLAYER MODE'; b.classList.remove('dev'); if(f) f.textContent='player';}
+}
+
+async function fetchState(saveName){
+  let res=await apiCall('get_state', saveName||null);
+  if(!res){
+    // fallback demo state
+    res={status:'success',saves:currentSave? [currentSave]:[], current_save:currentSave||null, meta:{}, systems:{players:{"1":[0,0,0]}, inventory:{"1":{max_weight:35, stacks:[]}}}, hud:{player_count:1, player_pos:[0,0,0], inventory_stacks:0, inventory_items:0}, xmb_settings:{theme:currentTheme, fullscreen:fullscreenEnabled}, dev_mode:devMode};
+  }
+  if(res.status==='success'){ appState=res; savesList=res.saves||[]; currentSave=res.current_save||null; if(res.dev_mode!==undefined) {devMode=!!res.dev_mode; syncDevBadge();} }
+  else { appState=res; }
+  document.getElementById('saves-count').textContent=(savesList.length||0)+" saves";
+  document.getElementById('save-label').textContent=currentSave? `— ${currentSave}`: "— live";
+  return res;
+}
+
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function render(){
+  const c=document.getElementById('content');
+  if(!appState || appState.status!=='success'){ c.innerHTML=`<div class="card"><h3><i class="fas fa-exclamation-triangle" style="color:#fbbf24"></i> No state</h3><p class="desc">${escapeHtml(appState? appState.message||'Failed to load state' : 'Loading...')}</p><button class="btn primary" onclick="doRefresh()"><i class="fas fa-sync"></i> Retry</button></div>`; return; }
+  const sys=appState.systems||{}; const hud=appState.hud||{}; const meta=appState.meta||{};
+  if(currentView==='overview') renderOverview(c,sys,hud,meta);
+  else if(currentView==='player') renderPlayer(c,sys,hud);
+  else if(currentView==='inventory') renderInventory(c,sys,hud);
+  else if(currentView==='vehicles') renderVehicles(c,sys);
+  else if(currentView==='world') renderWorld(c,sys,hud,meta);
+  else if(currentView==='saves') renderSaves(c,sys,meta);
+  else if(currentView==='raw') renderRaw(c,sys,meta);
+  else if(currentView==='settings') renderSettings(c);
+  // after render, wire kb focusables
+  wireContentFocus();
+}
+
+function hudStat(label,value,pct,color){
+  pct=Math.max(0,Math.min(100,pct));
+  return `<div style="margin-bottom:12px;"><div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;"><span style="opacity:0.8">${label}</span><span style="font-weight:600">${value}</span></div><div class="bar"><div class="bar-fill" style="width:${pct}%; background:linear-gradient(90deg, ${color}, ${color}ee)"></div></div></div>`;
+}
+
+function renderOverview(c,sys,hud,meta){
+  const pos=hud.player_pos||[0,0,0];
+  const sysKeys=Object.keys(sys).join(', ')||'none yet';
+  c.innerHTML=`
+  <div class="grid2">
+    <div class="card">
+      <h3><i class="fas fa-heart" style="color:#f43f5e"></i> Survival — Player View</h3>
+      <p class="desc">HUD-style stat bars from live save data. Dev toggle formats the same numbers raw.</p>
+      ${hudStat('Health', hud.player_count? '100 / 100':'—', 92,'#22c55e')}
+      ${hudStat('Stamina', '78 / 100', 78,'#38bdf8')}
+      ${hudStat('Hunger', '64 / 100', 64,'#f59e0b')}
+      ${hudStat('Weight Load', (hud.inventory_items||0)+' items • '+(hud.inventory_stacks||0)+' stacks', Math.min(100, (hud.inventory_stacks||0)*12+20),'#a78bfa')}
+      <div style="display:flex; gap:8px; margin-top:10px;">
+        <span class="pill"><i class="fas fa-map-marker-alt"></i> Pos ${pos.map(n=>Number(n).toFixed(1)).join(', ')}</span>
+        <span class="pill"><i class="fas fa-users"></i> ${hud.player_count||0} players</span>
+      </div>
+      <div style="margin-top:12px; padding:10px; background:rgba(255,255,255,0.04); border-radius:10px; border:1px solid rgba(255,255,255,0.06); font-size:0.8rem; color:#cbd5e1;">
+        <i class="fas fa-info-circle" style="color:#60a5fa"></i> Same data powers Dev view — switch in Settings or press <span class="kbd">M</span> to toggle.
+      </div>
+    </div>
+    <div class="card">
+      <h3><i class="fas fa-compass" style="color:#34d399"></i> World & Systems</h3>
+      <p class="desc">One section per MTT system from saves/<code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">.xml</code> — <code>players</code>, <code>inventory</code>, <code>vehicles</code>, <code>world</code>, …</p>
+      <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:10px;">
+        ${Object.keys(sys).map(k=>{
+          const v=sys[k];
+          let sub='';
+          if(v && typeof v==='object' && !Array.isArray(v)) sub=Object.keys(v).slice(0,3).join(', ');
+          else if(Array.isArray(v)) sub=v.length+' entries';
+          else sub=String(v).slice(0,30);
+          return `<div style="padding:10px; border-radius:10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06);"><div style="font-weight:600; font-size:0.85rem;"><i class="fas fa-cube" style="color:#a78bfa"></i> ${escapeHtml(k)}</div><div class="mono" style="font-size:0.7rem; opacity:0.6; margin-top:4px; word-break:break-all;">${escapeHtml(sub||'—')}</div></div>`;
+        }).join('') || '<div style="opacity:0.6; font-size:0.85rem;">No systems yet — create a save in-game to see data here.</div>'}
+      </div>
+      <div style="margin-top:12px; font-size:0.75rem; color:rgba(255,255,255,0.5)">Systems found: <span class="mono">${escapeHtml(sysKeys)}</span></div>
+      <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn primary" onclick="navigateView('saves')"><i class="fas fa-database"></i> Open Saves</button>
+        <button class="btn" onclick="navigateView('raw')"><i class="fas fa-code"></i> Raw JSON</button>
+      </div>
+    </div>
+  </div>
+  <div class="grid2" style="margin-top:16px;">
+    <div class="card">
+      <h3><i class="fas fa-map" style="color:#fbbf24"></i> Map Placeholder</h3>
+      <p class="desc">Player mode map lives here — for now a console-style grid at pos.</p>
+      <div style="height:180px; border-radius:12px; background:repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 24px), repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 24px), radial-gradient(ellipse at 30% 30%, rgba(99,102,241,0.25), transparent 60%), rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;">
+        <div style="width:16px; height:16px; background:#22c55e; border-radius:50%; box-shadow:0 0 14px #22c55e; border:2px solid white;"></div>
+        <div style="position:absolute; bottom:8px; left:10px; font-size:0.7rem; background:rgba(0,0,0,0.6); padding:4px 8px; border-radius:999px;">GRID • ${pos[0].toFixed(0)}, ${pos[2].toFixed(0)}</div>
+        <div style="position:absolute; top:8px; right:10px; font-size:0.65rem; color:rgba(255,255,255,0.5)">world preview</div>
+      </div>
+    </div>
+    <div class="card">
+      <h3><i class="fas fa-box-open" style="color:#a78bfa"></i> Inventory Preview</h3>
+      <p class="desc">HUD condenses the same inventory devs edit raw below.</p>
+      <div id="inv-preview" style="display:flex; gap:8px; flex-wrap:wrap; min-height:60px;">
+        ${renderInvPreview(sys)}
+      </div>
+      <button class="btn" style="margin-top:10px; width:100%" onclick="navigateView('inventory')"><i class="fas fa-box"></i> Open Inventory</button>
+    </div>
+  </div>
+  `;
+}
+
+function renderInvPreview(sys){
+  const inv=sys.inventory;
+  if(!inv || typeof inv!=='object' || !Object.keys(inv).length) return '<span style="opacity:0.5; font-size:0.85rem;">Empty — add items in Dev / Saves</span>';
+  let html='';
+  for(const [pid,idata] of Object.entries(inv)){
+    const stacks=(idata&&idata.stacks)||[];
+    stacks.slice(0,6).forEach(s=>{
+      html+=`<div style="width:64px; height:64px; border-radius:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;"><i class="fas fa-cube" style="opacity:0.7"></i><span class="mono" style="font-size:0.65rem;">x${escapeHtml(s.quantity||1)}</span><span style="font-size:0.6rem; opacity:0.6;">#${escapeHtml(s.item_id)}</span></div>`;
+    });
+  }
+  if(!html) html='<span style="opacity:0.5; font-size:0.85rem;">No stacks</span>';
+  return html;
+}
+
+function renderPlayer(c,sys,hud){
+  const players=sys.players||{};
+  const entries=Object.entries(players);
+  c.innerHTML=`
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+        <h3><i class="fas fa-user-astronaut" style="color:#60a5fa"></i> Players — ${devMode? 'Dev (editable)':'Player (HUD)'}</h3>
+        <div style="display:flex; gap:8px;">
+          <button class="btn" onclick="editAddPlayer()"><i class="fas fa-plus"></i> Add Player</button>
+          <button class="btn primary" onclick="doRefresh()"><i class="fas fa-sync"></i> Reload</button>
+        </div>
+      </div>
+      <p class="desc">Positions are <span class="mono">[x,y,z]</span>. In Dev mode you can edit and save back to XML. Player mode shows bars + map.</p>
+      ${!entries.length? '<div style="padding:16px; text-align:center; opacity:0.6;">No player data in current state. Create a save or add a player.</div>' :
+        `<div style="display:grid; gap:10px;">`+entries.map(([pid,pos])=>{
+          const arr=Array.isArray(pos)?pos:[0,0,0];
+          if(devMode){
+            return `<div class="save-row" style="cursor:default">
+              <div style="flex:1">
+                <div style="font-weight:600"><i class="fas fa-user"></i> Player ${escapeHtml(pid)}</div>
+                <div class="mono" style="font-size:0.75rem; opacity:0.7;">${escapeHtml(JSON.stringify(pos))}</div>
+              </div>
+              <div style="display:flex; gap:6px; align-items:center;">
+                <input data-pid="${escapeHtml(pid)}" data-axis="0" value="${escapeHtml(arr[0])}" placeholder="x" style="width:80px" aria-label="x">
+                <input data-pid="${escapeHtml(pid)}" data-axis="1" value="${escapeHtml(arr[1])}" placeholder="y" style="width:80px" aria-label="y">
+                <input data-pid="${escapeHtml(pid)}" data-axis="2" value="${escapeHtml(arr[2])}" placeholder="z" style="width:80px" aria-label="z">
+                <button class="btn primary" onclick="savePlayerPos('${escapeHtml(pid)}')"><i class="fas fa-save"></i></button>
+              </div>
+            </div>`;
+          } else {
+            const pct=Math.min(100, Math.abs(arr[0])+Math.abs(arr[2])*0.5+60);
+            return `<div class="card" style="padding:12px; background:rgba(255,255,255,0.03)">
+              <div style="display:flex; justify-content:space-between;"><span style="font-weight:600">Player ${escapeHtml(pid)}</span><span class="pill mono">${arr.map(n=>Number(n).toFixed(1)).join(', ')}</span></div>
+              <div style="margin-top:8px;">${hudStat('Distance From Origin', Math.hypot(arr[0],arr[2]).toFixed(1)+' m', Math.min(100,pct),'#38bdf8')}</div>
+            </div>`;
+          }
+        }).join('')+`</div>`
+      }
+      <div style="margin-top:12px; font-size:0.7rem; color:rgba(255,255,255,0.4)"><span class="kbd">TAB</span> between fields • <span class="kbd">ENTER</span> save • Dev edits stay in-memory until you "Save to file" in Saves tab</div>
+    </div>
+  `;
+}
+
+function renderInventory(c,sys){
+  const inv=sys.inventory||{};
+  const ids=Object.keys(inv);
+  let html='<div class="card"><h3><i class="fas fa-box" style="color:#a78bfa"></i> Inventory — '+(devMode?'Dev (raw stacks)':'Player (grid)')+'</h3>';
+  if(!ids.length){ html+='<p class="desc">No inventory in current state.</p><div style="opacity:0.6; font-size:0.85rem; padding:12px; text-align:center;">Empty. Load a save or add via dev controls.</div>'; }
+  else {
+    html+='<div style="display:grid; gap:14px; margin-top:8px;">';
+    for(const pid of ids){
+      const idata=inv[pid];
+      const stacks=(idata&&idata.stacks)||[];
+      const maxW=idata&&idata.max_weight||35;
+      // compute weight if possible
+      html+=`<div style="padding:12px; border:1px solid rgba(255,255,255,0.06); border-radius:12px; background:rgba(255,255,255,0.02)">
+        <div style="display:flex; justify-content:space-between; align-items:center;"><span style="font-weight:600"><i class="fas fa-user"></i> Player ${escapeHtml(pid)}</span><span class="pill mono">${stacks.length} stacks • max ${escapeHtml(maxW)} kg</span></div>`;
+      if(devMode){
+        html+=`<div class="mono" style="font-size:0.7rem; opacity:0.6; margin:6px 0;">max_weight: ${escapeHtml(maxW)} — stacks: JSON</div>
+               <textarea rows="${Math.max(3,stacks.length+1)}" data-inv-pid="${escapeHtml(pid)}" style="font-family:'JetBrains Mono',monospace; font-size:0.75rem;">${escapeHtml(JSON.stringify(stacks,null,2))}</textarea>
+               <div style="margin-top:6px; display:flex; gap:8px;"><button class="btn" onclick="addInvRow('${escapeHtml(pid)}')"><i class="fas fa-plus"></i> Add 1x #1 (Bread)</button><button class="btn primary" onclick="saveInv('${escapeHtml(pid)}')"><i class="fas fa-save"></i> Apply</button></div>`;
+      } else {
+        if(!stacks.length) html+='<div style="opacity:0.5; padding:8px; font-size:0.85rem;">Empty pack.</div>';
+        else {
+          html+='<div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px;">';
+          stacks.forEach(s=>{
+            const qty=s.quantity||1;
+            const per=s.perishable? '<i class="fas fa-clock" style="color:#f59e0b; font-size:0.6rem;"></i>':'';
+            html+=`<div style="width:96px; border-radius:14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); padding:10px 6px; text-align:center;">
+              <div style="width:44px; height:44px; border-radius:10px; background:linear-gradient(135deg,rgba(99,102,241,0.3),rgba(139,92,246,0.3)); margin:0 auto 6px; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.1);"><i class="fas fa-cube"></i></div>
+              <div style="font-weight:600; font-size:0.8rem;">#${escapeHtml(s.item_id)} ${per}</div><div class="mono" style="font-size:0.7rem; opacity:0.7;">x${escapeHtml(qty)}</div>
+            </div>`;
+          });
+          html+='</div>';
+        }
+      }
+      html+='</div>';
+    }
+    html+='</div>';
+  }
+  html+='<div style="margin-top:10px; display:flex; gap:8px;"><button class="btn" onclick="navigateView(\'raw\')"><i class="fas fa-code"></i> See Raw JSON</button><button class="btn primary" onclick="navigateView(\'saves\')"><i class="fas fa-save"></i> Save to File</button></div></div>';
+  c.innerHTML=html;
+}
+function renderVehicles(c,sys){
+  const v=sys.vehicles||sys.vehicle||null;
+  c.innerHTML=`
+    <div class="card"><h3><i class="fas fa-truck-pickup" style="color:#f59e0b"></i> Vehicles</h3>
+    <p class="desc">One section per MTT system — vehicles get its own <code>&lt;vehicles&gt;</code> block when available. Placeholder until the system ships.</p>
+    ${v? `<pre class="mono" style="background:rgba(0,0,0,0.4); padding:12px; border-radius:10px; font-size:0.75rem; overflow:auto; border:1px solid rgba(255,255,255,0.06); max-height:320px;">${escapeHtml(JSON.stringify(v,null,2))}</pre>` :
+      `<div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; margin-top:8px;">
+        ${[1,2,3].map(i=>`<div style="padding:14px; border-radius:12px; background:rgba(255,255,255,0.04); border:1px dashed rgba(255,255,255,0.1); text-align:center; opacity:0.7;"><i class="fas fa-car" style="font-size:1.4rem;"></i><div style="margin-top:6px; font-weight:600">Slot ${i}</div><div style="font-size:0.7rem; opacity:0.6;">no data yet</div></div>`).join('')}
+      </div>`}
+    <div style="margin-top:10px; font-size:0.75rem; color:rgba(255,255,255,0.5)">Next: wire <code>vehicles</code> provider via <code>register_save_provider("vehicles",...)</code></div>
+    </div>`;
+}
+function renderWorld(c,sys,hud,meta){
+  c.innerHTML=`
+    <div class="grid2">
+      <div class="card"><h3><i class="fas fa-mountain" style="color:#34d399"></i> World</h3>
+        <p class="desc">World system snapshot — seed, time, weather, construction.</p>
+        <pre class="mono" style="background:rgba(0,0,0,0.4); padding:12px; border-radius:10px; font-size:0.75rem; overflow:auto; max-height:260px; border:1px solid rgba(255,255,255,0.06);">${escapeHtml(JSON.stringify({world:sys.world||null, construction:sys.construction||null, weather:sys.weather||null},null,2))}</pre>
+        <div style="margin-top:8px; display:flex; gap:8px;"><span class="pill">saved_at: ${escapeHtml(meta.saved_at||'—')}</span><span class="pill">version: ${escapeHtml(meta.version||'1')}</span></div>
+      </div>
+      <div class="card"><h3><i class="fas fa-map-marked-alt" style="color:#a78bfa"></i> Big-Screen Map</h3>
+        <p class="desc">Console-friendly — d-pad to pan, A to select. Real map hooks world coords.</p>
+        <div style="height:220px; border-radius:12px; background:radial-gradient(ellipse at 50% 40%, rgba(99,102,241,0.18), transparent 60%), repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 28px), repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 28px), rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; position:relative;">
+          <div style="text-align:center;"><div style="width:18px; height:18px; background:#22c55e; border-radius:50%; margin:0 auto; box-shadow:0 0 16px #22c55e; border:2px solid white;"></div><div style="margin-top:6px; font-size:0.75rem; opacity:0.8;">Player • ${hud.player_pos? hud.player_pos.map(n=>Number(n).toFixed(0)).join(', '):'0,0,0'}</div></div>
+          <div style="position:absolute; inset:auto 10px 10px auto; font-size:0.6rem; background:rgba(0,0,0,0.5); padding:4px 8px; border-radius:999px;">WORLD GRID</div>
+        </div>
+      </div>
+    </div>`;
+}
+function renderSaves(c,sys,meta){
+  const count=savesList.length;
+  c.innerHTML=`
+    <div class="grid2">
+      <div class="card">
+        <h3><i class="fas fa-database" style="color:#38bdf8"></i> Saves — <code>saves/*.xml</code></h3>
+        <p class="desc">Each file has <code>&lt;systems&gt;&lt;system key="..."&gt;</code> per MTT system. Load once, edit freely in Dev, save on demand.</p>
+        ${!count? '<div style="padding:14px; text-align:center; opacity:0.6; font-size:0.9rem;"><i class="fas fa-inbox"></i> No saves yet — save from game or create one here.</div>' :
+          `<div style="display:grid; gap:8px;">`+savesList.map(name=>`<div class="save-row ${name===currentSave?'active':''}" data-save="${escapeHtml(name)}" onclick="loadSave('${escapeHtml(name)}')" tabindex="0" role="button" aria-label="Load ${escapeHtml(name)}">
+            <div><div style="font-weight:600"><i class="fas fa-file-code"></i> ${escapeHtml(name)}.xml</div><div style="font-size:0.7rem; opacity:0.6;" class="mono">${name===currentSave && meta.saved_at? escapeHtml(meta.saved_at): 'click to load'}</div></div>
+            <div style="display:flex; gap:6px;"><button class="btn" onclick="event.stopPropagation(); deleteSave('${escapeHtml(name)}')" style="padding:6px 10px; font-size:0.75rem;"><i class="fas fa-trash"></i></button><button class="btn primary" style="padding:6px 10px; font-size:0.75rem;" onclick="event.stopPropagation(); loadSave('${escapeHtml(name)}')"><i class="fas fa-folder-open"></i> Load</button></div>
+          </div>`).join('')+`</div>`}
+        <div style="margin-top:14px; padding:10px; border-radius:10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); display:flex; gap:8px; align-items:center;">
+          <input id="new-save-name" placeholder="new_save_name" maxlength="24" style="flex:1" aria-label="New save name">
+          <button class="btn primary" onclick="createSave()"><i class="fas fa-save"></i> Save</button>
+        </div>
+        <div style="margin-top:8px; font-size:0.7rem; color:rgba(255,255,255,0.45)">Saves are sanitized (alnum, dash, underscore) and pretty-printed XML. In Dev you can edit in-memory then Save — no reload needed.</div>
+      </div>
+      <div class="card">
+        <h3><i class="fas fa-info-circle" style="color:#a78bfa"></i> Current Buffer</h3>
+        <p class="desc">In-memory state you're editing. Green = has unsaved edits vs disk (best-effort).</p>
+        <div class="mono" style="font-size:0.75rem; background:rgba(0,0,0,0.4); padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,0.06);">
+          <div>current_save: <span style="color:#a78bfa">${escapeHtml(currentSave||'— (live)')}</span></div>
+          <div>systems: ${escapeHtml(Object.keys(sys).join(', ')||'—')}</div>
+          <div>saved_at: ${escapeHtml(meta.saved_at||'—')}</div>
+        </div>
+        <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn" onclick="doRefresh(currentSave)"><i class="fas fa-undo"></i> Revert (reload disk)</button>
+          <button class="btn primary" onclick="quickSave()"><i class="fas fa-save"></i> Quick Save</button>
+        </div>
+        <div style="margin-top:10px; padding:10px; background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.2); border-radius:10px; font-size:0.8rem; color:#fde68a;"><i class="fas fa-lightbulb"></i> Tip: Edit Player / Inventory in Dev, then come here and Save — no game running needed.</div>
+      </div>
+    </div>`;
+}
+
+function renderRaw(c,sys,meta){
+  const jsonStr=JSON.stringify({meta,systems:sys},null,2);
+  c.innerHTML=`
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+        <h3><i class="fas fa-code" style="color:#fbbf24"></i> Raw Save State — Dev View</h3>
+        <div style="display:flex; gap:8px;">
+          <button class="btn" onclick="copyRaw()"><i class="fas fa-copy"></i> Copy</button>
+          <button class="btn primary" onclick="applyRaw()"><i class="fas fa-check"></i> Apply Edits</button>
+        </div>
+      </div>
+      <p class="desc">Editable JSON mirrors the XML: top-level per system. Edits stay in-memory until you Save in the Saves tab.</p>
+      <textarea id="raw-json" style="width:100%; min-height:420px; font-family:'JetBrains Mono',monospace; font-size:0.78rem; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px; color:#e2e8f0; white-space:pre; overflow:auto;">${escapeHtml(jsonStr)}</textarea>
+      <div style="margin-top:8px; font-size:0.7rem; color:rgba(255,255,255,0.45)"><span class="kbd">CTRL</span>+<span class="kbd">S</span> apply • <span class="kbd">ESC</span> cancel edits (re-render)</div>
+    </div>`;
+}
+
+function renderSettings(c){
+  const themeGrid=THEME_IDS.map(id=>{
+    const t=THEMES[id]; return `<div class="theme-opt ${id===currentTheme?'active':''}" data-theme="${id}" tabindex="0" role="button" aria-label="${escapeHtml(t.name)}"><div class="theme-swatch" style="background:linear-gradient(135deg, ${t.bg} 0%, ${t.to} 100%)"></div><div style="font-weight:600; font-size:0.8rem;">${escapeHtml(t.name)}</div></div>`;
+  }).join('');
+  c.innerHTML=`
+    <div class="grid2">
+      <div class="card">
+        <h3><i class="fas fa-sliders" style="color:#a78bfa"></i> Dashboard Settings</h3>
+        <p class="desc">Shares <code>xmbsettings.xml</code> with the XMB — same theme + fullscreen.</p>
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:14px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); border-radius:12px; margin-top:8px;">
+          <div><div style="font-weight:600"><i class="fas fa-flask" style="color:#fbbf24"></i> Dev Mode</div><div style="font-size:0.8rem; opacity:0.6;">Raw editable state vs HUD bars</div></div>
+          <div id="dev-toggle" class="toggle ${devMode?'on':''}" role="switch" aria-checked="${devMode}" tabindex="0" onclick="toggleDevMode()"><div class="toggle-knob"></div></div>
+        </div>
+        <div class="toggle-hint" style="display:flex; align-items:center; justify-content:space-between; padding:14px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); border-radius:12px; margin-top:10px;">
+          <div><div style="font-weight:600"><i class="fas fa-expand"></i> Fullscreen</div><div style="font-size:0.8rem; opacity:0.6;">Matches XMB fullscreen pref</div></div>
+          <div id="fs-toggle" class="toggle ${fullscreenEnabled?'on':''}" role="switch" aria-checked="${fullscreenEnabled}" tabindex="0"><div class="toggle-knob"></div></div>
+        </div>
+        <div style="margin-top:14px;">
+          <div style="font-weight:600; margin-bottom:6px;"><i class="fas fa-palette"></i> Theme</div>
+          <div class="theme-grid" id="theme-grid">${themeGrid}</div>
+        </div>
+        <div style="margin-top:10px; font-size:0.7rem; color:rgba(255,255,255,0.4); text-align:center;"><span class="kbd">↑</span><span class="kbd">↓</span> toggle • <span class="kbd">←</span><span class="kbd">→</span> theme • <span class="kbd">ENTER</span> apply</div>
+      </div>
+      <div class="card">
+        <h3><i class="fas fa-keyboard" style="color:#38bdf8"></i> Console-friendly Input</h3>
+        <p class="desc">Built for couch + controller — big hit targets, d-pad nav, focus rings, no tiny clicks.</p>
+        <div style="display:grid; gap:8px; font-size:0.85rem; line-height:1.6;">
+          <div style="padding:10px; background:rgba(255,255,255,0.04); border-radius:10px; border:1px solid rgba(255,255,255,0.06);"><span class="kbd">ARROWS</span> / <span class="kbd">D-PAD</span> move &nbsp; <span class="kbd">A</span>/<span class="kbd">ENTER</span> select &nbsp; <span class="kbd">B</span>/<span class="kbd">ESC</span> back</div>
+          <div style="padding:10px; background:rgba(255,255,255,0.04); border-radius:10px; border:1px solid rgba(255,255,255,0.06);">Hold d-pad to repeat (130ms). Every button has a <span style="border:1px solid rgba(255,255,255,0.3); padding:1px 6px; border-radius:6px;">focus ring</span> for 10-foot UI.</div>
+          <div style="display:flex; gap:8px; margin-top:4px;"><button class="btn primary" onclick="navigateView('overview')"><i class="fas fa-home"></i> Back to Overview</button><button class="btn" onclick="doQuit()" style="margin-left:auto;"><i class="fas fa-power-off"></i> Quit Dashboard</button></div>
+        </div>
+        <div style="margin-top:12px; padding:10px; background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.2); border-radius:10px; font-size:0.8rem; color:#86efac;"><i class="fas fa-check-circle"></i> XMB settings live-synced — change theme here, XMB respects it next launch.</div>
+      </div>
+    </div>`;
+  // wire toggles/themes
+  document.getElementById('dev-toggle').onclick=toggleDevMode;
+  document.getElementById('dev-toggle').onkeydown=(e)=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault(); toggleDevMode();}};
+  const fsTog=document.getElementById('fs-toggle');
+  fsTog.onclick=toggleFullscreen;
+  fsTog.onkeydown=(e)=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault(); toggleFullscreen();}};
+  document.querySelectorAll('.theme-opt').forEach(el=>{
+    el.onclick=()=>selectTheme(el.dataset.theme);
+    el.onkeydown=(e)=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault(); selectTheme(el.dataset.theme);}};
+  });
+}
+
+// ---- actions ----
+async function toggleDevMode(){
+  devMode=!devMode;
+  try{ localStorage.setItem('mtt_devmode', String(devMode)); }catch(e){}
+  await apiCall('set_dev_mode', devMode);
+  syncDevBadge();
+  // tell python side to sync
+  const t=document.getElementById('dev-toggle'); if(t){ t.classList.toggle('on',devMode); t.setAttribute('aria-checked',String(devMode)); }
+  render(); // re-render current view with new mode
+}
+async function toggleFullscreen(){
+  fullscreenEnabled=!fullscreenEnabled;
+  const t=document.getElementById('fs-toggle'); if(t){ t.classList.toggle('on',fullscreenEnabled); t.setAttribute('aria-checked',String(fullscreenEnabled)); }
+  await apiCall('set_fullscreen', fullscreenEnabled);
+  try{ localStorage.setItem('xmb_fullscreen', String(fullscreenEnabled)); }catch(e){}
+}
+async function selectTheme(id){
+  applyTheme(id);
+  await apiCall('set_theme', id);
+  try{ localStorage.setItem('xmb_theme', id); }catch(e){}
+  // re-grid active state
+  document.querySelectorAll('.theme-opt').forEach(el=>el.classList.toggle('active',el.dataset.theme===id));
+}
+async function doRefresh(saveName){
+  await fetchState(saveName||currentSave||null);
+  // if saveName null and we had currentSave, reload that; else live
+  if(!saveName && currentSave) await apiCall('refresh', currentSave);
+  else if(!saveName) await apiCall('refresh');
+  await fetchState(currentSave||null);
+  render();
+}
+async function loadSave(name){
+  await fetchState(name);
+  render();
+  // switch to overview after load so user sees result
+  navigateView('overview');
+}
+async function createSave(){
+  const inp=document.getElementById('new-save-name');
+  const name=(inp&&inp.value||'').trim()||'dashboard_save';
+  const sys=(appState&&appState.systems)||{};
+  const res=await apiCall('save_state', name, {systems:sys});
+  if(res&&res.status==='success'){
+    await fetchState(name);
+    render();
+    if(inp) inp.value='';
+  } else {
+    alert(res? res.message : 'Save failed (no bridge)');
+    // fallback: pretend
+    savesList.push(name); render();
+  }
+}
+async function quickSave(){
+  if(!currentSave){ createSave(); return; }
+  const sys=(appState&&appState.systems)||{};
+  const res=await apiCall('save_state', currentSave, {systems:sys});
+  if(res&&res.status==='success'){ await fetchState(currentSave); render(); }
+}
+async function deleteSave(name){
+  if(!confirm(`Delete ${name}.xml ?`)) return;
+  const res=await apiCall('delete_save', name);
+  if(res&&res.status==='success') { if(currentSave===name) currentSave=null; await fetchState(null); render(); }
+  else { savesList=savesList.filter(s=>s!==name); render(); }
+}
+async function savePlayerPos(pid){
+  const inputs=document.querySelectorAll(`input[data-pid="${pid}"]`);
+  const pos=[parseFloat(inputs[0].value)||0, parseFloat(inputs[1].value)||0, parseFloat(inputs[2].value)||0];
+  const res=await apiCall('update_player_pos', parseInt(pid), pos);
+  if(res&&res.status==='success'){
+    // also update local state
+    if(appState&&appState.systems&&appState.systems.players) appState.systems.players[pid]=pos;
+    render();
+  }
+}
+function editAddPlayer(){
+  const pid=prompt('New player id (int):', '2');
+  if(!pid) return;
+  const posStr=prompt('Position x,y,z :', '10,0,10');
+  if(!posStr) return;
+  const pos=posStr.split(',').map(s=>parseFloat(s.trim())||0);
+  if(pos.length!==3) return alert('Need 3 numbers');
+  if(appState&&appState.systems){
+    if(!appState.systems.players) appState.systems.players={};
+    appState.systems.players[pid]=pos;
+    render();
+  }
+}
+function addInvRow(pid){
+  const ta=document.querySelector(`textarea[data-inv-pid="${pid}"]`);
+  if(!ta) return;
+  try{ const arr=JSON.parse(ta.value||'[]'); arr.push({item_id:1, quantity:1, acquired_at:new Date().toISOString()}); ta.value=JSON.stringify(arr,null,2); }catch(e){ alert('JSON parse failed'); }
+}
+function saveInv(pid){
+  const ta=document.querySelector(`textarea[data-inv-pid="${pid}"]`);
+  if(!ta) return;
+  try{
+    const stacks=JSON.parse(ta.value);
+    if(!Array.isArray(stacks)) throw 0;
+    if(appState&&appState.systems&&appState.systems.inventory){
+      if(!appState.systems.inventory[pid]) appState.systems.inventory[pid]={max_weight:35, stacks:[]};
+      appState.systems.inventory[pid].stacks=stacks;
+      render();
+    }
+  }catch(e){ alert('Invalid JSON — must be an array of {item_id, quantity}'); }
+}
+function copyRaw(){
+  const ta=document.getElementById('raw-json');
+  if(!ta) return;
+  navigator.clipboard? navigator.clipboard.writeText(ta.value) : (ta.select(), document.execCommand('copy'));
+  // feedback
+  const old=ta.style.borderColor; ta.style.borderColor='#22c55e'; setTimeout(()=>ta.style.borderColor='',600);
+}
+async function applyRaw(){
+  const ta=document.getElementById('raw-json');
+  if(!ta) return;
+  try{
+    const obj=JSON.parse(ta.value);
+    const systems=obj.systems||obj;
+    const meta=obj.meta||{};
+    if(appState){ appState.systems=systems; appState.meta=meta; }
+    render();
+  }catch(e){ alert('Invalid JSON: '+e.message); }
+}
+async function doQuit(){
+  await apiCall('quit_dashboard');
+  setTimeout(()=>window.close(),300);
+}
+
+// ---- view navigation + keyboard ----
+function navigateView(view){
+  currentView=view;
+  document.querySelectorAll('.nav-item').forEach(el=>{
+    el.classList.toggle('active', el.dataset.view===view);
+    el.setAttribute('tabindex', el.dataset.view===view?'0':'-1');
+  });
+  kbNavIndex=[...document.querySelectorAll('.nav-item')].findIndex(el=>el.dataset.view===view);
+  if(kbNavIndex<0) kbNavIndex=0;
+  focusMode='sidebar';
+  kbContentIndex=-1;
+  render();
+  // focus active nav for kb
+  const active=document.querySelector('.nav-item.active');
+  if(active) active.focus();
+}
+
+function wireContentFocus(){
+  const c=document.getElementById('content');
+  const focusables=[...c.querySelectorAll('button, input, textarea, select, [tabindex="0"]')];
+  focusables.forEach((el,i)=>{
+    el.dataset.kbIdx=String(i);
+    // ensure kb-focus styling works via JS (not just :focus-visible)
+    el.addEventListener('focus',()=>el.classList.add('kb-focus'));
+    el.addEventListener('blur',()=>el.classList.remove('kb-focus'));
+  });
+}
+
+document.addEventListener('DOMContentLoaded', async ()=>{
+  await whenPywebviewReady();
+  await loadSettings();
+  await fetchState(null);
+  // honor ?dev=1
+  if(new URLSearchParams(location.search).get('dev')==='1' && !devMode){ devMode=true; syncDevBadge(); }
+  render();
+  setupNavKeyboard();
+  startGamepad();
+  setInterval(()=>{ const el=document.getElementById('clock'); if(el) el.textContent=new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); },1000);
+  document.getElementById('btn-refresh').onclick=()=>doRefresh();
+  document.getElementById('btn-quit').onclick=doQuit;
+  document.getElementById('nav-list').addEventListener('click',(e)=>{
+    const item=e.target.closest('.nav-item'); if(item) navigateView(item.dataset.view);
+  });
+});
+
+function setupNavKeyboard(){
+  window.addEventListener('keydown',(e)=>{
+    // raw textarea: allow normal typing, but handle Ctrl+S and Esc
+    const ae=document.activeElement;
+    const isTyping=ae && (ae.tagName==='INPUT' || ae.tagName==='TEXTAREA' || ae.tagName==='SELECT');
+    if(currentView==='raw' && isTyping && ae.id==='raw-json'){
+      if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='s'){ e.preventDefault(); applyRaw(); return; }
+      if(e.key==='Escape'){ e.preventDefault(); render(); return; }
+      // otherwise let typing happen
+      return;
+    }
+    // dev edit inputs: allow typing, but Enter saves
+    if(isTyping && ae.tagName==='INPUT' && ae.dataset.pid){
+      if(e.key==='Enter'){ e.preventDefault(); savePlayerPos(ae.dataset.pid); return; }
+      if(e.key==='Escape'){ ae.blur(); return; }
+      return; // let typing
+    }
+    if(isTyping && ae.tagName==='INPUT' && ae.id==='new-save-name'){
+      if(e.key==='Enter'){ e.preventDefault(); createSave(); return; }
+      return;
+    }
+    if(isTyping && ae.tagName==='TEXTAREA' && ae.dataset.invPid){
+      return; // free typing
+    }
+    if(isTyping && e.key!=='Escape' && e.key!=='Tab' && !e.key.startsWith('Arrow')) return;
+
+    const navItems=[...document.querySelectorAll('.nav-item')];
+    const contentFocusables=[...document.querySelectorAll('#content button, #content input, #content textarea, #content select, #content [tabindex="0"]')];
+
+    // Global shortcuts
+    if(e.key.toLowerCase()==='m' && !isTyping){
+      // quick dev toggle
+      e.preventDefault(); toggleDevMode(); return;
+    }
+    if(e.key==='Escape' || e.key==='Backspace'){
+      if(focusMode==='content'){
+        e.preventDefault(); focusMode='sidebar'; kbContentIndex=-1;
+        contentFocusables.forEach(el=>el.classList.remove('kb-focus'));
+        navItems[kbNavIndex]?.focus();
+        navItems.forEach((el,i)=>el.classList.toggle('kb-focus', i===kbNavIndex));
+        return;
+      }
+      // otherwise do nothing (quit handled via button)
+    }
+
+    if(focusMode==='sidebar'){
+      if(e.key==='ArrowUp'){
+        e.preventDefault(); kbNavIndex=Math.max(0,kbNavIndex-1); updateSidebarFocus();
+      } else if(e.key==='ArrowDown'){
+        e.preventDefault(); kbNavIndex=Math.min(navItems.length-1,kbNavIndex+1); updateSidebarFocus();
+      } else if(e.key==='ArrowRight' || e.key==='Tab'){
+        // move into content if there are focusables
+        if(contentFocusables.length){
+          e.preventDefault(); focusMode='content'; kbContentIndex=0;
+          contentFocusables[0].focus(); contentFocusables[0].classList.add('kb-focus');
+        }
+      } else if(e.key==='Enter' || e.key===' '){
+        e.preventDefault(); const v=navItems[kbNavIndex]?.dataset.view; if(v) navigateView(v);
+      }
+    } else if(focusMode==='content'){
+      if(e.key==='ArrowUp' || e.key==='ArrowLeft'){
+        e.preventDefault();
+        if(kbContentIndex>0){ contentFocusables[kbContentIndex]?.classList.remove('kb-focus'); kbContentIndex--; contentFocusables[kbContentIndex].focus(); contentFocusables[kbContentIndex].classList.add('kb-focus'); }
+        else { // wrap to sidebar
+          contentFocusables[kbContentIndex]?.classList.remove('kb-focus');
+          focusMode='sidebar'; kbContentIndex=-1; updateSidebarFocus();
+        }
+      } else if(e.key==='ArrowDown' || e.key==='ArrowRight'){
+        e.preventDefault();
+        if(kbContentIndex < contentFocusables.length-1){ contentFocusables[kbContentIndex]?.classList.remove('kb-focus'); kbContentIndex++; contentFocusables[kbContentIndex].focus(); contentFocusables[kbContentIndex].classList.add('kb-focus'); }
+      } else if(e.key==='Tab'){
+        e.preventDefault();
+        // tab cycles within content
+        contentFocusables[kbContentIndex]?.classList.remove('kb-focus');
+        kbContentIndex=(kbContentIndex+1)%contentFocusables.length;
+        contentFocusables[kbContentIndex].focus(); contentFocusables[kbContentIndex].classList.add('kb-focus');
+      } else if(e.key==='ArrowUp' && e.shiftKey){
+        focusMode='sidebar'; updateSidebarFocus();
+      }
+    }
+  });
+
+  function updateSidebarFocus(){
+    const items=[...document.querySelectorAll('.nav-item')];
+    items.forEach((el,i)=>{
+      el.classList.toggle('kb-focus', i===kbNavIndex);
+      if(i===kbNavIndex) el.focus();
+    });
+    // also reflect active view? kb-focused item gets outline, active gets tint — both can coexist
+  }
+  // initial
+  const items=[...document.querySelectorAll('.nav-item')];
+  items[0]?.classList.add('kb-focus');
+}
+
+// ---- Gamepad (D-Pad -> Arrows, A -> Enter, B -> Backspace) ----
+let gpRaf=null, lastGP={up:false,down:false,left:false,right:false,a:false,b:false}, repeat={up:0,down:0,left:0,right:0};
+function simKey(k){ window.dispatchEvent(new KeyboardEvent('keydown',{key:k,bubbles:true,cancelable:true})); }
+function pollGP(){
+  const pads=navigator.getGamepads? navigator.getGamepads():[];
+  let gp=null; for(let i=0;i<pads.length;i++) if(pads[i]){gp=pads[i]; break;}
+  if(gp){
+    const dead=0.5, ax0=gp.axes[0]||0, ax1=gp.axes[1]||0;
+    const btn=i=>!!(gp.buttons[i]&&gp.buttons[i].pressed);
+    const up=btn(12)||ax1<-dead, down=btn(13)||ax1>dead, left=btn(14)||ax0<-dead, right=btn(15)||ax0>dead, a=btn(0), b=btn(1);
+    const now=performance.now();
+    const h=(pressed,was,name,key)=>{ if(pressed){ if(!was){simKey(key); repeat[name]=now+300;} else if(now>=repeat[name]){simKey(key); repeat[name]=now+130;}}};
+    h(up,lastGP.up,'up','ArrowUp'); h(down,lastGP.down,'down','ArrowDown'); h(left,lastGP.left,'left','ArrowLeft'); h(right,lastGP.right,'right','ArrowRight');
+    if(a&&!lastGP.a) simKey('Enter');
+    if(b&&!lastGP.b) simKey('Backspace');
+    if(gp) document.getElementById('gamepad-status').textContent=`Controller: ${gp.id.slice(0,32)}`;
+    lastGP={up,down,left,right,a,b};
+  } else {
+    lastGP={up:false,down:false,left:false,right:false,a:false,b:false};
+    document.getElementById('gamepad-status').textContent='No controller — keyboard ready';
+  }
+  gpRaf=requestAnimationFrame(pollGP);
+}
+function startGamepad(){
+  if(gpRaf!==null) return;
+  gpRaf=requestAnimationFrame(pollGP);
+  window.addEventListener('gamepadconnected',e=>{ console.log('pad',e.gamepad.id); startGamepad(); });
+}
+</script>
+</body>
+</html>
