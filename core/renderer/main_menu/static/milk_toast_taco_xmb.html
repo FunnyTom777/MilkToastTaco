@@ -19,6 +19,11 @@
             --item-height: 50px;
             --transition-speed: 0.25s;
             --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+            /* Themeable vars */
+            --bg-main: #050914;
+            --bg-to: #0a1128;
+            --wave1: rgba(30, 80, 150, 0.15);
+            --wave2: rgba(80, 30, 150, 0.1);
         }
 
         body {
@@ -26,7 +31,7 @@
             padding: 0;
             overflow: hidden;
             font-family: 'Inter', sans-serif;
-            background-color: #050914;
+            background-color: var(--bg-main);
             color: white;
             user-select: none;
         }
@@ -39,7 +44,8 @@
             height: 100vh;
             z-index: -1;
             overflow: hidden;
-            background: linear-gradient(135deg, #050914 0%, #0a1128 100%);
+            background: linear-gradient(135deg, var(--bg-main) 0%, var(--bg-to) 100%);
+            transition: background 0.6s var(--ease);
         }
 
         .wave {
@@ -48,13 +54,14 @@
             height: 200%;
             top: -50%;
             left: -50%;
-            background: radial-gradient(ellipse at center, rgba(30, 80, 150, 0.15) 0%, transparent 60%);
+            background: radial-gradient(ellipse at center, var(--wave1) 0%, transparent 60%);
             animation: rotateWave 30s linear infinite;
             transform-origin: center center;
+            transition: background 0.6s var(--ease);
         }
 
         .wave:nth-child(2) {
-            background: radial-gradient(ellipse at center, rgba(80, 30, 150, 0.1) 0%, transparent 50%);
+            background: radial-gradient(ellipse at center, var(--wave2) 0%, transparent 50%);
             animation: rotateWave 45s linear infinite reverse;
         }
 
@@ -73,8 +80,8 @@
         /* The main horizontal track */
         #xmb-row {
             position: absolute;
-            top: 40vh; /* Intersection Y */
-            left: 30vw; /* Intersection X */
+            top: 40vh;
+            left: 30vw;
             display: flex;
             transition: transform var(--transition-speed) var(--ease);
             will-change: transform;
@@ -131,10 +138,10 @@
 
         .items-column-wrapper {
             position: absolute;
-            top: 80px; /* Below the icon */
+            top: 80px;
             left: 0;
             width: 100%;
-            height: 60vh; /* Give it space to move */
+            height: 60vh;
             overflow: visible;
             opacity: 0;
             visibility: hidden;
@@ -163,7 +170,7 @@
             font-weight: 300;
             color: var(--xmb-dim);
             transition: all var(--transition-speed) var(--ease);
-            padding-left: 65px; /* Align with text, pass icon */
+            padding-left: 65px;
             white-space: nowrap;
         }
 
@@ -210,7 +217,6 @@
             line-height: 1.5;
         }
 
-        /* Clock */
         #clock {
             position: absolute;
             top: 5vh;
@@ -229,6 +235,222 @@
             font-weight: 300;
             letter-spacing: 1px;
         }
+
+        /* --- Popup / Overlay System --- */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            opacity: 1;
+            transition: opacity 0.3s var(--ease), visibility 0.3s var(--ease);
+        }
+        .overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .modal {
+            background: linear-gradient(135deg, rgba(20,20,35,0.95) 0%, rgba(10,10,25,0.98) 100%);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 16px;
+            padding: 32px 36px;
+            max-width: 480px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 30px rgba(255,255,255,0.05);
+            transform: scale(1);
+            transition: transform 0.3s var(--ease);
+            text-align: center;
+        }
+        .overlay.hidden .modal {
+            transform: scale(0.92);
+        }
+        .modal-icon {
+            font-size: 2.8rem;
+            margin-bottom: 16px;
+            color: #fbbf24;
+            text-shadow: 0 0 20px rgba(251,191,36,0.4);
+        }
+        .modal h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #fff;
+        }
+        .modal p {
+            font-size: 0.95rem;
+            color: #ccc;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+        .modal p strong {
+            color: #fff;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+            border: none;
+            color: white;
+            padding: 10px 28px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s var(--ease);
+            box-shadow: 0 4px 15px rgba(59,130,246,0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(59,130,246,0.4);
+        }
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        .btn-secondary {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #ccc;
+            padding: 10px 28px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s var(--ease);
+            margin-left: 10px;
+        }
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.12);
+            color: #fff;
+        }
+
+        /* Settings overlay specifics */
+        .settings-modal {
+            max-width: 560px;
+            text-align: left;
+        }
+        .settings-modal h2 {
+            text-align: center;
+        }
+        .settings-modal .modal-icon {
+            text-align: center;
+            display: block;
+        }
+        .setting-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .setting-row:last-of-type {
+            border-bottom: none;
+        }
+        .setting-label {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .setting-label span:first-child {
+            font-size: 1.05rem;
+            font-weight: 500;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .setting-label span:last-child {
+            font-size: 0.85rem;
+            color: #999;
+            font-weight: 300;
+        }
+        /* Toggle switch */
+        .toggle {
+            position: relative;
+            width: 54px;
+            height: 30px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 999px;
+            cursor: pointer;
+            transition: background 0.3s var(--ease);
+            border: 1px solid rgba(255,255,255,0.1);
+            flex-shrink: 0;
+        }
+        .toggle.on {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            border-color: rgba(99,102,241,0.5);
+            box-shadow: 0 0 12px rgba(99,102,241,0.4);
+        }
+        .toggle-knob {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+        .toggle.on .toggle-knob {
+            transform: translateX(24px);
+        }
+        /* Theme grid */
+        .theme-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .theme-option {
+            background: rgba(255,255,255,0.06);
+            border: 2px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 14px 10px;
+            cursor: pointer;
+            transition: all 0.2s var(--ease);
+            text-align: center;
+        }
+        .theme-option:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.15);
+            transform: translateY(-1px);
+        }
+        .theme-option.active {
+            background: linear-gradient(135deg, rgba(59,130,246,0.2) 0%, rgba(139,92,246,0.2) 100%);
+            border-color: #6366f1;
+            box-shadow: 0 0 15px rgba(99,102,241,0.25);
+        }
+        .theme-swatch {
+            width: 100%;
+            height: 36px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .theme-name {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #fff;
+        }
+        .theme-option.active .theme-name {
+            color: #a5b4fc;
+        }
+        .theme-desc {
+            font-size: 0.7rem;
+            color: #888;
+            margin-top: 2px;
+        }
+        .settings-actions {
+            display: flex;
+            justify-content: center;
+            margin-top: 24px;
+            gap: 10px;
+        }
+        @media (max-width: 600px) {
+            .theme-grid { grid-template-columns: repeat(2, 1fr); }
+        }
     </style>
 </head>
 <body>
@@ -241,7 +463,7 @@
 
     <!-- UI Overlays -->
     <div id="clock">00:00 AM</div>
-    <div class="controls-hint">USE ARROW KEYS TO NAVIGATE • ENTER TO SELECT</div>
+    <div class="controls-hint">USE ARROW KEYS TO NAVIGATE • ENTER TO SELECT • ESC TO CLOSE POPUPS</div>
 
     <div id="info-panel">
         <div id="info-title">Title</div>
@@ -250,13 +472,175 @@
 
     <!-- Main XMB Viewport -->
     <div id="xmb-viewport">
-        <!-- The row that translates horizontally -->
-        <div id="xmb-row">
-            <!-- Categories injected here -->
+        <div id="xmb-row"></div>
+    </div>
+
+    <!-- Not-Implemented Popup -->
+    <div id="popup-overlay" class="overlay hidden" onclick="if(event.target===this) hidePopup()">
+        <div class="modal">
+            <div class="modal-icon"><i class="fas fa-tools"></i></div>
+            <h2>Not Implemented Yet</h2>
+            <p>This feature is not implemented yet.<br><strong>Try using the Dashboard</strong> for now — it's where all the real magic happens. <i class="fas fa-wand-magic-sparkles" style="color:#a78bfa"></i></p>
+            <button class="btn-primary" onclick="hidePopup()"><i class="fas fa-check" style="margin-right:6px"></i> Got it</button>
+        </div>
+    </div>
+
+    <!-- XMB Settings Overlay -->
+    <div id="settings-overlay" class="overlay hidden" onclick="if(event.target===this) hideSettings()">
+        <div class="modal settings-modal">
+            <div class="modal-icon"><i class="fas fa-sliders" style="color:#a78bfa"></i></div>
+            <h2>XMB Options</h2>
+            <p style="text-align:center; margin-bottom:18px; color:#aaa; font-size:0.9rem;">Personalize your XMB experience. Settings save to <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px; font-size:0.8rem;">xmbsettings.xml</code></p>
+            
+            <div class="setting-row">
+                <div class="setting-label">
+                    <span><i class="fas fa-expand"></i> Open in Fullscreen</span>
+                    <span>Launch the XMB directly in fullscreen mode</span>
+                </div>
+                <div id="fullscreen-toggle" class="toggle" onclick="toggleFullscreenSetting()" role="switch" aria-checked="false" tabindex="0">
+                    <div class="toggle-knob"></div>
+                </div>
+            </div>
+
+            <div style="margin-top: 8px;">
+                <div class="setting-label" style="margin-bottom:4px;">
+                    <span><i class="fas fa-palette"></i> Theme</span>
+                    <span>Choose your XMB color vibe</span>
+                </div>
+                <div id="theme-grid" class="theme-grid">
+                    <!-- injected by JS -->
+                </div>
+            </div>
+
+            <div class="settings-actions">
+                <button class="btn-primary" onclick="hideSettings()"><i class="fas fa-check" style="margin-right:6px"></i> Done</button>
+            </div>
         </div>
     </div>
 
     <script>
+        // --- Theme definitions (mirrors python xmb_settings.THEMES) ---
+        const THEMES = {
+            default:       { name: "Default",       desc: "Deep-space blue", bg: "#050914", to: "#0a1128", wave1: "rgba(30, 80, 150, 0.15)", wave2: "rgba(80, 30, 150, 0.1)" },
+            dark_purple:   { name: "Dark Purple",   desc: "Royal void",      bg: "#0d0514", to: "#1a0a2e", wave1: "rgba(120, 40, 180, 0.18)", wave2: "rgba(60, 20, 120, 0.12)" },
+            crimson_red:   { name: "Crimson Red",   desc: "Ember core",      bg: "#140505", to: "#2e0a0a", wave1: "rgba(180, 30, 30, 0.16)", wave2: "rgba(120, 20, 60, 0.12)" },
+            midnight_green:{ name: "Midnight Green",desc: "Forest night",    bg: "#05140a", to: "#0a2814", wave1: "rgba(30, 150, 80, 0.14)", wave2: "rgba(20, 100, 60, 0.11)" },
+            ocean_blue:    { name: "Ocean Blue",    desc: "Abyssal teal",    bg: "#05141a", to: "#0a2830", wave1: "rgba(20, 140, 160, 0.16)", wave2: "rgba(30, 80, 150, 0.11)" },
+            sunset_orange: { name: "Sunset Orange", desc: "Dusk ember",      bg: "#140a05", to: "#2e1a0a", wave1: "rgba(200, 90, 20, 0.15)", wave2: "rgba(160, 40, 80, 0.11)" },
+        };
+        let currentTheme = "default";
+        let fullscreenEnabled = false;
+
+        function applyTheme(themeId) {
+            const t = THEMES[themeId] || THEMES.default;
+            currentTheme = themeId;
+            const r = document.documentElement;
+            r.style.setProperty('--bg-main', t.bg);
+            r.style.setProperty('--bg-to', t.to);
+            r.style.setProperty('--wave1', t.wave1);
+            r.style.setProperty('--wave2', t.wave2);
+            // also persist bg color on body
+            document.body.style.backgroundColor = t.bg;
+            // update active state in grid
+            document.querySelectorAll('.theme-option').forEach(el => {
+                el.classList.toggle('active', el.dataset.theme === themeId);
+            });
+        }
+
+        function buildThemeGrid() {
+            const grid = document.getElementById('theme-grid');
+            grid.innerHTML = '';
+            Object.entries(THEMES).forEach(([id, t]) => {
+                const opt = document.createElement('div');
+                opt.className = 'theme-option' + (id === currentTheme ? ' active' : '');
+                opt.dataset.theme = id;
+                opt.innerHTML = `
+                    <div class="theme-swatch" style="background: linear-gradient(135deg, ${t.bg} 0%, ${t.to} 100%);"></div>
+                    <div class="theme-name">${t.name}</div>
+                    <div class="theme-desc">${t.desc}</div>
+                `;
+                opt.onclick = () => selectTheme(id);
+                grid.appendChild(opt);
+            });
+        }
+
+        async function selectTheme(themeId) {
+            applyTheme(themeId);
+            playTick('select');
+            // persist via python
+            try {
+                if (window.pywebview && window.pywebview.api && window.pywebview.api.set_theme) {
+                    await window.pywebview.api.set_theme(themeId);
+                } else {
+                    // fallback: localStorage for browser-only preview
+                    localStorage.setItem('xmb_theme', themeId);
+                }
+            } catch(e) { console.error('set_theme failed', e); }
+        }
+
+        function updateFullscreenToggleUI() {
+            const tog = document.getElementById('fullscreen-toggle');
+            if (!tog) return;
+            tog.classList.toggle('on', fullscreenEnabled);
+            tog.setAttribute('aria-checked', String(fullscreenEnabled));
+        }
+
+        async function toggleFullscreenSetting() {
+            fullscreenEnabled = !fullscreenEnabled;
+            updateFullscreenToggleUI();
+            playTick('select');
+            try {
+                if (window.pywebview && window.pywebview.api && window.pywebview.api.set_fullscreen) {
+                    await window.pywebview.api.set_fullscreen(fullscreenEnabled);
+                } else {
+                    localStorage.setItem('xmb_fullscreen', String(fullscreenEnabled));
+                }
+            } catch(e) { console.error('set_fullscreen failed', e); }
+        }
+
+        async function loadXmbSettings() {
+            try {
+                if (window.pywebview && window.pywebview.api && window.pywebview.api.get_xmb_settings) {
+                    const res = await window.pywebview.api.get_xmb_settings();
+                    if (res && res.settings) {
+                        fullscreenEnabled = !!res.settings.fullscreen;
+                        currentTheme = res.settings.theme || 'default';
+                    }
+                } else {
+                    // browser fallback
+                    const fs = localStorage.getItem('xmb_fullscreen');
+                    if (fs !== null) fullscreenEnabled = fs === 'true';
+                    const th = localStorage.getItem('xmb_theme');
+                    if (th && THEMES[th]) currentTheme = th;
+                }
+            } catch(e) { console.error('load settings failed', e); }
+            applyTheme(currentTheme);
+            updateFullscreenToggleUI();
+            buildThemeGrid();
+        }
+
+        // --- Popup helpers ---
+        function showPopup(msg) {
+            const overlay = document.getElementById('popup-overlay');
+            const p = overlay.querySelector('p');
+            if (msg) p.innerHTML = msg;
+            else p.innerHTML = 'This feature is not implemented yet.<br><strong>Try using the Dashboard</strong> for now — it\'s where all the real magic happens. <i class="fas fa-wand-magic-sparkles" style="color:#a78bfa"></i>';
+            overlay.classList.remove('hidden');
+            playTick('select');
+        }
+        function hidePopup() {
+            document.getElementById('popup-overlay').classList.add('hidden');
+            playTick('move');
+        }
+        function showSettings() {
+            document.getElementById('settings-overlay').classList.remove('hidden');
+            playTick('select');
+        }
+        function hideSettings() {
+            document.getElementById('settings-overlay').classList.add('hidden');
+            playTick('move');
+        }
+
         // Menu data - will be populated dynamically from Python API
         let xmbData = [];
         
@@ -286,10 +670,20 @@
                 ]
             },
             {
+                id: "xmb_options",
+                title: "XMB Options",
+                icon: "fa-sliders",
+                items: [
+                    { name: "Display Settings", desc: "Configure fullscreen and display preferences for the XMB." },
+                    { name: "Theme Settings", desc: "Change the XMB visual theme — colors, waves, and accents." }
+                ]
+            },
+            {
                 id: "misc",
                 title: "Misc",
                 icon: "fa-ellipsis-h",
                 items: [
+                    { name: "Launch MTT Dashboard", desc: "Open the Milk Toast Taco developer dashboard (terminal/web)." },
                     { name: "Quit", desc: "Save progress and return to desktop." }
                 ]
             }
@@ -298,7 +692,6 @@
         // Initialize menu structure from Python API or use fallback
         async function initializeMenuStructure() {
             try {
-                // Check if pywebview is available
                 if (typeof window.pywebview !== 'undefined' && window.pywebview.api) {
                     const menuStructure = await window.pywebview.api.get_menu_structure();
                     xmbData = menuStructure;
@@ -313,15 +706,13 @@
                 console.log('Using fallback menu structure due to error');
             }
             
-            // Initialize activeItemIndices based on loaded data
             activeItemIndices = new Array(xmbData.length).fill(0);
-            
-            // Build the DOM after menu is loaded
             buildDOM();
             setupNavigation();
+            // load settings after DOM
+            await loadXmbSettings();
         }
 
-        // Simple synth for XMB navigation 'tick' sound
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
         function playTick(type = 'move') {
@@ -352,34 +743,70 @@
         const catWidth = 240;
         const itemHeight = 50;
 
-        // Handle menu selection and call Python API methods
+        function isOverlayOpen() {
+            return !document.getElementById('popup-overlay').classList.contains('hidden') ||
+                   !document.getElementById('settings-overlay').classList.contains('hidden');
+        }
+
         async function handleMenuSelection() {
             const catId = xmbData[activeCatIndex].id;
             const itemIndex = activeItemIndices[activeCatIndex];
             const selectedItem = xmbData[activeCatIndex].items[itemIndex];
-            
-            // Check if we're in pywebview context
+
+            // --- local UI actions that don't need pywebview ---
+            const notImplementedMsg = 'This feature is not implemented yet.<br><strong>Try using the Dashboard</strong> for now! <i class="fas fa-rocket" style="color:#60a5fa"></i>';
+
+            if (catId === 'game_modes' && (selectedItem.name === 'Play Career Mode' || selectedItem.name === 'Play Sandbox Mode' || selectedItem.name === 'View Military Campaigns')) {
+                showPopup(notImplementedMsg);
+                // still call python for state but not needed
+                if (window.pywebview && window.pywebview.api) {
+                    try {
+                        if (selectedItem.name === 'Play Career Mode') await window.pywebview.api.play_career_mode();
+                        else if (selectedItem.name === 'Play Sandbox Mode') await window.pywebview.api.play_sandbox_mode();
+                        else await window.pywebview.api.view_military_campaigns();
+                    } catch(e) { console.error(e); }
+                }
+                return;
+            }
+            if (catId === 'xmb_options') {
+                showSettings();
+                return;
+            }
+            if (catId === 'misc' && selectedItem.name === 'Launch MTT Dashboard') {
+                showPopup('The <strong>MTT Dashboard</strong> is coming soon!<br>This feature is not implemented yet. Try using the Dashboard via terminal for now. <i class="fas fa-terminal" style="color:#34d399"></i>');
+                if (window.pywebview && window.pywebview.api && window.pywebview.api.launch_dashboard) {
+                    try { await window.pywebview.api.launch_dashboard(); } catch(e){}
+                }
+                return;
+            }
+            if (catId === 'misc' && selectedItem.name === 'Quit') {
+                if (typeof window.pywebview !== 'undefined' && window.pywebview.api && window.pywebview.api.quit_game) {
+                    try { await window.pywebview.api.quit_game(); } catch(e){ console.error(e); }
+                    // fallback: try close window
+                    setTimeout(()=>window.close(), 300);
+                } else {
+                    console.log('Quit (no pywebview) - would close window');
+                    showPopup('Quit would close the program when running as desktop app.<br><em style="color:#888">Not available in browser preview.</em>');
+                }
+                return;
+            }
+
+            // For other items, try python API
             if (typeof window.pywebview === 'undefined' || !window.pywebview.api) {
                 console.log(`Selected: ${catId} > ${selectedItem.name} (pywebview not available)`);
+                // show generic not-implemented for options that aren't xmb_options
+                if (catId === 'options') showPopup(notImplementedMsg);
                 return;
             }
             
             try {
-                // Route to appropriate Python API method
-                if (catId === 'game_modes' && selectedItem.name === 'Play Career Mode') {
-                    await window.pywebview.api.play_career_mode();
-                } else if (catId === 'game_modes' && selectedItem.name === 'Play Sandbox Mode') {
-                    await window.pywebview.api.play_sandbox_mode();
-                } else if (catId === 'game_modes' && selectedItem.name === 'View Military Campaigns') {
-                    await window.pywebview.api.view_military_campaigns();
-                } else if (catId === 'options' && selectedItem.name === 'Mod Browser') {
+                if (catId === 'options' && selectedItem.name === 'Mod Browser') {
                     await window.pywebview.api.open_mod_browser();
+                    showPopup(notImplementedMsg);
                 } else if (catId === 'options' && selectedItem.name === 'Game Options') {
                     await window.pywebview.api.open_game_options();
-                } else if (catId === 'misc' && selectedItem.name === 'Quit') {
-                    await window.pywebview.api.quit_game();
+                    showPopup(notImplementedMsg);
                 } else {
-                    // Get game status for other selections
                     const status = await window.pywebview.api.get_game_status();
                     console.log('Game Status:', status);
                 }
@@ -389,6 +816,7 @@
         }
 
         function buildDOM() {
+            rowEl.innerHTML = '';
             xmbData.forEach((cat, cIdx) => {
                 const catGroup = document.createElement('div');
                 catGroup.className = `category-group ${cIdx === 0 ? 'active' : ''}`;
@@ -424,21 +852,14 @@
         }
 
         function updateUI() {
-            // 1. Move Horizontal Row
-            // 30vw is handled by CSS left property. We just translate by negative catWidths.
             const rowOffset = -(activeCatIndex * catWidth);
             rowEl.style.transform = `translateX(${rowOffset}px)`;
 
-            // 2. Update Category Classes
             document.querySelectorAll('.category-group').forEach((el, idx) => {
-                if (idx === activeCatIndex) {
-                    el.classList.add('active');
-                } else {
-                    el.classList.remove('active');
-                }
+                if (idx === activeCatIndex) el.classList.add('active');
+                else el.classList.remove('active');
             });
 
-            // 3. Move Active Vertical Column
             const activeCol = document.getElementById(`col-${activeCatIndex}`);
             if (activeCol) {
                 const currentItemIndex = activeItemIndices[activeCatIndex];
@@ -446,16 +867,11 @@
                 activeCol.style.transform = `translateY(${colOffset}px)`;
             }
 
-            // 4. Update Item Classes in Active Column
             document.querySelectorAll(`#col-${activeCatIndex} .item`).forEach((el, idx) => {
-                if (idx === activeItemIndices[activeCatIndex]) {
-                    el.classList.add('active');
-                } else {
-                    el.classList.remove('active');
-                }
+                if (idx === activeItemIndices[activeCatIndex]) el.classList.add('active');
+                else el.classList.remove('active');
             });
 
-            // 5. Update Info Panel
             updateInfoPanel();
         }
 
@@ -467,20 +883,29 @@
             const currentItemIndex = activeItemIndices[activeCatIndex];
             const activeData = xmbData[activeCatIndex].items[currentItemIndex];
 
-            // Brief fade out/in effect
             panel.classList.remove('visible');
             
             setTimeout(() => {
                 titleEl.innerText = activeData.name;
                 descEl.innerText = activeData.desc;
                 panel.classList.add('visible');
-            }, 150); // wait slightly to change text
+            }, 150);
         }
 
         
         function setupNavigation() {
             window.addEventListener('keydown', (e) => {
-                if (isMoving) return; // Prevent rapid firing causing glitches
+                // If overlay open, handle overlay keys first
+                if (isOverlayOpen()) {
+                    if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        if (!document.getElementById('popup-overlay').classList.contains('hidden')) hidePopup();
+                        else hideSettings();
+                    }
+                    return;
+                }
+
+                if (isMoving) return;
                 
                 let moved = false;
 
@@ -512,7 +937,6 @@
                         break;
                     case 'Enter':
                         playTick('select');
-                        // Add a visual flash to the active item
                         const activeItemEl = document.getElementById(`item-${activeCatIndex}-${activeItemIndices[activeCatIndex]}`);
                         if(activeItemEl) {
                             activeItemEl.style.transform = 'translateX(20px) scale(1.1)';
@@ -522,17 +946,16 @@
                                 activeItemEl.style.color = '';
                             }, 200);
                         }
-                         
-                        // Call corresponding Python API method
                         handleMenuSelection();
+                        break;
+                    case 'Escape':
+                        // no op when no overlay
                         break;
                 }
 
                 if (moved) {
                     playTick('move');
                     updateUI();
-                    
-                    // Debounce movement slightly to match CSS transitions
                     isMoving = true;
                     setTimeout(() => { isMoving = false; }, 100); 
                 }
@@ -552,13 +975,20 @@
             document.getElementById('clock').innerText = `${hours}:${minutes} ${ampm}`;
         }
 
-        // Initialize when page loads
+        // Keyboard accessibility for toggle
+        document.addEventListener('keydown', (e) => {
+            const tog = document.getElementById('fullscreen-toggle');
+            if (document.activeElement === tog && (e.key === 'Enter' || e.key === ' ')) {
+                e.preventDefault();
+                toggleFullscreenSetting();
+            }
+        });
+
         window.addEventListener('DOMContentLoaded', () => {
             initializeMenuStructure();
             updateClock();
-            setInterval(updateClock, 10000); // Update clock every 10s
+            setInterval(updateClock, 10000);
 
-            // Fix audio context requiring interaction
             document.body.addEventListener('click', () => {
                 if (audioCtx.state === 'suspended') audioCtx.resume();
             }, { once: true });

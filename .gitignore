@@ -228,6 +228,8 @@ logs/*.log
 # Save files are local player state (XML under saves/), not source — see core/systems/save/manager.py
 saves/*
 !saves/.gitkeep
+# XMB settings (local UI prefs - fullscreen, theme) - separate from game saves
+xmbsettings.xml
 
 # Local dev / test scratch
 .scratch/

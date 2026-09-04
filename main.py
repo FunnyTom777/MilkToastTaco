@@ -52,6 +52,14 @@ def run():
         
         # Create the API instance
         api = XMBDashboardAPI()
+
+        # Load XMB settings for fullscreen preference
+        try:
+            from core.renderer.main_menu.xmb_settings import load_settings
+            _xmb_settings = load_settings()
+            _fullscreen = bool(_xmb_settings.get("fullscreen", False))
+        except Exception:
+            _fullscreen = False
         
         # Create and show the pywebview window
         webview.create_window(
@@ -59,6 +67,7 @@ def run():
             url=f"file://{html_path}",
             js_api=api,
             min_size=(1200, 800),
+            fullscreen=_fullscreen,
         )
         
         # Start the webview event loop

@@ -161,17 +161,50 @@ class XMBDashboardAPI:
             "message": "Game Options opened",
         }
 
+    # --- XMB Options ----------------------------------------------------
+
+    @menu_option("xmb_options", "XMB Options", "fa-sliders", "Display Settings",
+                 "Configure fullscreen and display preferences for the XMB.")
+    def open_xmb_display_settings(self):
+        """Open XMB display settings (fullscreen etc)."""
+        return {"status": "success", "message": "XMB display settings opened"}
+
+    @menu_option("xmb_options", "XMB Options", "fa-sliders", "Theme Settings",
+                 "Change the XMB visual theme — colors, waves, and accents.")
+    def open_xmb_theme_settings(self):
+        """Open XMB theme settings."""
+        return {"status": "success", "message": "XMB theme settings opened"}
+
     # --- Misc -----------------------------------------------------------
+
+    @menu_option("misc", "Misc", "fa-ellipsis-h", "Launch MTT Dashboard",
+                 "Open the Milk Toast Taco developer dashboard (terminal/web).")
+    def launch_dashboard(self):
+        """Launch dashboard placeholder."""
+        return {
+            "status": "info",
+            "message": "Dashboard launch not implemented yet",
+        }
 
     @menu_option("misc", "Misc", "fa-ellipsis-h", "Quit",
                  "Save progress and return to desktop.")
     def quit_game(self):
-        """Quit the game gracefully.
-        
-        Returns:
-            dict: Confirmation message
-        """
+        """Quit the game gracefully - actually closes pywebview window."""
         self.game_state["started"] = False
+        try:
+            import webview
+            # Destroy all windows - closes the app
+            if webview.windows:
+                for w in list(webview.windows):
+                    try:
+                        w.destroy()
+                    except Exception:
+                        pass
+            else:
+                # Fallback: try to destroy via API
+                pass
+        except Exception:
+            pass
         return {
             "status": "success",
             "message": "Game quit",
@@ -187,6 +220,55 @@ class XMBDashboardAPI:
             "status": "success",
             "game_state": self.game_state,
         }
+
+    # --- XMB Settings (fullscreen + theme) --------------------------------
+
+    def get_xmb_settings(self):
+        """Get current XMB settings (fullscreen, theme)."""
+        from core.renderer.main_menu.xmb_settings import load_settings
+        settings = load_settings()
+        return {"status": "success", "settings": settings}
+
+    def set_fullscreen(self, enabled: bool):
+        """Set fullscreen preference and apply to window if possible."""
+        from core.renderer.main_menu.xmb_settings import load_settings, save_settings
+        settings = load_settings()
+        settings["fullscreen"] = bool(enabled)
+        save_settings(settings)
+        # Try to apply live to window
+        try:
+            import webview
+            if webview.windows:
+                w = webview.windows[0]
+                # pywebview: toggle_fullscreen vs fullscreen property
+                if hasattr(w, "toggle_fullscreen"):
+                    # Only toggle if needed
+                    is_fs = getattr(w, "fullscreen", False)
+                    if bool(is_fs) != bool(enabled):
+                        w.toggle_fullscreen()
+                elif hasattr(w, "fullscreen"):
+                    w.fullscreen = bool(enabled)
+                elif hasattr(w, "maximize"):
+                    if enabled:
+                        w.maximize()
+        except Exception:
+            pass
+        return {"status": "success", "settings": settings}
+
+    def set_theme(self, theme: str):
+        """Set XMB theme."""
+        from core.renderer.main_menu.xmb_settings import load_settings, save_settings, VALID_THEMES
+        if theme not in VALID_THEMES:
+            return {"status": "error", "message": f"Unknown theme '{theme}'"}
+        settings = load_settings()
+        settings["theme"] = theme
+        save_settings(settings)
+        return {"status": "success", "settings": settings}
+
+    def get_available_themes(self):
+        """Return available themes."""
+        from core.renderer.main_menu.xmb_settings import THEMES
+        return {"status": "success", "themes": THEMES}
 
     def get_menu_structure(self) -> List[Dict[str, Any]]:
         """Get the dynamically-built menu structure for the XMB interface.
