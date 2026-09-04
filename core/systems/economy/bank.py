@@ -6,7 +6,16 @@ except ImportError:
     from orchestrator import bank_names, inform_player as infp, request_player_input, warning
     import orchestrator
 
+try:
+    from core.command_registry import command as _command
+except ImportError:
+    def _command(*a, **k):
+        def _d(fn):
+            return fn
+        return _d
 
+
+@_command("bank.apply", "Apply for bank membership", category="player")
 def apply_bank_membership(player_id, bank_name):  # Banks should be loaded from a banks.xml!
     # Validate requested bank exists
     if bank_name not in bank_names:
@@ -48,6 +57,7 @@ current_bank_supports_loans = True
 
 
 
+@_command("bank.get_loan", "Request a bank loan (placeholder)", category="player")
 def get_bank_loan():
     if current_bank_supports_loans == True:
         # continue
@@ -59,9 +69,11 @@ def get_bank_loan():
 
 
 
+@_command("bank.list_cards", "List active bank cards", category="player")
 def list_active_cards():
     """
     Lists active bank cards (Credit/Debit) active on the players current bank account.
     Only lists ACTIVE cards. Not frozen/etc cards.
     """
     print("This does nothing yet...")
+    return {"status": "success", "cards": [], "message": "Not implemented yet"}

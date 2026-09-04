@@ -353,27 +353,103 @@ class DashboardAPI:
         """Alias for get_state for backwards compat with early dashboard ideas."""
         return self.get_state()
 
-    # -- live edit helpers (dev mode) --------------------------------------
+    # -- command registry bridge (decoupled) ---------------------------------
+    # Single entry-point so dashboards/game never hardcode system imports.
+    # JS: pywebview.api.call_command("player.move", {player_id: 1, pos: [10,0,5]})
+    def call_command(self, name: str, args=None):
+        """
+        Dispatch any registered command (string id, namespaced like 'player.move').
 
-    def update_player_pos(self, player_id: int, pos):
-        """Dev edit: update a player's position in the in-memory save."""
+        Args:
+            name: Command name e.g. "player.move", "inventory.add", "bank.apply".
+            args: Optional dict of kwargs, or list of positional args.
+                  Simplest is dict: {player_id: 1, pos: [10,0,5]}
+
+        Returns:
+            {"status": "success", "result": ...} or {"status": "error", "message": ...}
+        """
         try:
-            # normalize pos
-            if not (hasattr(pos, "__len__") and len(pos) == 3):
-                return {"status": "error", "message": "pos must be [x,y,z]"}
-            if self._current_data and "systems" in self._current_data:
-                players = self._current_data["systems"].setdefault("players", {})
-                players[str(player_id)] = [float(pos[0]), float(pos[1]), float(pos[2])]
-                return {"status": "success", "players": players}
-            else:
-                # live edit via player_manager
-                from core.systems.player_manager import update_player_pos as _upd
-                _upd(int(player_id), tuple(pos))
-                return {"status": "success", "message": f"player {player_id} moved (live)"}
+            from core.command_registry import execute, ensure_commands_loaded
+
+            ensure_commands_loaded()
+            if args is None:
+                return execute(name)
+            if isinstance(args, dict):
+                return execute(name, **args)
+            if isinstance(args, (list, tuple)):
+                return execute(name, *args)
+            # single value fallback
+            return execute(name, args)
+        except Exception as e:
+            return {"status": "error", "message": str(e), "command": name}
+
+    # Alias matching user's original proposal
+    def call_function(self, function_id, args=None):
+        """Alias for call_command (supports original function_id naming)."""
+        try:
+            from core.command_registry import call_function as _cf, ensure_commands_loaded
+
+            ensure_commands_loaded()
+            if isinstance(function_id, (list, tuple)) and len(function_id) == 1:
+                function_id = function_id[0]
+            if args is None:
+                return _cf(function_id)
+            if isinstance(args, dict):
+                return _cf(function_id, **args)
+            if isinstance(args, (list, tuple)):
+                return _cf(function_id, *args)
+            return _cf(function_id, args)
+        except Exception as e:
+            return {"status": "error", "message": str(e), "command": str(function_id)}
+
+    def list_commands(self, category: str | None = None):
+        """
+        List available commands, optionally filtered by category.
+
+        Args:
+            category: "player" | "dev" | None (all). Player dashboard passes "player".
+
+        Returns:
+            {"status": "success", "commands": [{name, help, category, params}]}
+        """
+        try:
+            from core.command_registry import list_commands as _list, ensure_commands_loaded
+
+            ensure_commands_loaded()
+            cmds = _list(category)
+            return {"status": "success", "commands": cmds, "category": category}
         except Exception as e:
             return {"status": "error", "message": str(e)}
 
+    def get_commands(self, category: str | None = None):
+        """Alias for list_commands."""
+        return self.list_commands(category)
+
+    # -- live edit helpers (dev mode) --------------------------------------
+
+    def update_player_pos(self, player_id: int, pos):
+        """
+        Legacy helper: now delegates to command registry (kept for backwards compat).
+        Prefer: call_command("player.move", {player_id, pos})
+        """
+        # In-memory edit path preserved for save-editing workflow
+        try:
+            if self._current_data and "systems" in self._current_data:
+                if not (hasattr(pos, "__len__") and len(pos) == 3):
+                    return {"status": "error", "message": "pos must be [x,y,z]"}
+                players = self._current_data["systems"].setdefault("players", {})
+                players[str(player_id)] = [float(pos[0]), float(pos[1]), float(pos[2])]
+                return {"status": "success", "players": players}
+        except Exception:
+            pass
+        # Live path via registry
+        return self.call_command("player.move", {"player_id": int(player_id), "pos": pos})
+
     def add_inventory_item(self, player_id: int, item_id: int, quantity: int = 1):
+        """
+        Legacy helper: now delegates to command registry.
+        Prefer: call_command("inventory.add", {player_id, item_id, quantity})
+        """
         try:
             if self._current_data and "systems" in self._current_data:
                 inv = self._current_data["systems"].setdefault("inventory", {})
@@ -381,20 +457,15 @@ class DashboardAPI:
                 if pid not in inv:
                     inv[pid] = {"max_weight": 35.0, "stacks": []}
                 stacks = inv[pid].setdefault("stacks", [])
-                # merge or append
                 for s in stacks:
                     if s.get("item_id") == int(item_id):
                         s["quantity"] = int(s.get("quantity", 0)) + int(quantity)
                         return {"status": "success", "inventory": inv[pid]}
                 stacks.append({"item_id": int(item_id), "quantity": int(quantity), "acquired_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat()})
                 return {"status": "success", "inventory": inv[pid]}
-            else:
-                from core.systems.inventory.manager import ensure_inventory
-                inv_obj = ensure_inventory(int(player_id))
-                ok = inv_obj.add(int(item_id), int(quantity))
-                return {"status": "success" if ok else "error", "message": "added" if ok else "weight limit or unknown item"}
-        except Exception as e:
-            return {"status": "error", "message": str(e)}
+        except Exception:
+            pass
+        return self.call_command("inventory.add", {"player_id": int(player_id), "item_id": int(item_id), "quantity": int(quantity)})
 
     def delete_save(self, save_name: str):
         try:

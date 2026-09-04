@@ -18,6 +18,16 @@ def _sync_player_pos1():
     player_pos1 = _players.get(1, (0, 0, 0))
 
 
+try:
+    from core.command_registry import command as _command
+except ImportError:
+    def _command(*a, **k):
+        def _d(fn):
+            return fn
+        return _d
+
+
+@_command("player.add", "Add a new player at pos [x,y,z]", category="dev")
 def add_player(player_id, pos):
     """Add a new player with position `pos` (sequence of 3 numbers).
 
@@ -42,6 +52,7 @@ def add_player(player_id, pos):
     return True
 
 
+@_command("player.move", "Update an existing player's position [x,y,z]", category="player")
 def update_player_pos(player_id, pos):
     """Update an existing player's position.
 
@@ -58,6 +69,7 @@ def update_player_pos(player_id, pos):
     return True
 
 
+@_command("player.get", "Get a player's position by ID", category="player")
 def get_player_pos(player_id):
     """Return the player's position tuple, or None if not found (and log a warning)."""
     pos = _players.get(player_id)
@@ -66,6 +78,7 @@ def get_player_pos(player_id):
     return pos
 
 
+@_command("player.remove", "Remove a player by ID", category="dev")
 def remove_player(player_id):
     """Remove a player from the manager.
 

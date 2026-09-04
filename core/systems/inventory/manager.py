@@ -13,6 +13,14 @@ from typing import Dict, List, Optional
 
 from core.systems.orchestrator import warning
 
+try:
+    from core.command_registry import command as _command
+except ImportError:
+    def _command(*a, **k):
+        def _d(fn):
+            return fn
+        return _d
+
 DEFAULT_MAX_WEIGHT = 35.0  # KG — e.g. ~70 bread loaves (0.5kg) or 2 jerry cans (15kg)
 
 # Lazy import to avoid circular deps — loader is imported inside functions where needed
@@ -201,6 +209,7 @@ class Inventory:
 _inventories: Dict[int, Inventory] = {}
 
 
+@_command("inventory.ensure", "Get or create inventory for player_id", category="player")
 def ensure_inventory(player_id: int, max_weight: float = DEFAULT_MAX_WEIGHT) -> Inventory:
     """Get or create inventory for player_id."""
     if not isinstance(player_id, int):
@@ -210,6 +219,7 @@ def ensure_inventory(player_id: int, max_weight: float = DEFAULT_MAX_WEIGHT) -> 
     return _inventories[player_id]
 
 
+@_command("inventory.get", "Return player's Inventory or None", category="player")
 def get_inventory(player_id: int) -> Optional[Inventory]:
     """Return Inventory or None if player has no inventory (and warn)."""
     inv = _inventories.get(player_id)
@@ -218,6 +228,7 @@ def get_inventory(player_id: int) -> Optional[Inventory]:
     return inv
 
 
+@_command("inventory.remove", "Remove a player's inventory (dev)", category="dev")
 def remove_inventory(player_id: int) -> bool:
     """Remove a player's inventory. Returns True if existed."""
     if player_id in _inventories:
@@ -226,15 +237,44 @@ def remove_inventory(player_id: int) -> bool:
     return False
 
 
+@_command("inventory.clear_all", "Clear all inventories (dev)", category="dev")
 def clear_all_inventories() -> None:
     _inventories.clear()
 
 
+@_command("inventory.set_max_weight", "Set max weight for a player's inventory", category="player")
 def set_max_weight(player_id: int, new_max: float) -> None:
     inv = ensure_inventory(player_id)
     if new_max <= 0:
         raise ValueError("new_max must be > 0")
     inv.max_weight = float(new_max)
+
+
+@_command("inventory.add", "Add item to player's inventory (weight-checked)", category="player")
+def inventory_add(player_id: int, item_id: int, quantity: int = 1) -> bool:
+    """Add quantity of item_id to player's inventory. Returns True on success."""
+    inv = ensure_inventory(int(player_id))
+    return inv.add(int(item_id), int(quantity))
+
+
+@_command("inventory.remove_item", "Remove item from player's inventory", category="player")
+def inventory_remove_item(player_id: int, item_id: int, quantity: int = 1) -> bool:
+    """Remove quantity of item_id from player's inventory."""
+    inv = ensure_inventory(int(player_id))
+    return inv.remove(int(item_id), int(quantity))
+
+
+@_command("inventory.list", "List player's inventory contents", category="player")
+def inventory_list(player_id: int) -> dict:
+    """Return player's inventory as dict (for dashboards)."""
+    inv = ensure_inventory(int(player_id))
+    return inv.to_dict()
+
+
+@_command("inventory.has", "Check if player has quantity of item_id", category="player")
+def inventory_has(player_id: int, item_id: int, quantity: int = 1) -> bool:
+    inv = ensure_inventory(int(player_id))
+    return inv.has(int(item_id), int(quantity))
 
 
 # ---- save/load provider ----

@@ -191,6 +191,53 @@ class DashboardV2API:
             "xmb_settings": xmb_settings,
         }
 
+    # -- command registry bridge (decoupled, with dev filtering) ---------------
+    # Player dashboard filters to "player"; V2 (debugger) shows all.
+    def call_command(self, name: str, args=None):
+        try:
+            from core.command_registry import execute, ensure_commands_loaded
+
+            ensure_commands_loaded()
+            if args is None:
+                return execute(name)
+            if isinstance(args, dict):
+                return execute(name, **args)
+            if isinstance(args, (list, tuple)):
+                return execute(name, *args)
+            return execute(name, args)
+        except Exception as e:
+            return {"status": "error", "message": str(e), "command": name}
+
+    def call_function(self, function_id, args=None):
+        try:
+            from core.command_registry import call_function as _cf, ensure_commands_loaded
+
+            ensure_commands_loaded()
+            if isinstance(function_id, (list, tuple)) and len(function_id) == 1:
+                function_id = function_id[0]
+            if args is None:
+                return _cf(function_id)
+            if isinstance(args, dict):
+                return _cf(function_id, **args)
+            if isinstance(args, (list, tuple)):
+                return _cf(function_id, *args)
+            return _cf(function_id, args)
+        except Exception as e:
+            return {"status": "error", "message": str(e), "command": str(function_id)}
+
+    def list_commands(self, category: str | None = None):
+        try:
+            from core.command_registry import list_commands as _list, ensure_commands_loaded
+
+            ensure_commands_loaded()
+            cmds = _list(category)
+            return {"status": "success", "commands": cmds, "category": category}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    def get_commands(self, category: str | None = None):
+        return self.list_commands(category)
+
     def get_game_status(self):
         return {"status": "success", "game_state": self.game_state}
 

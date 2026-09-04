@@ -282,15 +282,34 @@
     let savesList = [];
     let currentSave = null;
 
-    const COMMANDS = [
-      { cmd: '/stats', desc: 'Display player current statistics' },
-      { cmd: '/teleport', desc: 'Warp player: /teleport [x] [y] [z]' },
-      { cmd: '/clear', desc: 'Clear console logs' },
-      { cmd: '/help', desc: 'List available debug hooks' },
-      { cmd: '/saves', desc: 'List saves/*.xml' },
-      { cmd: '/load', desc: 'Load save: /load [name]' },
-      { cmd: '/quit', desc: 'Close Dashboard V2' },
+    // --- Command registry (auto-generated) ---
+    // BUILTIN: always available even if pywebview offline
+    const BUILTIN_COMMANDS = [
+      { cmd: '/stats', desc: 'Display live state (HUD)', category: 'builtin' },
+      { cmd: '/saves', desc: 'List saves/*.xml', category: 'builtin' },
+      { cmd: '/load', desc: 'Load save: /load [name]', category: 'builtin' },
+      { cmd: '/clear', desc: 'Clear console logs', category: 'builtin' },
+      { cmd: '/help', desc: 'List available commands (auto-generated)', category: 'builtin' },
+      { cmd: '/quit', desc: 'Close Dashboard V2', category: 'builtin' },
+      // legacy mock kept for fallback
+      { cmd: '/teleport', desc: 'Warp player: /teleport [x] [y] [z] (mock)', category: 'builtin' },
     ];
+    let COMMANDS = [...BUILTIN_COMMANDS]; // merged list used for autocomplete
+    let REGISTRY_META = []; // raw from python: [{name, help, category, params}]
+    // quick lookup: "player.move" -> meta
+    function getRegistryMeta(nameWithoutSlash){
+      const key = (nameWithoutSlash||'').toLowerCase();
+      return REGISTRY_META.find(c=> c.name.toLowerCase()===key) || null;
+    }
+    function formatParamsHint(params){
+      if(!params || !params.length) return '';
+      return params.map(p=>{
+        const req = p.required ? '' : '?';
+        const def = p.has_default ? `=${JSON.stringify(p.default)}` : '';
+        return `${p.name}${req}${def}`;
+      }).join(' ');
+    }
+
     const MOCK_RESPONSES = {
       '/stats': `### Player State
 * **HP:** \`100 / 100\`
@@ -300,12 +319,111 @@
   2. *Iron Skin* (00:45)`,
       '/teleport': `**Sector Shift**
 Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
+      // /help is now auto-generated; kept as fallback
       '/help': `### Available Debug Tools
 * \`/stats\` — Reads live state (via \`get_state\` when pywebview is available).
 * \`/saves\` — Lists \`saves/*.xml\`.
 * \`/load <name>\` — Loads a save and refreshes State Monitor.
 * \`/clear\` — Clears console. \`/quit\` — Closes Dashboard V2.`,
     };
+
+    // Fetch registry from Python and rebuild COMMANDS + autocomplete
+    async function refreshCommands(){
+      // V2 debugger shows ALL (player + dev). Pass null/undefined for all.
+      let res = await apiCall('list_commands');
+      if(!res || !res.commands){
+        // try alias get_commands
+        res = await apiCall('get_commands');
+      }
+      if(!res || !res.commands){
+        // fallback: try with explicit null
+        res = await apiCall('list_commands', null);
+      }
+      if(res && Array.isArray(res.commands)){
+        REGISTRY_META = res.commands;
+        const registryCmds = res.commands.map(c=>({
+          cmd: '/' + c.name,
+          desc: c.help || c.name,
+          category: c.category,
+          params: c.params,
+          _registry: true
+        }));
+        const seen = new Set(BUILTIN_COMMANDS.map(b=> b.cmd.toLowerCase()));
+        const merged = [...BUILTIN_COMMANDS];
+        for(const rc of registryCmds){
+          const key = rc.cmd.toLowerCase();
+          if(!seen.has(key)){
+            merged.push(rc);
+            seen.add(key);
+          } else {
+            // enrich builtin if registry has same name (should not happen)
+          }
+        }
+        // sort: builtin first, then registry alphabetically
+        const builtinSet = new Set(BUILTIN_COMMANDS.map(b=> b.cmd));
+        merged.sort((a,b)=>{
+          const aB = builtinSet.has(a.cmd), bB = builtinSet.has(b.cmd);
+          if(aB!==bB) return aB ? -1 : 1;
+          return a.cmd.localeCompare(b.cmd);
+        });
+        COMMANDS = merged;
+      } else {
+        // offline or error: keep builtin only
+        if(COMMANDS.length===0) COMMANDS = [...BUILTIN_COMMANDS];
+      }
+      return COMMANDS;
+    }
+
+    function buildHelpMarkdown(){
+      // Group by category for nice /help output
+      const groups = {};
+      for(const c of COMMANDS){
+        const cat = c.category || 'other';
+        if(!groups[cat]) groups[cat]=[];
+        groups[cat].push(c);
+      }
+      const order = ['builtin','player','dev','system','debug','other'];
+      let md = `### Available Commands (${COMMANDS.length})\n*Auto-generated from \`core/command_registry.py\` + builtins. Type \`/help [cmd]\` for detail.*\n\n`;
+      for(const cat of order){
+        if(!groups[cat]) continue;
+        md += `**${cat}**\n`;
+        for(const c of groups[cat]){
+          const hint = c.params ? ` \`${formatParamsHint(c.params)}\`` : '';
+          md += `* \`${c.cmd}\`${hint} — ${c.desc}\n`;
+        }
+        md += `\n`;
+      }
+      // leftover categories not in order
+      for(const cat of Object.keys(groups)){
+        if(order.includes(cat)) continue;
+        md += `**${cat}**\n`;
+        for(const c of groups[cat]) md += `* \`${c.cmd}\` — ${c.desc}\n`;
+        md += `\n`;
+      }
+      md += `\n*Tip: autocomplete with \`/\` — use \`Tab\`/`+ "`↑↓`" + `, params shown in suggestions. Args: \`/player.move {\"player_id\":1,\"pos\":[10,0,5]}\` or \`/player.move 1 [10,0,5]\`.*`;
+      return md;
+    }
+    function buildSingleHelpMarkdown(cmdWithSlash){
+      const meta = getRegistryMeta(cmdWithSlash.replace(/^\//,''));
+      const entry = COMMANDS.find(c=> c.cmd.toLowerCase()===cmdWithSlash.toLowerCase());
+      if(!meta && !entry) return `*Unknown command \`${cmdWithSlash}\`. Try \`/help\`.*`;
+      const desc = (meta && meta.help) || (entry && entry.desc) || '';
+      const cat = (meta && meta.category) || (entry && entry.category) || '';
+      let md = `### \`${cmdWithSlash}\` — ${desc}\n`;
+      if(cat) md += `*Category:* \`${cat}\`\n`;
+      if(meta && meta.params && meta.params.length){
+        md += `\n**Params:**\n`;
+        for(const p of meta.params){
+          md += `* \`${p.name}\`${p.required?' **(required)**':' (optional)'}${p.has_default ? ` default=\`${JSON.stringify(p.default)}\``:''}${p.annotation ? ` — \`${p.annotation}\``:''}\n`;
+        }
+        md += `\n**Examples:**\n`;
+        const exJson = {};
+        meta.params.forEach(p=>{ exJson[p.name]= p.annotation==='int' ? 1 : p.name==='pos' ? [10,0,5] : p.annotation==='list' ? [1,2,3] : p.has_default ? p.default : (p.name.includes('id')?1:'value'); });
+        md += `* JSON: \`${cmdWithSlash} ${JSON.stringify(exJson)}\`\n`;
+        md += `* Positional: \`${cmdWithSlash} ${Object.values(exJson).map(v=> JSON.stringify(v)).join(' ')}\`\n`;
+      }
+      return md;
+    }
 
     function applyTheme(id){
       const t = THEMES[id] || THEMES.default;
@@ -420,8 +538,13 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
     function handleInput(e){
       const val = e.target.value;
       if(val.startsWith('/')){
-        const query = val.toLowerCase();
+        const query = val.toLowerCase().split(' ')[0]; // filter on command token only
         const matches = COMMANDS.filter(c=> c.cmd.toLowerCase().startsWith(query));
+        // also fuzzy: include if desc contains query word (when typing /move)
+        if(matches.length<6){
+          const extra = COMMANDS.filter(c=> !matches.includes(c) && (c.desc.toLowerCase().includes(query.slice(1)) || c.cmd.toLowerCase().includes(query.slice(1))));
+          matches.push(...extra.slice(0, 8-matches.length));
+        }
         renderSuggestions(matches);
       } else {
         hideSuggestions();
@@ -433,7 +556,9 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
       matches.forEach((item,index)=>{
         const div=document.createElement('div');
         div.className=`suggestion-item ${index===selectedIndex?'selected':''}`;
-        div.innerHTML=`<span>${item.cmd}</span><span class="suggestion-desc">${item.desc}</span>`;
+        const hint = item.params ? `<span style="opacity:0.55; font-size:0.72rem; margin-left:8px;">${formatParamsHint(item.params)}</span>` : '';
+        const catBadge = item.category && item.category!=='builtin' ? `<span style="font-size:0.62rem; padding:2px 5px; border-radius:999px; background:var(--accent-subtle); border:1px solid var(--accent-border); margin-left:6px;">${item.category}</span>` : '';
+        div.innerHTML=`<span><span style="font-weight:600;">${item.cmd}</span>${hint}${catBadge}</span><span class="suggestion-desc">${item.desc}</span>`;
         div.onclick=()=> selectSuggestion(item.cmd);
         suggestionsBox.appendChild(div);
       });
@@ -456,12 +581,106 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
       }
     }
 
+    // --- arg parsing for registry commands ---
+    function coerceToken(tok){
+      const t = tok.trim();
+      if(t==='' ) return t;
+      // try JSON for numbers, arrays, objects, booleans
+      if(/^[\[\{]/.test(t) || /^(true|false|null)$/i.test(t) || /^-?\d+(\.\d+)?$/.test(t)){
+        try{ return JSON.parse(t); }catch(e){ return t; }
+      }
+      // strip quotes
+      if((t.startsWith('"') && t.endsWith('"')) || (t.startsWith("'") && t.endsWith("'"))){
+        return t.slice(1,-1);
+      }
+      return t;
+    }
+    function splitArgsRespectingBraces(raw){
+      // split on spaces but keep {..} and [..] together
+      const out=[]; let cur=''; let depth=0; let inQ=false; let qChar='';
+      for(let i=0;i<raw.length;i++){
+        const ch=raw[i];
+        if(inQ){
+          cur+=ch;
+          if(ch===qChar) inQ=false;
+          continue;
+        }
+        if(ch==='"' || ch==="'"){ inQ=true; qChar=ch; cur+=ch; continue; }
+        if(ch==='{' || ch==='[') depth++;
+        if(ch==='}' || ch===']') depth=Math.max(0, depth-1);
+        if(ch===' ' && depth===0){ if(cur.trim()){ out.push(cur.trim()); cur=''; } }
+        else cur+=ch;
+      }
+      if(cur.trim()) out.push(cur.trim());
+      return out;
+    }
+    function parseRegistryArgs(nameWithoutSlash, rawRemainder){
+      const meta = getRegistryMeta(nameWithoutSlash);
+      rawRemainder = (rawRemainder||'').trim();
+      if(!rawRemainder) return {};
+      // JSON object -> dict kwargs
+      if(rawRemainder.startsWith('{')){
+        try{
+          const obj = JSON.parse(rawRemainder);
+          if(obj && typeof obj==='object' && !Array.isArray(obj)) return obj;
+        }catch(e){}
+      }
+      // JSON array -> positional list
+      if(rawRemainder.startsWith('[')){
+        try{
+          const arr = JSON.parse(rawRemainder);
+          if(Array.isArray(arr)) return arr;
+        }catch(e){}
+      }
+      // key=value pairs? e.g. player_id=1 pos=[10,0,5]
+      if(rawRemainder.includes('=')){
+        const parts = splitArgsRespectingBraces(rawRemainder);
+        const obj={}; let hasEq=false;
+        for(const p of parts){
+          const eq = p.indexOf('=');
+          if(eq>0){
+            hasEq=true;
+            const k=p.slice(0,eq).trim();
+            const v=coerceToken(p.slice(eq+1).trim());
+            obj[k]=v;
+          }
+        }
+        if(hasEq) return obj;
+      }
+      // positional tokens -> map to params if meta known, else array
+      const toks = splitArgsRespectingBraces(rawRemainder).map(coerceToken);
+      if(meta && meta.params && meta.params.length){
+        // if token count matches or less, build dict in param order
+        if(toks.length<=meta.params.length){
+          const obj={};
+          meta.params.forEach((p,i)=>{
+            if(i < toks.length) obj[p.name]=toks[i];
+          });
+          return obj;
+        }
+      }
+      return toks; // fallback positional array
+    }
+
     async function handleSend(e){
       e.preventDefault();
       const text=cmdInput.value.trim();
       if(!text) return;
       if(text==='/clear'){ chatHistory.innerHTML=''; cmdInput.value=''; hideSuggestions(); return; }
       if(text==='/quit'){ await apiCall('quit_dashboard'); setTimeout(()=>window.close(),250); return; }
+      // /help with optional arg: "/help" or "/help /player.move"
+      if(text.startsWith('/help')){
+        const arg = text.split(/\s+/)[1];
+        appendUserMessage(text);
+        if(arg && arg.startsWith('/')){
+          appendGameResponse(buildSingleHelpMarkdown(arg));
+        } else {
+          // ensure commands are fresh
+          await refreshCommands();
+          appendGameResponse(buildHelpMarkdown());
+        }
+        cmdInput.value=''; hideSuggestions(); return;
+      }
       if(text.startsWith('/saves')){
         appendUserMessage(text);
         const res=await apiCall('list_saves');
@@ -488,23 +707,64 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
         }
         cmdInput.value=''; hideSuggestions(); return;
       }
+      // try registry dispatch for any /<name> that exists in COMMANDS
+      const baseCmd = text.split(' ')[0];
+      const nameWithoutSlash = baseCmd.replace(/^\//,'');
+      const remainder = text.slice(baseCmd.length).trim();
+      const meta = getRegistryMeta(nameWithoutSlash);
+      const isBuiltinStats = baseCmd.toLowerCase()==='/stats';
+      // intercept /stats to prefer live backend first
+      if(isBuiltinStats){
+        appendUserMessage(text);
+        const res=await apiCall('get_state', currentSave||null);
+        if(res && res.status==='success'){
+          const hud=res.hud||{}; const sysKeys=Object.keys(res.systems||{}).join(', ')||'—';
+          const pos=(hud.player_pos||[0,0,0]).map(n=>Number(n).toFixed(1)).join(', ');
+          appendGameResponse(`### Live State — \`${currentSave||'live'}\`\n* **Players:** \`${hud.player_count??0}\`  •  **Pos:** \`${pos}\`\n* **Inventory:** \`${hud.inventory_stacks||0} stacks / ${hud.inventory_items||0} items\`\n* **Systems:** \`${sysKeys}\``);
+          await refreshStateMonitor();
+          cmdInput.value=''; hideSuggestions(); return;
+        }
+        // fall through to mock if no bridge
+      }
+      if(meta){
+        appendUserMessage(text);
+        const parsed = parseRegistryArgs(nameWithoutSlash, remainder);
+        let res;
+        if(Array.isArray(parsed)){
+          res = await apiCall('call_command', nameWithoutSlash, parsed);
+        } else {
+          res = await apiCall('call_command', nameWithoutSlash, parsed);
+        }
+        if(res){
+          if(res.status==='success'){
+            // pretty result
+            let md = `**✔ \`${baseCmd}\`** — success\n`;
+            if(res.result !== undefined && res.result !== null && res.result !== true){
+              const r = typeof res.result==='object' ? '```json\n'+JSON.stringify(res.result, null, 2)+'\n```' : '`'+String(res.result)+'`';
+              md += `\n${r}`;
+            } else if(res.message){
+              md += `\n*${res.message}*`;
+            }
+            appendGameResponse(md);
+            // auto refresh monitor if state mutated
+            if(['player.move','player.add','player.remove','inventory.add','inventory.remove_item','inventory.set_max_weight','bank.apply'].includes(meta.name)){
+              try{ await refreshStateMonitor(); }catch(e){}
+            }
+          } else {
+            const hint = res.expected_params ? `\n\n*Expected:* \`${formatParamsHint(res.expected_params)}\`` : '';
+            appendGameResponse(`**✖ \`${baseCmd}\` failed:** ${res.message || 'unknown error'}${hint}`);
+          }
+        } else {
+          appendGameResponse(`*No bridge — cannot execute \`${baseCmd}\`. Is Dashboard V2 running via pywebview?*`);
+        }
+        cmdInput.value=''; hideSuggestions(); return;
+      }
+      // Not a registry command: fall back to mock + generic message
       appendUserMessage(text);
       setTimeout(async ()=>{
-        const baseCmd=text.split(' ')[0];
-        // prefer live backend for /stats
-        if(baseCmd==='/stats'){
-          const res=await apiCall('get_state', currentSave||null);
-          if(res && res.status==='success'){
-            const hud=res.hud||{}; const sysKeys=Object.keys(res.systems||{}).join(', ')||'—';
-            const pos=(hud.player_pos||[0,0,0]).map(n=>Number(n).toFixed(1)).join(', ');
-            appendGameResponse(`### Live State — \`${currentSave||'live'}\`\n* **Players:** \`${hud.player_count??0}\`  •  **Pos:** \`${pos}\`\n* **Inventory:** \`${hud.inventory_stacks||0} stacks / ${hud.inventory_items||0} items\`\n* **Systems:** \`${sysKeys}\``);
-            await refreshStateMonitor();
-            return;
-          }
-        }
-        const responseMD=MOCK_RESPONSES[baseCmd] || `**System Output:** Processed input \`${text}\`.\n\n*No specific response wire defined for this test string.*`;
+        const responseMD=MOCK_RESPONSES[baseCmd] || `**System Output:** Processed input \`${text}\`.\n\n*No registry command matched.* Try \`/help\` to see ${COMMANDS.length} available commands.`;
         appendGameResponse(responseMD);
-      }, 120);
+      }, 80);
       cmdInput.value=''; hideSuggestions();
     }
     function executeQuick(commandText){ cmdInput.value=commandText; handleSend(new Event('submit')); }
@@ -563,6 +823,7 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
       wireFocus();
       await whenPywebviewReady();
       await loadSettings();
+      await refreshCommands();
       await refreshStateMonitor();
       startGamepad();
       // clock
@@ -570,10 +831,11 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
       tick(); setInterval(tick, 10000);
       document.getElementById('btn-refresh').onclick=refreshStateMonitor;
       document.getElementById('btn-quit').onclick=async()=>{ await apiCall('quit_dashboard'); setTimeout(()=>window.close(),250); };
-      // pywebview ready reload (fixes theme race)
+      // pywebview ready reload (fixes theme race + refresh commands)
       whenPywebviewReady().then(async (ready)=>{
         if(!ready) return;
         try{ await loadSettings(); }catch(e){}
+        try{ await refreshCommands(); }catch(e){}
         try{ await refreshStateMonitor(); }catch(e){}
       });
       // allow Tab cycling between quick actions and input
