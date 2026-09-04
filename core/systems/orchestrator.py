@@ -177,3 +177,8 @@ def warning(warning_note):  # Should also eventually save it to a log.txt, with 
 
 def display_phone_ui():
     print("*Displayed Phone UI* This dosent exist yet though....")
+
+
+
+def thisdoesnothing():
+    warning("This does nothing yet...")
