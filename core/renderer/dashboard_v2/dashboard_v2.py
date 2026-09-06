@@ -191,52 +191,36 @@ class DashboardV2API:
             "xmb_settings": xmb_settings,
         }
 
-    # -- command registry bridge (decoupled, with dev filtering) ---------------
-    # Player dashboard filters to "player"; V2 (debugger) shows all.
+        # -- command registry bridge (autodiscovering, shared via bridge mixin) --
+    # Inherits autodiscover behaviour from core.renderer.bridge.CommandBridgeMixin
+    # so new @command files appear automatically in V2 (shows all) and
+    # future dashboards/game share the same bridge.
     def call_command(self, name: str, args=None):
-        try:
-            from core.command_registry import execute, ensure_commands_loaded
+        from core.renderer.bridge import bridge_call_command as _bcc
 
-            ensure_commands_loaded()
-            if args is None:
-                return execute(name)
-            if isinstance(args, dict):
-                return execute(name, **args)
-            if isinstance(args, (list, tuple)):
-                return execute(name, *args)
-            return execute(name, args)
-        except Exception as e:
-            return {"status": "error", "message": str(e), "command": name}
+        return _bcc(name, args)
 
     def call_function(self, function_id, args=None):
-        try:
-            from core.command_registry import call_function as _cf, ensure_commands_loaded
+        from core.renderer.bridge import CommandBridgeMixin as _CBM
 
-            ensure_commands_loaded()
-            if isinstance(function_id, (list, tuple)) and len(function_id) == 1:
-                function_id = function_id[0]
-            if args is None:
-                return _cf(function_id)
-            if isinstance(args, dict):
-                return _cf(function_id, **args)
-            if isinstance(args, (list, tuple)):
-                return _cf(function_id, *args)
-            return _cf(function_id, args)
-        except Exception as e:
-            return {"status": "error", "message": str(e), "command": str(function_id)}
+        # Delegate via mixin to keep alias semantics (list-wrapped ids, etc.)
+        return _CBM.call_function(self, function_id, args)
 
-    def list_commands(self, category: str | None = None):
-        try:
-            from core.command_registry import list_commands as _list, ensure_commands_loaded
+    def list_commands(self, category: str | None = None, refresh: bool = False):
+        from core.renderer.bridge import bridge_list_commands as _blc
 
-            ensure_commands_loaded()
-            cmds = _list(category)
-            return {"status": "success", "commands": cmds, "category": category}
-        except Exception as e:
-            return {"status": "error", "message": str(e)}
+        res = _blc(category, refresh=refresh)
+        # Normalise to {status, commands, category} shape expected by JS
+        if res.get("status") == "success":
+            res["category"] = category
+        return res
 
-    def get_commands(self, category: str | None = None):
-        return self.list_commands(category)
+    def get_commands(self, category: str | None = None, refresh: bool = False):
+        return self.list_commands(category, refresh=refresh)
+
+    def refresh_commands(self):
+        """Force filesystem rescan — JS can call refresh_commands() after adding new @command files."""
+        return self.list_commands(refresh=True)
 
     def get_game_status(self):
         return {"status": "success", "game_state": self.game_state}

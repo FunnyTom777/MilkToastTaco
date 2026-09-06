@@ -1,14 +1,13 @@
+from core.command_registry import command
+
 try:
-    from core.command_registry import command as _command
+    from core.systems.orchestrator import thisdoesnothing
 except ImportError:
-    def _command(*a, **k):
-        def _d(fn):
-            return fn
-        return _d
-
-
-
-from orchestrator import thisdoesnothing
+    try:
+        from orchestrator import thisdoesnothing
+    except ImportError:
+        def thisdoesnothing(*a, **k):  # fallback so autodiscover never fails on import
+            pass
 # Manages everything the player owns (Add new items, manage existing items, remove items, etc)
 
 
@@ -16,13 +15,13 @@ from orchestrator import thisdoesnothing
 
 
 
-@_command("ownership.add", "Adds a new item to the players ownership list", category="dev")
+@command("ownership.add", "Adds a new item to the players ownership list", category="player")
 def add_new_item(player_id):
     # Adds a new item to the players ownership list
     thisdoesnothing()
 
 
-@_command("ownership.remove", "renoves a item to the players ownership list", category="dev")
+@command("ownership.remove", "Removes a item from the Players Ownership List.", category="player")
 def remove_item(player_id):
     # Removes a item from the players ownership list
     thisdoesnothing()

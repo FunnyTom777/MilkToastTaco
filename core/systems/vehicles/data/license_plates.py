@@ -1,7 +1,14 @@
 import secrets
 import string
 
-from orchestrator import warning
+try:
+    from core.systems.orchestrator import warning
+except ImportError:
+    try:
+        from orchestrator import warning
+    except ImportError:
+        def warning(*a, **k):
+            pass
 
 
 registered_license_plates = []

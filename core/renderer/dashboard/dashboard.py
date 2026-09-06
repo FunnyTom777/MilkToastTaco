@@ -353,77 +353,46 @@ class DashboardAPI:
         """Alias for get_state for backwards compat with early dashboard ideas."""
         return self.get_state()
 
-    # -- command registry bridge (decoupled) ---------------------------------
-    # Single entry-point so dashboards/game never hardcode system imports.
-    # JS: pywebview.api.call_command("player.move", {player_id: 1, pos: [10,0,5]})
+    # -- command registry bridge (autodiscovering, shared via bridge mixin) ---
+    # All dashboards (V1, V2, future) share bridge.py — new @command files
+    # appear automatically; no manual import list to edit.
     def call_command(self, name: str, args=None):
-        """
-        Dispatch any registered command (string id, namespaced like 'player.move').
+        """Dispatch any registered command — autodiscovered."""
+        from core.renderer.bridge import bridge_call_command as _bcc
 
-        Args:
-            name: Command name e.g. "player.move", "inventory.add", "bank.apply".
-            args: Optional dict of kwargs, or list of positional args.
-                  Simplest is dict: {player_id: 1, pos: [10,0,5]}
+        return _bcc(name, args)
 
-        Returns:
-            {"status": "success", "result": ...} or {"status": "error", "message": ...}
-        """
-        try:
-            from core.command_registry import execute, ensure_commands_loaded
-
-            ensure_commands_loaded()
-            if args is None:
-                return execute(name)
-            if isinstance(args, dict):
-                return execute(name, **args)
-            if isinstance(args, (list, tuple)):
-                return execute(name, *args)
-            # single value fallback
-            return execute(name, args)
-        except Exception as e:
-            return {"status": "error", "message": str(e), "command": name}
-
-    # Alias matching user's original proposal
     def call_function(self, function_id, args=None):
         """Alias for call_command (supports original function_id naming)."""
-        try:
-            from core.command_registry import call_function as _cf, ensure_commands_loaded
+        from core.renderer.bridge import CommandBridgeMixin as _CBM
 
-            ensure_commands_loaded()
-            if isinstance(function_id, (list, tuple)) and len(function_id) == 1:
-                function_id = function_id[0]
-            if args is None:
-                return _cf(function_id)
-            if isinstance(args, dict):
-                return _cf(function_id, **args)
-            if isinstance(args, (list, tuple)):
-                return _cf(function_id, *args)
-            return _cf(function_id, args)
-        except Exception as e:
-            return {"status": "error", "message": str(e), "command": str(function_id)}
+        return _CBM.call_function(self, function_id, args)
 
-    def list_commands(self, category: str | None = None):
+    def list_commands(self, category: str | None = None, refresh: bool = False):
         """
         List available commands, optionally filtered by category.
 
         Args:
             category: "player" | "dev" | None (all). Player dashboard passes "player".
+            refresh: If True, force rescan so new @command files appear without restart.
 
         Returns:
             {"status": "success", "commands": [{name, help, category, params}]}
         """
-        try:
-            from core.command_registry import list_commands as _list, ensure_commands_loaded
+        from core.renderer.bridge import bridge_list_commands as _blc
 
-            ensure_commands_loaded()
-            cmds = _list(category)
-            return {"status": "success", "commands": cmds, "category": category}
-        except Exception as e:
-            return {"status": "error", "message": str(e)}
+        res = _blc(category, refresh=refresh)
+        if res.get("status") == "success":
+            res["category"] = category
+        return res
 
-    def get_commands(self, category: str | None = None):
+    def get_commands(self, category: str | None = None, refresh: bool = False):
         """Alias for list_commands."""
-        return self.list_commands(category)
+        return self.list_commands(category, refresh=refresh)
+
+    def refresh_commands(self):
+        """Force filesystem rescan — JS can call refresh_commands() after adding new @command files."""
+        return self.list_commands(refresh=True)
 
     # -- live edit helpers (dev mode) --------------------------------------
 

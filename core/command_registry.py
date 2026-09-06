@@ -16,16 +16,21 @@ Dashboards / game / REPL import only this module:
 Categories enable filtering (player vs dev). Dashboards can expose
 one pywebview method: call_command(name, args_dict) -> execute(name, **args_dict)
 
-Manual discovery for now: system modules import `command` and register at
-import time (like save providers). Ensure systems are imported once before
-list_commands/execute is used. No auto-scan yet.
+Auto-discovery: any new file under ``core/`` or ``engine/`` that uses
+``@command(...)`` is automatically imported on first use. No manual list
+to keep in sync. All dashboards (V1, V2, future game/GUI) share the same
+registry via ``autodiscover()`` / lazy ``_ensure_autodiscovered()``.
 """
 
 from __future__ import annotations
 
+import importlib
 import inspect
+import sys
+import threading
 from dataclasses import dataclass, field
 from functools import wraps
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 # Valid categories — keep small; dashboards filter on this.
@@ -47,6 +52,18 @@ class CommandSpec:
 
 # name -> CommandSpec
 _COMMANDS: Dict[str, CommandSpec] = {}
+
+# -- autodiscovery state -------------------------------------------------
+# Project root = core/command_registry.py -> parents[1] -> MilkToastTaco/
+_PROJECT_ROOT = Path(__file__).resolve().parents[1]
+# Packages / roots scanned on autodiscover. Add new top-level packages here
+# if the game grows beyond core/ + engine/.
+_DEFAULT_SCAN_PACKAGES: List[str] = ["core", "engine"]
+
+_AUTO_DISCOVERED: bool = False
+_SEEN_MODULES: set[str] = set()
+_FAILED_MODULES: set[str] = set()
+_DISCOVERY_LOCK = threading.Lock()
 
 
 def _build_params(sig: inspect.Signature) -> List[Dict[str, Any]]:
@@ -152,20 +169,28 @@ def get_command(name: str) -> Optional[CommandSpec]:
     """Return CommandSpec for name (case-insensitive) or None."""
     if not isinstance(name, str):
         return None
+    _ensure_autodiscovered()
     return _COMMANDS.get(name.strip().lower())
 
 
-def list_commands(category: Optional[str] = None) -> List[Dict[str, Any]]:
+def list_commands(category: Optional[str] = None, refresh: bool = False) -> List[Dict[str, Any]]:
     """
     Return list of registered commands as JSON-serializable dicts.
 
     Args:
         category: If given, only return commands matching that category.
                   Use None to return all. Case-insensitive.
+        refresh: If True, force a filesystem rescan before listing so
+                 newly-created ``@command`` files appear without restart.
 
     Returns:
         List of {name, help, category, params} sorted by name.
     """
+    if refresh:
+        autodiscover(force=True)
+    else:
+        _ensure_autodiscovered()
+
     if category is not None:
         cat = category.strip().lower()
         if cat not in VALID_CATEGORIES:
@@ -188,8 +213,12 @@ def list_commands(category: Optional[str] = None) -> List[Dict[str, Any]]:
     return result
 
 
-def get_commands_dict(category: Optional[str] = None) -> Dict[str, CommandSpec]:
+def get_commands_dict(category: Optional[str] = None, refresh: bool = False) -> Dict[str, CommandSpec]:
     """Return copy of internal dict, optionally filtered by category."""
+    if refresh:
+        autodiscover(force=True)
+    else:
+        _ensure_autodiscovered()
     if category is None:
         return dict(_COMMANDS)
     cat = category.strip().lower()
@@ -217,12 +246,21 @@ def execute(name: str, *args, **kwargs) -> Dict[str, Any]:
     if not isinstance(name, str) or not name.strip():
         return {"status": "error", "message": "command name must be a non-empty string", "command": str(name)}
 
+    _ensure_autodiscovered()
+
     key = name.strip().lower()
     spec = _COMMANDS.get(key)
     if spec is None:
-        available = sorted(_COMMANDS.keys())
-        hint = f" Available: {', '.join(available[:8])}" + ("..." if len(available) > 8 else "") if available else ""
-        return {"status": "error", "message": f"Unknown command '{name}'.{hint}", "command": name}
+        # Retry once after a forced rescan — picks up brand-new files
+        # created after the first autodiscover without requiring a restart.
+        autodiscover(force=False)
+        spec = _COMMANDS.get(key)
+        if spec is None:
+            # One more try with force (re-import failed modules)
+            # only if we haven't yet discovered everything.
+            available = sorted(_COMMANDS.keys())
+            hint = f" Available: {', '.join(available[:8])}" + ("..." if len(available) > 8 else "") if available else ""
+            return {"status": "error", "message": f"Unknown command '{name}'.{hint}", "command": name}
 
     # Validate args against signature before calling, to give nice errors
     try:
@@ -280,36 +318,183 @@ def call_function(function_id: str, *args, **kwargs) -> Dict[str, Any]:
 def unregister_all() -> None:
     """Clear registry. Useful for test isolation."""
     _COMMANDS.clear()
+    # Keep discovery flags so tests can re-discover if needed
+    # (callers may also call _reset_discovery_for_tests)
 
 
-def ensure_commands_loaded() -> None:
+def _reset_discovery_for_tests() -> None:
+    """Reset autodiscovery state — for test isolation only."""
+    global _AUTO_DISCOVERED
+    with _DISCOVERY_LOCK:
+        _AUTO_DISCOVERED = False
+        _SEEN_MODULES.clear()
+        _FAILED_MODULES.clear()
+
+
+def _iter_candidate_modules(
+    packages: Optional[List[str]] = None,
+) -> List[str]:
+    """
+    Walk the filesystem under each package root and return dotted module names.
+    Skips tests, __pycache__, and non-python files.
+    """
+    if packages is None:
+        packages = _DEFAULT_SCAN_PACKAGES
+    candidates: List[str] = []
+    for pkg in packages:
+        pkg_path = _PROJECT_ROOT / pkg
+        if not pkg_path.is_dir():
+            continue
+        for py in pkg_path.rglob("*.py"):
+            # Skip caches / tests / hidden
+            if "__pycache__" in py.parts:
+                continue
+            if "tests" in py.parts:
+                continue
+            if py.name.startswith("test_"):
+                continue
+            # Skip .pyc etc (rglob already filters)
+            rel = py.relative_to(_PROJECT_ROOT).with_suffix("")
+            parts = list(rel.parts)
+            # __init__.py -> package name
+            if py.name == "__init__.py":
+                parts = parts[:-1]
+                if not parts:
+                    continue
+            mod = ".".join(parts)
+            # Skip empty or obviously non-importable
+            if not mod or mod.endswith(".__init__"):
+                continue
+            candidates.append(mod)
+    # De-dupe and sort for deterministic import order (parents first)
+    return sorted(set(candidates))
+
+
+def autodiscover(
+    packages: Optional[List[str]] = None,
+    force: bool = False,
+    verbose: bool = False,
+) -> Dict[str, Any]:
+    """
+    Auto-import every Python module under ``packages`` so ``@command``
+    decorators run and populate the registry.
+
+    This is the single discovery entry-point for *all* dashboards and the
+    future game GUI. Adding a new file like
+    ``core/systems/vehicles/car.py`` with ``@command("vehicles.spawn", ...)``
+    is enough — the next ``list_commands()`` or ``execute()`` will see it
+    without editing any registry list.
+
+    Args:
+        packages: Top-level package names to scan (default: ["core", "engine"]).
+                  List is filesystem-relative to the project root.
+        force: If False, modules already attempted once are skipped.
+               If True, re-attempts even previously-failed modules (useful
+               after fixing an import error or when forcing a refresh).
+        verbose: If True, emit warnings for failed imports.
+
+    Returns:
+        {"imported": int, "failed": int, "skipped": int, "commands": int,
+         "modules": [imported module names]}
+    """
+    global _AUTO_DISCOVERED
+    with _DISCOVERY_LOCK:
+        candidates = _iter_candidate_modules(packages)
+        imported: List[str] = []
+        failed: List[str] = []
+        skipped = 0
+
+        for mod in candidates:
+            # Skip only successfully-seen modules when not forcing.
+            # Failed modules are retried automatically so a fix (like
+            # fixing Ownership.py's `from orchestrator import ...`) shows
+            # up without requiring `refresh=True` / `force=True`.
+            if not force and mod in _SEEN_MODULES and mod not in _FAILED_MODULES:
+                skipped += 1
+                continue
+            _SEEN_MODULES.add(mod)
+            # If this module previously failed, drop its cached (partial)
+            # entry so `import_module` re-executes the file.
+            if mod in _FAILED_MODULES and mod in sys.modules:
+                try:
+                    del sys.modules[mod]
+                except Exception:
+                    pass
+            try:
+                # Re-import or reload: use import_module for fresh modules,
+                # reload if already loaded and previously succeeded but
+                # force requested (handled via cache invalidation).
+                if mod in sys.modules and force:
+                    try:
+                        importlib.invalidate_caches()
+                    except Exception:
+                        pass
+                    importlib.reload(sys.modules[mod])
+                else:
+                    importlib.import_module(mod)
+                imported.append(mod)
+                _FAILED_MODULES.discard(mod)
+            except Exception as e:
+                failed.append(mod)
+                _FAILED_MODULES.add(mod)
+                if verbose:
+                    try:
+                        from core.systems.orchestrator import warning as _warn
+
+                        _warn(f"autodiscover: failed to import {mod}: {e}")
+                    except Exception:
+                        pass
+                # best-effort — do not crash registry on one bad module
+
+        _AUTO_DISCOVERED = True
+        return {
+            "imported": len(imported),
+            "failed": len(failed),
+            "skipped": skipped,
+            "commands": len(_COMMANDS),
+            "modules": imported,
+            "failed_modules": failed,
+        }
+
+
+def _ensure_autodiscovered() -> None:
+    """
+    Lazy hook: ensure registry is populated and pick up any new files.
+
+    First call does a full scan; subsequent calls do an incremental
+    scan (only unseen modules) so a newly-added ``@command`` file shows
+    up automatically without a restart or manual ``refresh=True``.
+    Cheap because ``autodiscover(force=False)`` skips already-seen modules.
+    """
+    try:
+        autodiscover(force=False)
+    except Exception:
+        pass
+
+
+def ensure_commands_loaded(
+    packages: Optional[List[str]] = None,
+    force: bool = False,
+    verbose: bool = False,
+) -> Dict[str, Any]:
     """
     Ensure all known system modules have been imported so their @command
-    decorators have run. Manual discovery for now.
+    decorators have run.
 
-    Call this once at startup (dashboards do it lazily before list/execute).
+    Now delegates to :func:`autodiscover` — kept for backwards compat.
+    Dashboards historically called this lazily before list/execute; future
+    code can call ``autodiscover()`` directly or rely on the lazy hook in
+    ``list_commands`` / ``execute``.
+
+    Args:
+        packages: Optional package list to scan (default: ["core","engine"]).
+        force: Re-import even previously attempted modules.
+        verbose: Emit warnings for failed imports.
+
+    Returns:
+        Same dict as :func:`autodiscover`.
     """
-    # Import each system that registers commands. Keep this list in sync
-    # as new systems add @command decorators. Each import is best-effort
-    # so a missing optional system doesn't break the registry.
-    modules = [
-        "core.output",
-        "core.systems.player_manager",
-        "core.systems.inventory.manager",
-        "core.systems.economy.bank",
-        "core.systems.phone.phone",
-        # Add future: "core.systems.vehicles.*", "core.systems.economy.finance_purchase", etc.
-    ]
-    for mod in modules:
-        try:
-            __import__(mod)
-        except Exception as e:
-            try:
-                from core.systems.orchestrator import warning as _warn
-
-                _warn(f"ensure_commands_loaded: failed to import {mod}: {e}")
-            except Exception:
-                pass
+    return autodiscover(packages=packages, force=force, verbose=verbose)
 
 
 __all__ = [
@@ -321,6 +506,9 @@ __all__ = [
     "get_commands_dict",
     "unregister_all",
     "ensure_commands_loaded",
+    "autodiscover",
+    "_ensure_autodiscovered",
+    "_reset_discovery_for_tests",
     "VALID_CATEGORIES",
     "DEFAULT_CATEGORY",
     "CommandSpec",
