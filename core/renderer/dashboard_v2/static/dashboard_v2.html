@@ -201,6 +201,49 @@
     .toast-item { pointer-events:auto; background: var(--panel-bg); border:1px solid var(--panel-border); border-left:3px solid var(--accent); border-radius:8px; padding:0.7rem 0.9rem; font-size:0.84rem; box-shadow: 0 8px 24px rgba(0,0,0,0.35); animation: toastIn 0.22s var(--ease); max-width:100%; }
     .toast-item.level-success{ border-left-color:#22c55e; } .toast-item.level-warning{ border-left-color:#f59e0b; } .toast-item.level-error{ border-left-color:#ef4444; }
     @keyframes toastIn{ from{ transform: translateX(12px); opacity:0; } to{ transform:none; opacity:1; } }
+    /* Param Assist — attribute chips + helper bar */
+    .param-assist { display:none; position:absolute; bottom: calc(100% + 6px); left:1.5rem; right:1.5rem; background: var(--panel-bg); border:1px solid var(--accent-border); border-radius: 10px; box-shadow: 0 -12px 28px rgba(0,0,0,0.45); z-index: 101; overflow:hidden; }
+    .param-assist.active { display:block; }
+    .param-assist-header { display:flex; align-items:center; justify-content:space-between; padding:0.7rem 0.9rem; border-bottom:1px solid var(--panel-border); gap:10px; }
+    .param-assist-title { font-family:var(--font-mono); font-size:0.82rem; font-weight:700; display:flex; align-items:center; gap:8px; }
+    .param-assist-title code { background:rgba(0,0,0,0.35); padding:2px 6px; border-radius:4px; border:1px solid var(--panel-border); color:var(--accent); }
+    .param-assist-actions { display:flex; gap:6px; flex-wrap:wrap; }
+    .mini-btn { font-size:0.70rem; padding:4px 8px; border-radius:6px; border:1px solid var(--panel-border); background:rgba(255,255,255,0.04); color:var(--text-main); cursor:pointer; font-family:var(--font-mono); transition: all 0.15s ease; }
+    .mini-btn:hover { background:var(--accent-subtle); border-color:var(--accent); color:var(--accent); }
+    .mini-btn.primary { background:var(--accent); color:#000; border-color:var(--accent); font-weight:700; }
+    .mini-btn.primary:hover { background:var(--accent-hover); }
+    .param-chip-row { display:flex; flex-wrap:wrap; gap:6px; padding:0.75rem 0.9rem; }
+    .param-chip { display:inline-flex; align-items:center; gap:6px; padding:5px 9px; border-radius:999px; border:1px solid var(--panel-border); background:rgba(255,255,255,0.04); font-family:var(--font-mono); font-size:0.75rem; cursor:pointer; transition: all 0.15s ease; user-select:none; }
+    .param-chip:hover { background:var(--accent-subtle); border-color:var(--accent); color:var(--accent); transform:translateY(-1px); }
+    .param-chip.required { border-color: var(--accent-border); }
+    .param-chip .chip-req { font-size:0.6rem; padding:1px 4px; border-radius:999px; background:var(--accent); color:#000; font-weight:700; letter-spacing:0.3px; }
+    .param-chip .chip-opt { font-size:0.6rem; opacity:0.6; }
+    .param-chip.in-input { opacity:0.45; text-decoration:line-through; pointer-events:none; }
+    .param-hint { padding:0 0.9rem 0.7rem; font-size:0.72rem; color:var(--text-muted); font-family:var(--font-mono); line-height:1.4; }
+    .param-hint code { background:rgba(0,0,0,0.3); padding:1px 4px; border-radius:3px; border:1px solid var(--panel-border); color:var(--text-main); font-size:0.70rem; }
+    /* Param suggestion items (attribute autocomplete) */
+    .suggestion-item.param-suggest { background: rgba(0,0,0,0.12); }
+    .suggestion-item.param-suggest:hover, .suggestion-item.param-suggest.selected { background: var(--accent-subtle); }
+    .param-suggest-type { font-size:0.68rem; opacity:0.6; margin-left:6px; }
+    /* Modal — Build Args Form */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); backdrop-filter: blur(4px); z-index:300; align-items:center; justify-content:center; }
+    .modal-overlay.active { display:flex; }
+    .modal-card { background: var(--panel-bg); border:1px solid var(--panel-border); border-radius:12px; width:min(560px, 92vw); max-height:85vh; overflow:hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); display:flex; flex-direction:column; }
+    .modal-head { display:flex; align-items:center; justify-content:space-between; padding:0.9rem 1rem; border-bottom:1px solid var(--panel-border); }
+    .modal-head h3 { font-size:0.95rem; letter-spacing:0.3px; display:flex; align-items:center; gap:8px; }
+    .modal-close { background:none; border:none; color:var(--text-muted); font-size:1.1rem; cursor:pointer; padding:4px 8px; }
+    .modal-body { padding:1rem; overflow-y:auto; display:flex; flex-direction:column; gap:12px; }
+    .form-row { display:flex; flex-direction:column; gap:4px; }
+    .form-row label { font-family:var(--font-mono); font-size:0.78rem; font-weight:600; display:flex; align-items:center; gap:6px; }
+    .form-row label .req-badge { font-size:0.60rem; padding:1px 5px; border-radius:999px; background:var(--accent); color:#000; }
+    .form-row input { background:var(--bg-dark); border:1px solid var(--panel-border); border-radius:6px; padding:0.6rem 0.7rem; color:var(--text-main); font-family:var(--font-mono); font-size:0.85rem; outline:none; }
+    .form-row input:focus { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-subtle); }
+    .form-row .help { font-size:0.68rem; color:var(--text-muted); }
+    .modal-preview { background:rgba(0,0,0,0.25); border:1px solid var(--panel-border); border-radius:8px; padding:0.7rem; font-family:var(--font-mono); font-size:0.78rem; overflow-x:auto; }
+    .modal-foot { display:flex; justify-content:space-between; align-items:center; padding:0.8rem 1rem; border-top:1px solid var(--panel-border); gap:8px; }
+    .toggle-group { display:flex; background:rgba(255,255,255,0.06); border-radius:6px; padding:2px; gap:2px; }
+    .toggle-group button { padding:4px 8px; border-radius:4px; border:none; background:transparent; color:var(--text-muted); font-size:0.72rem; cursor:pointer; font-family:var(--font-mono); }
+    .toggle-group button.active { background:var(--panel-bg); color:var(--text-main); box-shadow:0 1px 3px rgba(0,0,0,0.2); border:1px solid var(--panel-border); }
   </style>
 </head>
 <body>
@@ -267,6 +310,7 @@
       </div>
       <div class="input-wrapper">
         <div class="suggestions-popup" id="suggestionsBox"></div>
+        <div class="param-assist" id="paramAssist"></div>
         <form class="command-form" id="commandForm" onsubmit="handleSend(event)">
           <div class="input-container">
             <input type="text" id="cmdInput" class="command-input" placeholder="Enter command starting with '/'..." autocomplete="off" oninput="handleInput(event)" onkeydown="handleKeyDown(event)" />
@@ -279,6 +323,35 @@
   <div class="footer-bar">
     <span><i class="fas fa-circle" style="color:var(--status-green); font-size:0.55rem;"></i> MTT Dashboard V2 • <span id="footer-theme">default</span> • XMB-synced</span>
     <span><span class="kbd">↑</span><span class="kbd">↓</span> nav • <span class="kbd">A</span>/<span class="kbd">Enter</span> select • <span class="kbd">→</span> input</span>
+  </div>
+
+  <!-- Build Args Modal -->
+  <div class="modal-overlay" id="argsModal" onclick="if(event.target===this) closeArgsModal()">
+    <div class="modal-card" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h3><i class="fas fa-sliders-h" style="color:var(--accent)"></i> <span id="modalTitle">Build args</span> <span id="modalCmdBadge" style="font-family:var(--font-mono); font-size:0.75rem; background:var(--accent-subtle); border:1px solid var(--accent-border); padding:2px 6px; border-radius:4px; color:var(--accent)"></span></h3>
+        <button class="modal-close" onclick="closeArgsModal()" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div style="padding:0 1rem;">
+        <div class="modal-preview" id="modalPreview" style="margin-bottom:8px;"></div>
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+          <span style="font-size:0.72rem; color:var(--text-muted); font-family:var(--font-mono);">Format:</span>
+          <div class="toggle-group" id="formatToggle">
+            <button data-fmt="kv" class="active" onclick="setModalFormat('kv')">key=value</button>
+            <button data-fmt="json" onclick="setModalFormat('json')">JSON</button>
+            <button data-fmt="positional" onclick="setModalFormat('positional')">positional</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="mini-btn" onclick="closeArgsModal()">Cancel</button>
+        <div style="display:flex; gap:6px;">
+          <button class="mini-btn" onclick="fillModalDefaults()">Fill defaults</button>
+          <button class="mini-btn primary" onclick="insertModalArgs()"><i class="fas fa-plus"></i> Insert into input</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -548,22 +621,189 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
     const chatHistory = document.getElementById('chatHistory');
     const cmdInput = document.getElementById('cmdInput');
     const suggestionsBox = document.getElementById('suggestionsBox');
+    const paramAssist = document.getElementById('paramAssist');
     let selectedIndex = -1;
+
+    // --- helpers for param assist ---
+    function placeholderForParam(p){
+      if(p.has_default) return JSON.stringify(p.default);
+      const ann = (p.annotation||'').toLowerCase();
+      if(ann==='int' || ann==='float') return p.name.includes('player') ? '1' : p.name.includes('item') ? '1' : '0';
+      if(ann==='list' || p.name==='pos') return '[10,0,5]';
+      if(ann==='bool') return 'true';
+      if(p.name.includes('name') || p.name.includes('bank')) return '"MyBank"';
+      if(p.name.includes('contact')) return p.name.includes('number') ? '"555-0100"' : '"Alex"';
+      return '"value"';
+    }
+    function exampleValueForParam(p){
+      const ph = placeholderForParam(p);
+      try{ return JSON.parse(ph); }catch(e){ return ph.replace(/^"|"$/g,''); }
+    }
+    function getActiveMeta(val){
+      if(!val || !val.startsWith('/')) return null;
+      const token = val.trim().split(/\s+/)[0].replace(/^\//,'');
+      return getRegistryMeta(token);
+    }
+    function isExactCommand(val){
+      const m = getActiveMeta(val);
+      if(!m) return false;
+      const token = val.trim().split(/\s+/)[0].toLowerCase();
+      return token === ('/' + m.name.toLowerCase());
+    }
+    function getRemainder(val){
+      const idx = val.indexOf(' ');
+      return idx === -1 ? '' : val.slice(idx+1);
+    }
+    function hideParamAssist(){ if(paramAssist) paramAssist.classList.remove('active'); }
+    function renderParamAssist(meta, remainder){
+      if(!meta || !meta.params || !meta.params.length){
+        // no params -> show simple header with no chips
+        paramAssist.innerHTML = `<div class="param-assist-header"><div class="param-assist-title"><code>/${meta?meta.name:''}</code> <span style="font-weight:400; font-size:0.75rem; color:var(--text-muted)">${meta?meta.help:''}</span></div><div class="param-assist-actions"><span class="pill">no args</span></div></div><div class="param-hint">Press <code>Enter</code> to execute. <code>/help /${meta?meta.name:''}</code> for docs.</div>`;
+        paramAssist.classList.add('active');
+        return;
+      }
+      const already = new Set();
+      // detect already typed param names (k=)
+      const re = /(\w+)\s*=/g; let m;
+      while((m=re.exec(remainder||''))!==null) already.add(m[1]);
+      // also if remainder looks like JSON object, mark all as filled
+      const isJson = (remainder||'').trim().startsWith('{');
+      const chips = meta.params.map(p=>{
+        const isIn = already.has(p.name) || isJson;
+        const req = p.required ? `<span class="chip-req">REQ</span>` : `<span class="chip-opt">opt</span>`;
+        const type = p.annotation ? `<span style="opacity:0.55">${p.annotation}</span>` : '';
+        const def = p.has_default ? `=${JSON.stringify(p.default)}` : '';
+        return `<button class="param-chip ${p.required?'required':''} ${isIn?'in-input':''}" data-param="${p.name}" onclick="insertParamChip('${p.name}')">${p.name}${def} ${type} ${req}</button>`;
+      }).join('');
+      const missing = meta.params.filter(p=> p.required && !already.has(p.name) && !isJson);
+      const missingHint = missing.length ? `<span style="color:var(--accent)">Missing: ${missing.map(p=>p.name).join(', ')}</span> • ` : '';
+      const examples = `<code>/${meta.name} ${meta.params.map(p=> p.name+'='+placeholderForParam(p)).join(' ')}</code> or <code>{"${meta.params[0].name}": ${placeholderForParam(meta.params[0])} ...}</code>`;
+      paramAssist.innerHTML = `
+        <div class="param-assist-header">
+          <div class="param-assist-title"><code>/${meta.name}</code> ${meta.category?`<span class="pill" style="font-size:0.6rem">${meta.category}</span>`:''} <span style="font-weight:400; font-size:0.73rem; color:var(--text-muted)">${meta.help||''}</span></div>
+          <div class="param-assist-actions">
+            <button class="mini-btn" onclick="fillExample('kv','${meta.name}')"><i class="fas fa-magic"></i> Fill example</button>
+            <button class="mini-btn" onclick="fillExample('json','${meta.name}')">{ } JSON</button>
+            <button class="mini-btn primary" onclick="openArgsModal('${meta.name}')"><i class="fas fa-sliders-h"></i> Build args…</button>
+          </div>
+        </div>
+        <div class="param-chip-row">${chips}</div>
+        <div class="param-hint">${missingHint}Click a chip to insert <code>name=</code> • ${examples} • <code>Tab</code> for next param</div>`;
+      paramAssist.classList.add('active');
+    }
+    function insertParamChip(paramName){
+      const val = cmdInput.value;
+      const base = val.split(' ')[0]; // /cmd
+      const rem = getRemainder(val);
+      // if already has paramName=, focus and move cursor after =
+      if(rem.includes(paramName+'=')){
+        cmdInput.focus();
+        const pos = cmdInput.value.indexOf(paramName+'=') + paramName.length+1;
+        cmdInput.setSelectionRange(pos,pos);
+        return;
+      }
+      const ph = placeholderForParam(getRegistryMeta(base.replace(/^\//,''))?.params.find(p=>p.name===paramName) || {name:paramName});
+      const needsSpace = val.endsWith(' ') || val.endsWith('/') ? '' : ' ';
+      const insert = `${needsSpace}${paramName}=${ph} `;
+      // insert at cursor if possible, else append
+      const start = cmdInput.selectionStart ?? cmdInput.value.length;
+      const end = cmdInput.selectionEnd ?? start;
+      const before = cmdInput.value.slice(0,start);
+      const after = cmdInput.value.slice(end);
+      // if cursor is inside trailing part, just insert there; otherwise append
+      if(start >= base.length){
+        cmdInput.value = before + (before.endsWith(' ')||before.endsWith('=') ? '' : ' ') + `${paramName}=${ph} ` + after.replace(/^\s+/, ' ');
+        const np = before.length + paramName.length + ph.length + 3;
+        requestAnimationFrame(()=> cmdInput.setSelectionRange(np, np));
+      } else {
+        cmdInput.value = cmdInput.value.trimEnd() + insert;
+      }
+      cmdInput.focus();
+      handleInput({target: cmdInput});
+    }
+    function fillExample(mode, nameWithoutSlash){
+      const meta = getRegistryMeta(nameWithoutSlash);
+      if(!meta) return;
+      const base = '/' + meta.name;
+      let argStr='';
+      if(mode==='json'){
+        const obj={}; meta.params.forEach(p=> obj[p.name]=exampleValueForParam(p));
+        argStr = ' ' + JSON.stringify(obj);
+      } else {
+        argStr = ' ' + meta.params.map(p=> `${p.name}=${placeholderForParam(p)}`).join(' ');
+      }
+      cmdInput.value = base + argStr;
+      cmdInput.focus();
+      hideSuggestions();
+      renderParamAssist(meta, argStr.trim());
+    }
 
     function handleInput(e){
       const val = e.target.value;
-      if(val.startsWith('/')){
-        const query = val.toLowerCase().split(' ')[0]; // filter on command token only
-        const matches = COMMANDS.filter(c=> c.cmd.toLowerCase().startsWith(query));
-        // also fuzzy: include if desc contains query word (when typing /move)
-        if(matches.length<6){
-          const extra = COMMANDS.filter(c=> !matches.includes(c) && (c.desc.toLowerCase().includes(query.slice(1)) || c.cmd.toLowerCase().includes(query.slice(1))));
-          matches.push(...extra.slice(0, 8-matches.length));
-        }
-        renderSuggestions(matches);
-      } else {
-        hideSuggestions();
+      if(!val.startsWith('/')){
+        hideSuggestions(); hideParamAssist(); return;
       }
+      const token = val.split(' ')[0];
+      const hasSpace = val.includes(' ');
+      const meta = getActiveMeta(val);
+      const exact = isExactCommand(val);
+      // If exact command + space (or exact typed) -> param mode
+      if(exact && meta){
+        const remainder = getRemainder(val);
+        hideSuggestions();
+        // If remainder looks like partial param name without '=', show filtered param suggestions
+        const lastToken = remainder.split(/\s+/).pop() || '';
+        const isTypingParam = lastToken && !lastToken.includes('=') && !lastToken.startsWith('{') && !lastToken.startsWith('[') && remainder.length>0;
+        if(isTypingParam && !remainder.trim().startsWith('{') && !remainder.trim().startsWith('[')){
+          const q = lastToken.toLowerCase();
+          const filtered = meta.params.filter(p=> p.name.toLowerCase().startsWith(q) && !remainder.includes(p.name+'='));
+          if(filtered.length){
+            renderParamNameSuggestions(meta, filtered, lastToken);
+            renderParamAssist(meta, remainder);
+            return;
+          }
+        }
+        // also show param name suggestions when remainder empty (show all)
+        if(!remainder.trim()){
+          // show assist only, no dropdown, but optionally show all params as suggestions
+          renderParamAssist(meta, remainder);
+          // optionally show all param suggestions as dropdown for discovery
+          renderParamNameSuggestions(meta, meta.params.filter(p=> !remainder.includes(p.name+'=')), '');
+          return;
+        }
+        renderParamAssist(meta, remainder);
+        // keep suggestions hidden unless we rendered param suggestions
+        if(!suggestionsBox.classList.contains('active')) hideSuggestions();
+        return;
+      }
+      // Not exact -> command search mode
+      hideParamAssist();
+      const query = token.toLowerCase();
+      const matches = COMMANDS.filter(c=> c.cmd.toLowerCase().startsWith(query));
+      if(matches.length<6){
+        const extra = COMMANDS.filter(c=> !matches.includes(c) && (c.desc.toLowerCase().includes(query.slice(1)) || c.cmd.toLowerCase().includes(query.slice(1))));
+        matches.push(...extra.slice(0, 8-matches.length));
+      }
+      // Also if token is partial like "/play", show param hint preview for top match
+      if(matches.length===1 && matches[0].params && matches[0].params.length){
+        // show mini assist preview for single match even before exact? optional
+      }
+      renderSuggestions(matches);
+    }
+    function renderParamNameSuggestions(meta, params, typed){
+      if(!params.length){ hideSuggestions(); return; }
+      suggestionsBox.innerHTML='';
+      params.forEach((p,i)=>{
+        const div=document.createElement('div');
+        div.className=`suggestion-item param-suggest ${i===selectedIndex?'selected':''}`;
+        const req = p.required ? '<span class="chip-req" style="margin-left:6px;">REQ</span>' : '<span class="chip-opt" style="margin-left:6px;">opt</span>';
+        const def = p.has_default ? ` =${JSON.stringify(p.default)}` : '';
+        const ann = p.annotation ? `<span class="param-suggest-type">${p.annotation}</span>` : '';
+        div.innerHTML=`<span><i class="fas fa-tag" style="opacity:0.5; margin-right:6px;"></i><b>${p.name}</b>${def}${ann}${req}</span><span class="suggestion-desc">${typed ? 'Tab to insert '+p.name+'=' : 'attribute • click to insert'}</span>`;
+        div.onclick=()=>{ insertParamChip(p.name); };
+        suggestionsBox.appendChild(div);
+      });
+      suggestionsBox.classList.add('active');
     }
     function renderSuggestions(matches){
       if(matches.length===0){ hideSuggestions(); return; }
@@ -573,27 +813,168 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
         div.className=`suggestion-item ${index===selectedIndex?'selected':''}`;
         const hint = item.params ? `<span style="opacity:0.55; font-size:0.72rem; margin-left:8px;">${formatParamsHint(item.params)}</span>` : '';
         const catBadge = item.category && item.category!=='builtin' ? `<span style="font-size:0.62rem; padding:2px 5px; border-radius:999px; background:var(--accent-subtle); border:1px solid var(--accent-border); margin-left:6px;">${item.category}</span>` : '';
-        div.innerHTML=`<span><span style="font-weight:600;">${item.cmd}</span>${hint}${catBadge}</span><span class="suggestion-desc">${item.desc}</span>`;
+        // show plus icon for registry commands that have params
+        const attrIcon = item.params && item.params.length ? `<span style="margin-left:6px; font-size:0.68rem; opacity:0.7;"><i class="fas fa-sliders-h"></i> ${item.params.length} attrs</span>` : '';
+        div.innerHTML=`<span><span style="font-weight:600;">${item.cmd}</span>${hint}${attrIcon}${catBadge}</span><span class="suggestion-desc">${item.desc}</span>`;
         div.onclick=()=> selectSuggestion(item.cmd);
         suggestionsBox.appendChild(div);
       });
       suggestionsBox.classList.add('active');
     }
     function hideSuggestions(){ suggestionsBox.classList.remove('active'); selectedIndex=-1; }
-    function selectSuggestion(cmdText){ cmdInput.value=cmdText+' '; cmdInput.focus(); hideSuggestions(); }
+    function selectSuggestion(cmdText){
+      cmdInput.value=cmdText+' ';
+      cmdInput.focus();
+      hideSuggestions();
+      // immediately show param assist for the selected command
+      const meta = getRegistryMeta(cmdText.replace(/^\//,''));
+      if(meta) renderParamAssist(meta, '');
+      else hideParamAssist();
+    }
     function handleKeyDown(e){
+      const hasSuggestions = suggestionsBox.classList.contains('active');
       const items=suggestionsBox.querySelectorAll('.suggestion-item');
-      if(!suggestionsBox.classList.contains('active') || items.length===0) return;
-      if(e.key==='ArrowDown'){ e.preventDefault(); selectedIndex=(selectedIndex+1)%items.length; updateSelection(items); }
-      else if(e.key==='ArrowUp'){ e.preventDefault(); selectedIndex=(selectedIndex-1+items.length)%items.length; updateSelection(items); }
-      else if(e.key==='Enter' && selectedIndex>=0){ e.preventDefault(); items[selectedIndex].click(); }
-      else if(e.key==='Escape'){ hideSuggestions(); }
+      if(hasSuggestions && items.length){
+        if(e.key==='ArrowDown'){ e.preventDefault(); selectedIndex=(selectedIndex+1)%items.length; updateSelection(items); return; }
+        else if(e.key==='ArrowUp'){ e.preventDefault(); selectedIndex=(selectedIndex-1+items.length)%items.length; updateSelection(items); return; }
+        else if(e.key==='Enter' && selectedIndex>=0){ e.preventDefault(); items[selectedIndex].click(); return; }
+        else if(e.key==='Tab' && selectedIndex>=0){ e.preventDefault(); items[selectedIndex].click(); return; }
+        else if(e.key==='Tab' && isExactCommand(cmdInput.value)){ e.preventDefault(); // Tab inserts first param
+          const meta=getActiveMeta(cmdInput.value);
+          if(meta && meta.params && meta.params.length){
+            const rem=getRemainder(cmdInput.value);
+            const notYet = meta.params.find(p=> !rem.includes(p.name+'='));
+            if(notYet) insertParamChip(notYet.name);
+          }
+          return;
+        }
+        else if(e.key==='Escape'){ hideSuggestions(); hideParamAssist(); return; }
+      } else if(isExactCommand(cmdInput.value) && e.key==='Tab'){
+        e.preventDefault();
+        const meta=getActiveMeta(cmdInput.value);
+        if(meta && meta.params && meta.params.length){
+          const rem=getRemainder(cmdInput.value);
+          const notYet = meta.params.find(p=> !rem.includes(p.name+'='));
+          if(notYet) insertParamChip(notYet.name);
+        }
+        return;
+      }
+      if(e.key==='Escape'){ hideSuggestions(); hideParamAssist(); }
     }
     function updateSelection(items){
       items.forEach((item,i)=> item.classList.toggle('selected', i===selectedIndex));
       if(selectedIndex >= 0 && items[selectedIndex]){
         items[selectedIndex].scrollIntoView({ block: 'nearest', inline: 'nearest' });
       }
+    }
+
+    // --- Build Args Modal ---
+    let modalMeta=null;
+    let modalFormat='kv';
+    function openArgsModal(nameWithoutSlash){
+      modalMeta = getRegistryMeta(nameWithoutSlash);
+      if(!modalMeta) return;
+      modalFormat='kv';
+      document.querySelectorAll('#formatToggle button').forEach(b=> b.classList.toggle('active', b.dataset.fmt===modalFormat));
+      document.getElementById('modalTitle').textContent = 'Build args — ';
+      document.getElementById('modalCmdBadge').textContent = '/' + modalMeta.name;
+      // pre-fill from current input remainder if same command
+      const curVal = cmdInput.value.trim();
+      const curToken = curVal.split(' ')[0].replace(/^\//,'').toLowerCase();
+      let prefill={};
+      if(curToken===modalMeta.name.toLowerCase()){
+        const rem = getRemainder(curVal);
+        const parsed = parseRegistryArgs(modalMeta.name, rem);
+        if(parsed && typeof parsed==='object' && !Array.isArray(parsed)) prefill=parsed;
+        else if(Array.isArray(parsed)){
+          modalMeta.params.forEach((p,i)=>{ if(i<parsed.length) prefill[p.name]=parsed[i]; });
+        }
+      }
+      const body=document.getElementById('modalBody');
+      body.innerHTML='';
+      modalMeta.params.forEach(p=>{
+        const row=document.createElement('div'); row.className='form-row';
+        const val = prefill[p.name]!==undefined ? (typeof prefill[p.name]==='object' ? JSON.stringify(prefill[p.name]) : String(prefill[p.name])) : (p.has_default ? String(p.default) : '');
+        row.innerHTML=`<label>${p.name} ${p.required?'<span class="req-badge">required</span>':''} <span style="opacity:0.55;font-weight:400">${p.annotation||''}${p.has_default?` default=${JSON.stringify(p.default)}`:''}</span></label>
+          <input type="text" data-param="${p.name}" value="${val.replace(/"/g,'&quot;')}" placeholder='${placeholderForParam(p)}' oninput="updateModalPreview()">
+          <div class="help">e.g. <code>${placeholderForParam(p)}</code> — ${p.required?'required':'optional'}${p.has_default?' (default '+JSON.stringify(p.default)+')':''}</div>`;
+        body.appendChild(row);
+      });
+      if(!modalMeta.params.length){
+        body.innerHTML='<div style="color:var(--text-muted); font-size:0.85rem; text-align:center; padding:1rem;">This command takes no arguments — just press Execute.</div>';
+      }
+      updateModalPreview();
+      document.getElementById('argsModal').classList.add('active');
+      setTimeout(()=>{ const first=body.querySelector('input'); if(first) first.focus(); }, 80);
+    }
+    function closeArgsModal(){ document.getElementById('argsModal').classList.remove('active'); }
+    function setModalFormat(fmt){
+      modalFormat=fmt;
+      document.querySelectorAll('#formatToggle button').forEach(b=> b.classList.toggle('active', b.dataset.fmt===fmt));
+      updateModalPreview();
+    }
+    function fillModalDefaults(){
+      if(!modalMeta) return;
+      document.querySelectorAll('#modalBody input[data-param]').forEach(inp=>{
+        const p = modalMeta.params.find(x=> x.name===inp.dataset.param);
+        if(p && !inp.value) inp.value = placeholderForParam(p).replace(/^"|"$/g,'');
+      });
+      updateModalPreview();
+    }
+    function collectModalValues(){
+      const vals={};
+      document.querySelectorAll('#modalBody input[data-param]').forEach(inp=>{
+        const key=inp.dataset.param;
+        let raw=inp.value.trim();
+        if(raw==='') return;
+        // try coerce similar to token logic
+        if(/^[\[\{]/.test(raw) || /^(true|false|null)$/i.test(raw) || /^-?\d+(\.\d+)?$/.test(raw)){
+          try{ vals[key]=JSON.parse(raw); return; }catch(e){}
+        }
+        if((raw.startsWith('"')&&raw.endsWith('"'))||(raw.startsWith("'")&&raw.endsWith("'"))) vals[key]=raw.slice(1,-1);
+        else if(!isNaN(Number(raw)) && raw!=='' ) vals[key]=Number(raw);
+        else vals[key]=raw;
+      });
+      return vals;
+    }
+    function updateModalPreview(){
+      if(!modalMeta) return;
+      const vals=collectModalValues();
+      const preview=document.getElementById('modalPreview');
+      let text='';
+      if(modalFormat==='json'){
+        text = '/' + modalMeta.name + ' ' + JSON.stringify(vals, null, 2);
+      } else if(modalFormat==='positional'){
+        const arr = modalMeta.params.map(p=> vals[p.name]!==undefined ? JSON.stringify(vals[p.name]) : (p.has_default?JSON.stringify(p.default):'""'));
+        text = '/' + modalMeta.name + ' ' + arr.join(' ');
+      } else {
+        const kv = Object.entries(vals).map(([k,v])=> `${k}=${typeof v==='string' ? '"'+v+'"' : JSON.stringify(v)}`).join(' ');
+        text = '/' + modalMeta.name + (kv? ' '+kv : '');
+      }
+      preview.textContent = text || ('/'+modalMeta.name);
+    }
+    function insertModalArgs(){
+      if(!modalMeta) return;
+      const vals=collectModalValues();
+      let argStr='';
+      if(modalFormat==='json'){
+        argStr = ' ' + JSON.stringify(vals);
+      } else if(modalFormat==='positional'){
+        const arr = modalMeta.params.map(p=> vals[p.name]!==undefined ? vals[p.name] : (p.has_default? p.default : ''));
+        // filter trailing undefined
+        while(arr.length && (arr[arr.length-1]==='' || arr[arr.length-1]===undefined)) arr.pop();
+        argStr = ' ' + arr.map(v=> typeof v==='string' ? '"'+v+'"' : JSON.stringify(v)).join(' ');
+      } else {
+        const kv = Object.entries(vals).map(([k,v])=> `${k}=${typeof v==='string' && !/^[\[\{"]/.test(String(v)) ? JSON.stringify(v) : (typeof v==='string'? v : JSON.stringify(v)) }`).join(' ');
+        // more precise: use JSON for non-strings, quote strings
+        const kv2 = Object.entries(vals).map(([k,v])=> `${k}=${typeof v==='object'? JSON.stringify(v) : typeof v==='string' ? v.includes(' ') ? '"'+v+'"' : v : String(v)}`).join(' ');
+        argStr = kv2 ? ' '+kv2 : '';
+      }
+      cmdInput.value = '/' + modalMeta.name + argStr;
+      cmdInput.focus();
+      closeArgsModal();
+      hideSuggestions();
+      renderParamAssist(modalMeta, argStr.trim());
     }
 
     // --- arg parsing for registry commands ---
@@ -681,7 +1062,7 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
       e.preventDefault();
       const text=cmdInput.value.trim();
       if(!text) return;
-      if(text==='/clear'){ chatHistory.innerHTML=''; cmdInput.value=''; hideSuggestions(); return; }
+      if(text==='/clear'){ chatHistory.innerHTML=''; cmdInput.value=''; hideSuggestions(); hideParamAssist(); return; }
       if(text==='/quit'){ await apiCall('quit_dashboard'); setTimeout(()=>window.close(),250); return; }
       // /help with optional arg: "/help" or "/help /player.move"
       if(text.startsWith('/help')){
@@ -694,7 +1075,7 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
           await refreshCommands();
           appendGameResponse(buildHelpMarkdown());
         }
-        cmdInput.value=''; hideSuggestions(); return;
+        cmdInput.value=''; hideSuggestions(); hideParamAssist(); return;
       }
       if(text.startsWith('/saves')){
         appendUserMessage(text);
@@ -706,12 +1087,12 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
         } else {
           appendGameResponse(`*No bridge — mock:* \`saves/\` empty.`);
         }
-        cmdInput.value=''; hideSuggestions(); return;
+        cmdInput.value=''; hideSuggestions(); hideParamAssist(); return;
       }
       if(text.startsWith('/load')){
         const name=text.split(/\s+/)[1];
         appendUserMessage(text);
-        if(!name){ appendGameResponse(`**Usage:** \`/load [save_name]\` — e.g. \`/load my_save\``); cmdInput.value=''; hideSuggestions(); return; }
+        if(!name){ appendGameResponse(`**Usage:** \`/load [save_name]\` — e.g. \`/load my_save\``); cmdInput.value=''; hideSuggestions(); hideParamAssist(); return; }
         const res=await apiCall('load_save', name) || await apiCall('get_state', name);
         if(res && res.status==='success'){
           currentSave=name;
@@ -720,7 +1101,7 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
         } else {
           appendGameResponse(`**Load failed:** ${res?res.message:'no bridge'} — \`${name}\``);
         }
-        cmdInput.value=''; hideSuggestions(); return;
+        cmdInput.value=''; hideSuggestions(); hideParamAssist(); return;
       }
       // try registry dispatch for any /<name> that exists in COMMANDS
       const baseCmd = text.split(' ')[0];
@@ -737,7 +1118,7 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
           const pos=(hud.player_pos||[0,0,0]).map(n=>Number(n).toFixed(1)).join(', ');
           appendGameResponse(`### Live State — \`${currentSave||'live'}\`\n* **Players:** \`${hud.player_count??0}\`  •  **Pos:** \`${pos}\`\n* **Inventory:** \`${hud.inventory_stacks||0} stacks / ${hud.inventory_items||0} items\`\n* **Systems:** \`${sysKeys}\``);
           await refreshStateMonitor();
-          cmdInput.value=''; hideSuggestions(); return;
+          cmdInput.value=''; hideSuggestions(); hideParamAssist(); return;
         }
         // fall through to mock if no bridge
       }
@@ -772,7 +1153,7 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
         } else {
           appendGameResponse(`*No bridge — cannot execute \`${baseCmd}\`. Is Dashboard V2 running via pywebview?*`);
         }
-        cmdInput.value=''; hideSuggestions(); return;
+        cmdInput.value=''; hideSuggestions(); hideParamAssist(); return;
       }
       // Not a registry command: fall back to mock + generic message
       appendUserMessage(text);
@@ -780,7 +1161,7 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
         const responseMD=MOCK_RESPONSES[baseCmd] || `**System Output:** Processed input \`${text}\`.\n\n*No registry command matched.* Try \`/help\` to see ${COMMANDS.length} available commands.`;
         appendGameResponse(responseMD);
       }, 80);
-      cmdInput.value=''; hideSuggestions();
+      cmdInput.value=''; hideSuggestions(); hideParamAssist();
     }
     function executeQuick(commandText){ cmdInput.value=commandText; handleSend(new Event('submit')); }
     function appendUserMessage(text){
