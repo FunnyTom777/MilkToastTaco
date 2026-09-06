@@ -261,49 +261,102 @@ def _to_owned_dict(vehicle_def: VehicleDef) -> dict:
 # Buy / Sell (ownership + wallet)
 # ---------------------------------------------------------------------------
 
-def buy_vehicle(player_id: int, vehicle_id: str) -> dict:
+def buy_vehicle(player_id: int, vehicle_id: str, card_id: Optional[str] = None, payment_method: Optional[str] = None) -> dict:
     """
-    Buy a vehicle for player. Checks wallet, deducts, adds to ownership.
+    Buy a vehicle for player. Checks wallet or card, deducts, adds to ownership.
+    If card_id is given, uses bank.pay_with_card (enforces per-transaction limits).
+    Otherwise uses wallet (legacy).
     Returns {status, message, instance_id, vehicle, balance}
     """
     _ensure_loaded()
     pid = int(player_id)
     vid = str(vehicle_id).strip()
+    # allow card_id to be passed as payment_method alias
+    if not card_id and payment_method:
+        card_id = str(payment_method).strip() or None
+    # also allow vehicle_id to contain card via legacy positional confusion handled in command wrapper
     if not vid:
         return {"status": "error", "message": "vehicle_id required"}
     v = get_vehicle(vid)
     if v is None:
-        # fuzzy try search
         matches = search_vehicles(vid)
         if len(matches) == 1:
             v = get_vehicle(matches[0]["id"])
         if v is None:
             return {"status": "error", "message": f"Unknown vehicle '{vehicle_id}'. Use vehicleshop.list_vehicles to browse."}
-    # wallet check
-    try:
-        from core.systems.economy.wallet import get_balance, deduct_funds
-        bal = get_balance(pid)
-        if bal + 1e-9 < v.price:
-            return {"status": "error", "message": f"Insufficient funds: need ${v.price}, have ${bal:.0f}", "balance": bal, "price": v.price}
-        ok = deduct_funds(pid, float(v.price))
-        if not ok:
-            return {"status": "error", "message": f"Insufficient funds: need ${v.price}, have ${bal:.0f}", "balance": bal}
-        new_bal = get_balance(pid)
-    except ImportError:
-        new_bal = None
-        # no wallet — allow purchase
+    # payment: card path (enforces limits)
+    new_bal = None
+    payment_info: Dict[str, Any] = {}
+    if card_id:
+        try:
+            from core.systems.economy.bank import pay_with_card
+            pay_res = pay_with_card(pid, str(card_id), float(v.price), description=f"Vehicle {v.name}")
+            if pay_res.get("status") != "success":
+                # Transaction Failed — propagate exactly
+                return {"status": "error", "message": pay_res.get("message", "Transaction Failed"), "price": v.price, "card": pay_res.get("card")}
+            payment_info = {"card": pay_res.get("card"), "type": pay_res.get("type")}
+            # for debit, also fetch new wallet balance
+            if pay_res.get("type") == "debit":
+                try:
+                    from core.systems.economy.wallet import get_balance
+                    new_bal = get_balance(pid)
+                except Exception:
+                    new_bal = None
+            else:
+                # credit: show debt/available
+                payment_info["debt"] = pay_res.get("debt")
+                payment_info["available"] = pay_res.get("available")
+                try:
+                    from core.systems.economy.wallet import get_balance
+                    new_bal = get_balance(pid)
+                except Exception:
+                    new_bal = None
+        except Exception as e:
+            return {"status": "error", "message": f"Card payment failed: {e}"}
+    else:
+        # legacy wallet path
+        try:
+            from core.systems.economy.wallet import get_balance, deduct_funds
+            bal = get_balance(pid)
+            if bal + 1e-9 < v.price:
+                return {"status": "error", "message": f"Insufficient funds: need ${v.price}, have ${bal:.0f}", "balance": bal, "price": v.price}
+            ok = deduct_funds(pid, float(v.price))
+            if not ok:
+                return {"status": "error", "message": f"Insufficient funds: need ${v.price}, have ${bal:.0f}", "balance": bal}
+            new_bal = get_balance(pid)
+        except ImportError:
+            new_bal = None
 
     # add to ownership
     try:
         from core.systems.player.ownership import add_owned_vehicle
         ov = add_owned_vehicle(pid, v, price_paid=v.price, stats=dict(v.stats))
-        _success(f"Player {pid} bought {v.name} for ${v.price} (instance {ov.instance_id})", source="vehicleshop")
-        return {"status": "success", "message": f"Bought {v.name} for ${v.price}", "instance_id": ov.instance_id, "vehicle": ov.to_dict(), "balance": new_bal, "catalog_price": v.price}
+        # success message varies by payment type
+        if payment_info:
+            _success(f"Player {pid} bought {v.name} for ${v.price} via {payment_info.get('type')} {payment_info.get('card',{}).get('bank','')} (instance {ov.instance_id})", source="vehicleshop")
+        else:
+            _success(f"Player {pid} bought {v.name} for ${v.price} (instance {ov.instance_id})", source="vehicleshop")
+        out: Dict[str, Any] = {"status": "success", "message": f"Bought {v.name} for ${v.price}", "instance_id": ov.instance_id, "vehicle": ov.to_dict(), "balance": new_bal, "catalog_price": v.price}
+        if payment_info:
+            out["payment"] = payment_info
+        return out
     except Exception as e:
         # refund on failure
         try:
-            from core.systems.economy.wallet import add_funds
-            add_funds(pid, float(v.price))
+            if card_id:
+                # refund via pay_debt or add_funds?
+                from core.systems.economy.bank import pay_debt
+                # for credit, reduce debt; for debit, refund wallet
+                from core.systems.economy.bank import find_card
+                c = find_card(pid, str(card_id))
+                if c and c.type == "credit":
+                    c.debt = max(0.0, float(c.debt) - float(v.price))
+                else:
+                    from core.systems.economy.wallet import add_funds
+                    add_funds(pid, float(v.price))
+            else:
+                from core.systems.economy.wallet import add_funds
+                add_funds(pid, float(v.price))
         except Exception:
             pass
         _err(f"buy_vehicle failed: {e}", source="vehicleshop")
@@ -394,23 +447,23 @@ def vehicleshop_info(vehicle_id: str) -> dict:
         return {"status": "error", "message": f"Unknown vehicle '{vehicle_id}'.{hint}"}
     return {"status": "success", "vehicle": v.to_dict()}
 
-@command("vehicleshop.buy", "Buy a vehicle by id (deducts wallet, adds to ownership)", category="player")
-def vehicleshop_buy(player_id: int = 1, vehicle_id: str = "", id: str = "", name: str = "") -> dict:
+@command("vehicleshop.buy", "Buy a vehicle by id (supports card_id for bank limits — use Payment Menu)", category="player")
+def vehicleshop_buy(player_id: int = 1, vehicle_id: str = "", id: str = "", name: str = "", card_id: str = "", card: str = "", payment_method: str = "") -> dict:
     """
-    Buy a vehicle. Preferred: vehicleshop.buy player_id=1 vehicle_id="car_sedan_classic"
+    Buy a vehicle. Preferred: vehicleshop.buy player_id=1 vehicle_id="car_sedan_classic" card_id="card_1_westbank_debit_xxx"
     Also accepts: vehicleshop.buy "car_sedan_classic"  (player defaults to 1)
-    Legacy aliases: id=, name=
+    Legacy aliases: id=, name=  • card= / payment_method= are aliases for card_id.
+    If card_id is given, payment enforces per-transaction debit/credit limits via bank.pay.
     """
+    # collect card alias
+    chosen_card = (card_id or card or payment_method or "").strip() or None
     # flexible positional handling: if player_id is actually a string vehicle id and vehicle_id empty
     pid = 1
     vid = ""
-    # detect calling style: vehicleshop_buy("car_sedan_classic") -> player_id gets string
     if isinstance(player_id, str) and not vehicle_id and not id and not name:
-        # called as buy("vehicle_id")
         vid = player_id
         pid = 1
     elif isinstance(player_id, str) and vehicle_id == "" and (id or name):
-        # unlikely
         vid = id or name or vehicle_id
         try:
             pid = int(player_id)
@@ -418,19 +471,17 @@ def vehicleshop_buy(player_id: int = 1, vehicle_id: str = "", id: str = "", name
             pid = 1
             vid = str(player_id)
     else:
-        # normal: pid is int
         try:
             pid = int(player_id)
         except Exception:
-            # if player_id non-int and looks like vehicle name, treat as vid
             pid = 1
             vid = str(player_id)
         vid = (vehicle_id or id or name or vid or "").strip()
         if not vid and isinstance(player_id, str):
             vid = str(player_id).strip()
     if not vid:
-        return {"status": "error", "message": "vehicle_id required. Example: /vehicleshop.buy car_sedan_classic  or  /vehicleshop.buy player_id=1 vehicle_id=car_sedan_classic"}
-    return buy_vehicle(pid, vid)
+        return {"status": "error", "message": "vehicle_id required. Example: /vehicleshop.buy car_sedan_classic  or  /vehicleshop.buy player_id=1 vehicle_id=car_sedan_classic card_id=card_..."}
+    return buy_vehicle(pid, vid, card_id=chosen_card)
 
 @command("vehicleshop.sell", "Sell an owned vehicle by instance_id (refund 70%)", category="player")
 def vehicleshop_sell(player_id: int = 1, instance_id: str = "", id: str = "") -> dict:

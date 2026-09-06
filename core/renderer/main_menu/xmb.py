@@ -208,10 +208,10 @@ class XMBDashboardAPI:
         }
 
     @menu_option("misc", "Misc", "fa-ellipsis-h", "Launch MTT Dashboard",
-                 "Open the Milk Toast Taco Dashboard — HUD, map, inventory and saves in its own window. XMB closes.")
+                 "This dashboard is outdated. Please use Dashboard V2 Instead")
     def launch_dashboard(self):
-        """Launch Dashboard (player mode)."""
-        return self._spawn_dashboard()
+        """Launch Dashboard (player mode) — deprecated, blocked."""
+        return {"status": "error", "message": "This dashboard is outdated. Please use Dashboard V2 Instead"}
 
     def _spawn_dashboard_v2(self):
         """Helper: spawn dashboard_v2 as independent process and close XMB."""

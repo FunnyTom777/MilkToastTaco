@@ -339,13 +339,95 @@ class DashboardAPI:
             hud["inventory_items"] = 0
 
         # world / vehicles / construction placeholders
-        for k in ("vehicles", "world", "construction", "economy", "weather"):
+        for k in ("vehicles", "world", "construction", "weather"):
             if k in systems:
                 v = systems[k]
                 if isinstance(v, dict):
                     hud[f"{k}_keys"] = list(v.keys())[:6]
                 elif isinstance(v, list):
                     hud[f"{k}_count"] = len(v)
+
+        # --- Economy HUD (wallet + ownership + bank) -------------------------------
+        # wallet is stored as { "1": 75000, ... } under "wallet" (alias "economy")
+        raw_wallet = systems.get("wallet") or systems.get("economy") or {}
+        if isinstance(raw_wallet, dict) and raw_wallet:
+            # normalize string keys -> float values
+            wallet_all: Dict[str, float] = {}
+            for k, v in raw_wallet.items():
+                try:
+                    wallet_all[str(k)] = float(v)  # type: ignore
+                except Exception:
+                    continue
+            if wallet_all:
+                # pick player 1 or first known pid, fallback to hud player_id
+                pid_key = str(hud.get("player_id", "1"))
+                if pid_key not in wallet_all:
+                    # first sorted pid
+                    try:
+                        pid_key = sorted(wallet_all.keys(), key=lambda x: int(x) if str(x).isdigit() else x)[0]
+                    except Exception:
+                        pid_key = next(iter(wallet_all))
+                hud["wallet_balance"] = wallet_all.get(pid_key, 0.0)
+                hud["wallet_pid"] = pid_key
+                hud["wallet_all"] = wallet_all
+                hud["wallet_total"] = sum(wallet_all.values())
+            else:
+                hud["wallet_balance"] = 0.0
+                hud["wallet_all"] = {}
+        else:
+            # live fallback: try direct import (covers fresh boot before any save)
+            try:
+                from core.systems.economy.wallet import get_balance
+                pid_key = str(hud.get("player_id", "1"))
+                try:
+                    hud["wallet_balance"] = float(get_balance(int(pid_key)))
+                except Exception:
+                    hud["wallet_balance"] = float(get_balance(1))
+                hud["wallet_pid"] = pid_key
+            except Exception:
+                hud["wallet_balance"] = 0.0
+                hud["wallet_pid"] = "1"
+            hud["wallet_all"] = {hud["wallet_pid"]: hud["wallet_balance"]}
+
+        # ownership: { vehicles: { "1": [ov_dict...] }, generic: ... }
+        owned = systems.get("ownership") or {}
+        owned_count = 0
+        owned_value = 0
+        owned_by_player: Dict[str, int] = {}
+        if isinstance(owned, dict) and "vehicles" in owned and isinstance(owned["vehicles"], dict):
+            for pid, lst in owned["vehicles"].items():
+                if isinstance(lst, list):
+                    owned_by_player[str(pid)] = len(lst)
+                    owned_count += len(lst)
+                    for ov in lst:
+                        try:
+                            owned_value += int(float(ov.get("price_paid", 0))) if isinstance(ov, dict) else 0
+                        except Exception:
+                            pass
+        hud["owned_count"] = owned_count
+        hud["owned_value"] = owned_value
+        hud["owned_by_player"] = owned_by_player
+
+        # bank membership + real cards (actual bank system, not synthetic)
+        try:
+            import core.systems.orchestrator as _orch
+            hud["bank_member"] = getattr(_orch, "current_bank_member", None)
+            hud["bank_names"] = list(getattr(_orch, "bank_names", []))
+        except Exception:
+            hud["bank_member"] = None
+            hud["bank_names"] = []
+        # real bank cards (with limits) — universal pay uses these
+        try:
+            from core.systems.economy.bank import get_cards as _get_cards, get_bank_names as _gbn, BANKS as _BANKS
+            pid_for_cards = int(hud.get("wallet_pid", "1"))
+            hud["bank_cards"] = _get_cards(pid_for_cards)
+            # also expose configs for limit preview
+            hud["bank_configs"] = {k: dict(v) for k, v in _BANKS.items()} if _BANKS else {}
+            if not hud["bank_names"]:
+                hud["bank_names"] = _gbn()
+        except Exception:
+            hud["bank_cards"] = []
+            hud["bank_configs"] = {}
 
         return hud
 

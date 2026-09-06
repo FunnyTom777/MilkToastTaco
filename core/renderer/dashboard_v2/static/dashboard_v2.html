@@ -294,6 +294,28 @@
     @keyframes savePulse{ 0%,100%{ opacity:1; } 50%{ opacity:0.55; } }
     .save-menu-overlay { display:none; position:fixed; inset:0; z-index:260; background:rgba(8,10,14,0.78); backdrop-filter: blur(5px); align-items:center; justify-content:center; padding:16px; }
     .save-menu-overlay.active { display:flex; }
+    /* Economy Menu — Wallet cards + tabs (V2) */
+    .econ-tabs{display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; background:rgba(255,255,255,0.04); padding:6px; border-radius:10px; border:1px solid var(--panel-border);}
+    .econ-tab{padding:7px 12px; border-radius:8px; border:1px solid transparent; background:transparent; color:var(--text-muted); font-weight:600; cursor:pointer; font-size:0.75rem; display:flex; gap:6px; align-items:center; transition:all 0.15s ease;}
+    .econ-tab.active{background:var(--accent-subtle); color:var(--accent); border-color:var(--accent-border); box-shadow:0 0 10px var(--accent-subtle);}
+    .econ-tab .badge-soon{font-size:0.55rem; padding:1px 5px; border-radius:999px; background:rgba(251,191,36,0.18); border:1px solid rgba(251,191,36,0.35); color:#fde68a;}
+    .econ-card-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px;}
+    .loan-range{width:100%; appearance:none; height:6px; border-radius:999px; background:rgba(255,255,255,0.12); outline:none;}
+    .loan-range::-webkit-slider-thumb{appearance:none; width:18px; height:18px; border-radius:50%; background:var(--accent); border:2px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,0.3); cursor:pointer;}
+    .loan-preview-v2{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:10px;}
+    .loan-preview-v2 .lp{padding:10px; border-radius:8px; background:rgba(0,0,0,0.22); border:1px solid var(--panel-border); text-align:center;}
+    .loan-preview-v2 .lp b{font-size:1rem; display:block;}
+    .bank-card-v2{position:relative; height:186px; border-radius:16px; padding:16px 18px; overflow:hidden; cursor:pointer; transition:all 0.28s cubic-bezier(0.34,1.56,0.64,1); border:1px solid rgba(255,255,255,0.10); display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 8px 24px rgba(0,0,0,0.35);}
+    .bank-card-v2:hover{transform:scale(1.045) translateY(-3px) rotateZ(0.25deg); box-shadow:0 16px 36px rgba(0,0,0,0.45), 0 0 18px var(--accent-subtle); z-index:2;}
+    .bank-card-v2.debit{background:linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);}
+    .bank-card-v2.credit{background:linear-gradient(135deg, #1a0a2e 0%, #312e81 45%, #4f46e5 100%);}
+    .bank-card-v2.gold{background:linear-gradient(135deg, #422006 0%, #92400e 40%, #f59e0b 100%);}
+    .bank-card-v2 .shine{position:absolute; top:-50%; left:-50%; width:200%; height:200%; background:linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.13) 50%, transparent 70%); transform:translateX(-100%) rotate(15deg); transition:transform 0.7s ease; pointer-events:none;}
+    .bank-card-v2:hover .shine{transform:translateX(100%) rotate(15deg);}
+    .bank-card-v2 .chip{width:32px; height:22px; border-radius:3px; background:linear-gradient(135deg,#fde68a 0%,#f59e0b 100%); border:1px solid rgba(0,0,0,0.12);}
+    .bank-card-v2 .card-number{font-family:var(--font-mono); letter-spacing:1.5px; font-size:0.95rem; margin:8px 0 4px; opacity:0.95;}
+    .bank-card-v2 .card-balance{font-weight:800; font-size:1.05rem;}
+    .bank-card-v2 .card-expiry{font-family:var(--font-mono); font-size:0.6rem; opacity:0.7;}
     .save-menu-window { width:min(720px, 96vw); max-height:88vh; background: linear-gradient(180deg, var(--panel-bg) 0%, #0f1115 100%); border:1px solid var(--panel-border); border-radius:14px; box-shadow:0 24px 64px rgba(0,0,0,0.55); display:flex; flex-direction:column; overflow:hidden; }
     .save-menu-header { display:flex; align-items:center; justify-content:space-between; padding:0.85rem 1rem; border-bottom:1px solid var(--panel-border); background:rgba(0,0,0,0.18); }
     .save-menu-title { font-weight:800; letter-spacing:0.5px; text-transform:uppercase; display:flex; align-items:center; gap:8px; font-size:0.9rem; }
@@ -347,6 +369,17 @@
         <div class="section-label"><i class="fas fa-satellite-dish"></i> State Monitor</div>
         <div class="stat-card">Player HP <span id="stat-hp">100/100</span></div>
         <div class="stat-card">Players <span id="stat-players">—</span></div>
+        <div class="stat-card" style="border-left: 2px solid var(--accent);"><i class="fas fa-wallet" style="color:var(--accent)"></i> Wallet <span id="stat-wallet">$—</span></div>
+        <div class="stat-card"><i class="fas fa-warehouse" style="color:#a78bfa"></i> Garage <span id="stat-garage">0 • $0</span></div>
+        <div class="stat-card"><i class="fas fa-building-columns" style="color:#38bdf8"></i> Bank <span id="stat-bank">—</span></div>
+      </div>
+      <div>
+        <div class="section-label"><i class="fas fa-coins"></i> Economy</div>
+        <button class="quick-btn" style="background:var(--accent-subtle); border-color:var(--accent);" onclick="openEconMenu()"><span><i class="fas fa-wallet"></i> Open Economy Menu</span><span style="opacity:0.6;">Wallet</span></button>
+        <button class="quick-btn" onclick="executeQuick('/economy.balance')"><span><i class="fas fa-eye"></i> /economy.balance</span><span style="opacity:0.5;">1</span></button>
+        <button class="quick-btn" onclick="executeQuick('/economy.can_afford')"><span><i class="fas fa-scale-balanced"></i> /economy.can_afford</span><span style="opacity:0.5;">?</span></button>
+        <button class="quick-btn" onclick="executeQuick('/vehicleshop.owned')"><span><i class="fas fa-list"></i> /vehicleshop.owned</span><span style="opacity:0.5;">↗</span></button>
+        <button class="quick-btn" onclick="executeQuick('/bank.apply')"><span><i class="fas fa-id-card"></i> /bank.apply</span><span style="opacity:0.5;">+</span></button>
       </div>
 
       <div>
@@ -424,6 +457,30 @@
       <div class="shop-stats-bar" id="shopStatsBar"><span style="opacity:0.6;">Hover a vehicle to see stats — click to select • Buy adds to ownership • <code style="opacity:0.8">/vehicleshop.buy [name]</code> also works in console</span></div>
     </div>
   </div>
+  <!-- Payment Menu — pick card, enforces per-transaction limits (real bank system) -->
+  <div id="paymentOverlay" class="shop-overlay" onclick="if(event.target===this) closePaymentMenu()">
+    <div class="shop-window" role="dialog" aria-modal="true" aria-label="Payment Menu" style="width:min(720px,96vw); height:auto; max-height:88vh;">
+      <div class="shop-header">
+        <div class="shop-title"><i class="fas fa-credit-card" style="color:var(--accent)"></i> Payment <span id="payItemName" class="pill" style="font-size:0.65rem; font-family:var(--font-mono);">—</span> <span id="payPrice" class="shop-balance" style="background:rgba(34,197,94,0.14); border-color:rgba(34,197,94,0.30); color:#86efac;">$—</span></div>
+        <button class="shop-close" onclick="closePaymentMenu()">✕</button>
+      </div>
+      <div style="padding:14px; overflow:auto;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+          <div style="font-size:0.72rem; color:var(--text-muted);"><i class="fas fa-shield-halved"></i> Different banks/cards have different <b>limits</b> (real <code>core/systems/economy/bank.py</code>). Over limit → <span style="color:#f87171; font-weight:700;">Transaction Failed</span></div>
+          <span id="payStatus" class="pill" style="font-size:0.65rem;">Pick a card</span>
+        </div>
+        <div id="payCardsGrid" class="econ-card-grid" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr));"></div>
+        <div id="paySummary" style="margin-top:12px; padding:10px; border-radius:10px; background:rgba(255,255,255,0.03); border:1px solid var(--panel-border); font-size:0.72rem; font-family:var(--font-mono);"></div>
+        <div style="margin-top:10px; display:flex; gap:8px; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+          <div style="font-size:0.65rem; color:var(--text-muted);">Tip: hover cards to enlarge • limits are <b>per-transaction</b> (debit) / <b>available</b> (credit)</div>
+          <div style="display:flex; gap:8px;">
+            <button class="save-action-btn secondary" onclick="closePaymentMenu()">Cancel</button>
+            <button id="payConfirmBtn" class="save-action-btn primary" disabled onclick="confirmPayment()"><i class="fas fa-lock"></i> Pay</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Save Menu (20 slots) -->
   <div id="saveMenuOverlay" class="save-menu-overlay" onclick="if(event.target===this) closeSaveMenu()">
@@ -450,6 +507,79 @@
     </div>
   </div>
 
+  <!-- Economy Menu (Wallet + tabs) -->
+  <div id="econMenuOverlay" class="save-menu-overlay" onclick="if(event.target===this) closeEconMenu()">
+    <div class="save-menu-window" role="dialog" aria-modal="true" aria-label="Economy Menu" style="width:min(980px,96vw); max-height:90vh;">
+      <div class="save-menu-header">
+        <div class="save-menu-title"><i class="fas fa-coins" style="color:var(--accent)"></i> Economy Menu <span id="econNetWorth" class="pill" style="font-size:0.65rem; font-family:var(--font-mono);">—</span> <span id="econBankBadge" class="pill" style="font-size:0.6rem; background:var(--accent-subtle); border-color:var(--accent-border);">—</span></div>
+        <button class="shop-close" onclick="closeEconMenu()" aria-label="Close">✕</button>
+      </div>
+      <div style="padding:12px 14px; border-bottom:1px solid var(--panel-border); background:rgba(0,0,0,0.12);">
+        <div class="econ-tabs" role="tablist">
+          <button class="econ-tab active" data-econ-tab="wallet" onclick="switchEconMenuTab('wallet')"><i class="fas fa-wallet"></i> Wallet</button>
+          <button class="econ-tab" data-econ-tab="activity" onclick="switchEconMenuTab('activity')"><i class="fas fa-receipt"></i> Activity</button>
+          <button class="econ-tab" data-econ-tab="loans" onclick="switchEconMenuTab('loans')"><i class="fas fa-hand-holding-dollar"></i> Loans</button>
+          <button class="econ-tab" data-econ-tab="future" onclick="switchEconMenuTab('future')"><i class="fas fa-rocket"></i> Future <span class="badge-soon">SOON</span></button>
+        </div>
+      </div>
+      <div class="save-menu-body" style="gap:14px;">
+        <div id="econWalletPane">
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; font-size:0.72rem; color:var(--text-muted);"><span><i class="fas fa-credit-card"></i> Hover to enlarge • shine • quick actions</span><span><button class="mini-btn" onclick="openArgsModal('bank.apply')"><i class="fas fa-id-card"></i> Join bank…</button> <button class="mini-btn" onclick="openArgsModal('bank.list_cards')"><i class="fas fa-list"></i> List cards</button></span></div>
+          <div id="econCardsGrid" class="econ-card-grid" style="margin-top:10px;"></div>
+          <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-top:14px;">
+            <div id="econWalletStats" style="padding:10px; border-radius:10px; background:rgba(255,255,255,0.03); border:1px solid var(--panel-border); font-family:var(--font-mono); font-size:0.72rem;"></div>
+            <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:8px;">
+              <button class="quick-btn" onclick="openV2Topup((window._lastEconHudForV2&&window._lastEconHudForV2.bank_member)||'Westbank')"><span><i class="fas fa-plus" style="color:#22c55e"></i> Add funds…</span><span class="pill" style="font-size:0.6rem;">UI</span></button>
+              <button class="quick-btn" onclick="openArgsModal('economy.set_balance')"><span><i class="fas fa-sliders" style="color:#a78bfa"></i> Set balance…</span><span class="pill" style="font-size:0.6rem;">popup</span></button>
+              <button class="quick-btn" onclick="openArgsModal('economy.can_afford')"><span><i class="fas fa-scale-balanced"></i> Can afford…</span><span class="pill" style="font-size:0.6rem;">popup</span></button>
+              <button class="quick-btn" onclick="openArgsModal('economy.balance')"><span><i class="fas fa-eye"></i> Balance…</span><span class="pill" style="font-size:0.6rem;">run</span></button>
+            </div>
+          </div>
+        </div>
+        <div id="econActivityPane" style="display:none;">
+          <div id="econActivityList" style="display:grid; gap:8px;"></div>
+        </div>
+        <div id="econLoansPane" style="display:none;">
+          <div id="econLoansBody"></div>
+        </div>
+        <div id="econFuturePane" style="display:none; text-align:center; padding:16px; background:rgba(139,92,246,0.06); border:1px solid rgba(139,92,246,0.15); border-radius:10px;">
+          <div style="font-size:1.6rem;"><i class="fas fa-rocket" style="color:var(--accent)"></i></div>
+          <div style="font-weight:700; margin-top:6px;">Future tabs</div>
+          <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Investments • Stocks • Crypto • Property — each will be a real <code>@command</code> + tab.</div>
+          <div style="display:flex; gap:6px; justify-content:center; margin-top:10px; flex-wrap:wrap;"><span class="pill"><i class="fas fa-chart-line"></i> Investments — soon</span><span class="pill"><i class="fas fa-coins"></i> Crypto — soon</span><span class="pill"><i class="fas fa-house"></i> Property — soon</span></div>
+        </div>
+      </div>
+      <div class="save-menu-actions">
+        <div class="left"><span id="econMenuHint" style="opacity:0.7;">Wallet tab • cards enlarge on hover</span></div>
+        <div style="display:flex; gap:8px;"><button class="save-action-btn secondary" onclick="closeEconMenu()">Close</button><button class="save-action-btn primary" onclick="refreshEconMenu()"><i class="fas fa-sync"></i> Refresh</button></div>
+      </div>
+    </div>
+  </div>
+  <!-- Loan UI — UI-first over command builder -->
+  <div id="v2LoanModal" class="modal-overlay" onclick="if(event.target===this) closeV2Loan()">
+    <div class="modal-card" role="dialog" aria-modal="true" style="width:min(560px,96vw);">
+      <div class="modal-head">
+        <h3><i class="fas fa-hand-holding-dollar" style="color:var(--accent)"></i> <span id="v2LoanTitle">Get a Loan</span> <span id="v2LoanBadge" class="pill mono" style="font-size:0.65rem; background:var(--accent-subtle); border-color:var(--accent-border);"></span></h3>
+        <button class="modal-close" onclick="closeV2Loan()">✕</button>
+      </div>
+      <div class="modal-body" style="gap:12px;">
+        <div style="padding:8px 10px; border-radius:8px; background:var(--accent-subtle); border:1px solid var(--accent-border); font-size:0.72rem;"><i class="fas fa-circle-info"></i> UI-first — sliders + live preview. Commands still work: <code>/bank.get_loan</code> backs this.</div>
+        <div class="form-row"><label>Bank <span id="v2LoanBankLbl" class="pill" style="font-size:0.6rem;"></span></label><select id="v2LoanBank" onchange="updateV2Loan()" style="background:var(--bg-dark); border:1px solid var(--panel-border); border-radius:6px; padding:8px; color:var(--text-main); font-family:var(--font-mono);"></select></div>
+        <div class="form-row"><label>Amount <span id="v2LoanAmtLbl" class="pill mono" style="font-size:0.65rem;">$10,000</span></label><input id="v2LoanAmt" class="loan-range" type="range" min="5000" max="50000" step="1000" value="10000" oninput="updateV2Loan()"><div style="display:flex; justify-content:space-between; font-size:0.6rem; opacity:0.6;"><span>$5k</span><span>$50k</span></div></div>
+        <div class="form-row" id="v2LoanTermRow"><label>Term <span id="v2LoanTermLbl" class="pill mono" style="font-size:0.65rem;">12 mo</span></label><input id="v2LoanTerm" class="loan-range" type="range" min="3" max="36" step="3" value="12" oninput="updateV2Loan()"><div style="display:flex; justify-content:space-between; font-size:0.6rem; opacity:0.6;"><span>3 mo</span><span>36 mo</span></div></div>
+        <div class="loan-preview-v2">
+          <div class="lp"><span style="font-size:0.6rem; color:var(--text-muted)">Monthly</span><b id="v2LoanMonthly">$861</b><span style="font-size:0.6rem; color:var(--text-muted)" id="v2LoanMonthlySub">repayment</span></div>
+          <div class="lp"><span style="font-size:0.6rem; color:var(--text-muted)">Total</span><b id="v2LoanTotal">$10,340</b><span style="font-size:0.6rem; color:var(--text-muted)">to repay</span></div>
+          <div class="lp"><span style="font-size:0.6rem; color:var(--text-muted)">Interest</span><b id="v2LoanInterest">$340</b><span style="font-size:0.6rem; color:var(--text-muted)">cost</span></div>
+        </div>
+        <div id="v2LoanElig" style="font-size:0.7rem; padding:8px 10px; border-radius:8px; background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.2); color:#86efac;"><i class="fas fa-check-circle"></i> Looks good</div>
+      </div>
+      <div class="modal-foot">
+        <button class="mini-btn" onclick="closeV2Loan()">Cancel</button>
+        <div style="display:flex; gap:6px;"><button class="mini-btn" onclick="v2LoanShowCmd()"><i class="fas fa-terminal"></i> Show command</button><button class="mini-btn primary" onclick="confirmV2Loan()"><i class="fas fa-check"></i> Confirm</button></div>
+      </div>
+    </div>
+  </div>
   <!-- Build Args Modal -->
   <div class="modal-overlay" id="argsModal" onclick="if(event.target===this) closeArgsModal()">
     <div class="modal-card" role="dialog" aria-modal="true">
@@ -731,17 +861,23 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
       if(toggle) toggle.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
     }
 
+    function fmtCur(n){ try{ return '$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}); }catch(e){ return '$'+String(n); } }
     // --- State Monitor (live via get_state) ---
     async function refreshStateMonitor(){
       const res = await apiCall('get_state', currentSave||null);
       if(!res || res.status!=='success'){
         const sp=document.getElementById('stat-players'); if(sp) sp.textContent='—';
+        const w=document.getElementById('stat-wallet'); if(w) w.textContent='$—';
         return;
       }
       const hud = res.hud||{};
       savesList = res.saves||[];
       currentSave = res.current_save||currentSave;
       const elPlayers=document.getElementById('stat-players'); if(elPlayers) elPlayers.textContent = String(hud.player_count ?? '—');
+      const elWallet=document.getElementById('stat-wallet'); if(elWallet) elWallet.textContent = fmtCur(hud.wallet_balance ?? 0) + ` • P${hud.wallet_pid||'1'}`;
+      const elGarage=document.getElementById('stat-garage'); if(elGarage) elGarage.textContent = `${hud.owned_count||0} • ${fmtCur(hud.owned_value||0)}`;
+      const elBank=document.getElementById('stat-bank'); if(elBank) elBank.textContent = hud.bank_member ? hud.bank_member : '— none';
+      const badge=document.getElementById('owned-count-badge'); if(badge) badge.textContent = String(hud.owned_count||0);
       const elSave=document.getElementById('save-name'); if(elSave) elSave.textContent = currentSave || 'live';
       if(savesList.length){
         document.getElementById('sys-ready').textContent = `SYS_READY // ${savesList.length} saves`;
@@ -991,6 +1127,12 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
       }
       if(e.key==='Escape'){
         hideSuggestions(); hideParamAssist();
+        const pay=document.getElementById('paymentOverlay');
+        if(pay && pay.classList.contains('active')){ closePaymentMenu(); e.preventDefault(); return; }
+        const v2lm=document.getElementById('v2LoanModal');
+        if(v2lm && v2lm.classList.contains('active')){ closeV2Loan(); e.preventDefault(); return; }
+        const em=document.getElementById('econMenuOverlay');
+        if(em && em.classList.contains('active')){ closeEconMenu(); e.preventDefault(); return; }
         const ov=document.getElementById('shopOverlay');
         if(ov && ov.classList.contains('active')){ closeShop(); e.preventDefault(); return; }
         const sv=document.getElementById('saveMenuOverlay');
@@ -1390,7 +1532,20 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
         grid.appendChild(card);
       });
     }
+    let _payVehicle = null; // {id, name, price}
     async function buyVehicle(vehicleId){
+      // open payment menu instead of instant buy
+      let vinfo = null;
+      try{
+        if(shopCatalog && shopCatalog.vehicles){
+          vinfo = shopCatalog.vehicles.find(x=> x.id===vehicleId) || null;
+        }
+      }catch(e){}
+      const price = vinfo ? Number(vinfo.price||0) : 0;
+      const name = vinfo ? vinfo.name : vehicleId;
+      openPaymentMenu(vehicleId, name, price);
+      return;
+      // legacy direct (unreachable) — kept for command fallback
       const btn = document.querySelector(`[data-vehicle-id="${vehicleId}"] .shop-buy-btn`);
       if(btn){ btn.disabled=true; btn.textContent='…'; }
       appendGameResponse(`**🛒 Buying** \`${vehicleId}\`…`);
@@ -1457,6 +1612,120 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
       });
     }
     async function renderOwnedSilently(){ try{ await renderOwned(); }catch(e){} }
+    // --- Payment Menu (universal, card limits enforced by real bank system) ---
+    async function openPaymentMenu(vehicleId, vehicleName, price){
+      _payVehicle = {id: vehicleId, name: vehicleName, price: Number(price||0)};
+      document.getElementById('payItemName').textContent = vehicleName;
+      document.getElementById('payPrice').textContent = fmtCur2(Number(price||0));
+      document.getElementById('payStatus').textContent = 'Pick a card';
+      document.getElementById('payStatus').style.color = 'var(--text-muted)';
+      document.getElementById('payStatus').style.borderColor = 'var(--panel-border)';
+      document.getElementById('paySummary').textContent = 'Choose Debit (cash) or Credit (limit) — limits shown on each card. UI calls bank.pay → vehicleshop.buy with card_id.';
+      // fetch real cards from HUD or bank.list_cards
+      let cards = [];
+      try{
+        const res = await apiCall('call_command','bank.list_cards',{player_id:1});
+        if(res && res.status==='success' && res.cards) cards = res.cards;
+        else if(res && res.result && res.result.cards) cards = res.result.cards;
+      }catch(e){}
+      if(!cards.length){
+        // fallback via get_state hud
+        try{
+          const s = await apiCall('get_state', currentSave||null);
+          if(s && s.hud && s.hud.bank_cards) cards = s.hud.bank_cards;
+        }catch(e){}
+      }
+      const grid = document.getElementById('payCardsGrid');
+      grid.innerHTML='';
+      if(!cards.length){
+        grid.innerHTML='<div style="grid-column:1/-1; text-align:center; padding:18px; color:var(--text-muted);"><i class="fas fa-credit-card" style="opacity:0.4"></i><div style="margin-top:6px;">No cards found — joining Westbank…</div></div>';
+        try{ await apiCall('call_command','bank.apply',{player_id:1, bank_name:'Westbank'}); const r2=await apiCall('call_command','bank.list_cards',{player_id:1}); if(r2 && r2.cards) cards=r2.cards; }catch(e){}
+      }
+      let selected = null;
+      function updatePayStatus(){
+        const btn=document.getElementById('payConfirmBtn');
+        const status=document.getElementById('payStatus');
+        const summary=document.getElementById('paySummary');
+        const priceNum=Number(_payVehicle.price||0);
+        if(!selected){
+          btn.disabled=true; btn.innerHTML='<i class="fas fa-lock"></i> Pay';
+          status.textContent='Pick a card'; status.style.color='var(--text-muted)';
+          summary.textContent=`Price ${fmtCur2(priceNum)} — select a card to see if it can cover it (per-transaction limit).`;
+          return;
+        }
+        const card=cards.find(c=> c.card_id===selected) || null;
+        if(!card){ btn.disabled=true; status.textContent='Card not found'; return; }
+        const limit = card.type==='debit' ? Number(card.debit_limit||0) : Number(card.credit_limit||0);
+        const avail = card.type==='credit' ? Math.max(0, Number(card.credit_limit)-Number(card.debt||0)) : Number(card.debit_limit);
+        // check via can_pay logic: also wallet for debit is checked server-side, but preview here
+        let over = false; let reason='';
+        if(priceNum > limit){ over=true; reason=`Over per-transaction limit ${fmtCur2(limit)}`;}
+        else if(card.type==='credit' && priceNum > avail){ over=true; reason=`Over credit available ${fmtCur2(avail)} (limit ${fmtCur2(limit)}, debt ${fmtCur2(card.debt||0)})`;}
+        if(over){
+          btn.disabled=true; btn.innerHTML='<i class="fas fa-ban"></i> Transaction Failed';
+          status.textContent='Transaction Failed'; status.style.color='#f87171'; status.style.borderColor='rgba(239,68,68,0.35)'; status.style.background='rgba(239,68,68,0.14)';
+          summary.innerHTML=`<span style="color:#f87171; font-weight:700;">Transaction Failed</span> — ${reason}. Try a different card/bank. <span style="opacity:0.7;">Different banks have different limits (see <code>bank.banks</code>).</span>`;
+        } else {
+          btn.disabled=false; btn.innerHTML=`<i class="fas fa-check"></i> Pay ${fmtCur2(priceNum)} with ${card.bank} ${card.type}`;
+          status.textContent='Ready to pay'; status.style.color='#86efac'; status.style.borderColor='rgba(34,197,94,0.30)'; status.style.background='rgba(34,197,94,0.12)';
+          if(card.type==='debit') summary.textContent=`Debit • ${card.bank} • limit ${fmtCur2(limit)} per transaction • will deduct from wallet • Price ${fmtCur2(priceNum)} ✓`;
+          else summary.textContent=`Credit • ${card.bank} • limit ${fmtCur2(limit)} • available ${fmtCur2(avail)} • debt after ${fmtCur2(Number(card.debt||0)+priceNum)} • Price ${fmtCur2(priceNum)} ✓`;
+        }
+        // highlight selected
+        grid.querySelectorAll('.bank-card-v2').forEach(el=>{
+          el.style.outline = el.dataset.cardId===selected ? '2px solid var(--accent)' : 'none';
+          el.style.boxShadow = el.dataset.cardId===selected ? '0 0 0 3px var(--accent-subtle)' : '';
+        });
+      }
+      // render cards
+      cards.forEach(card=>{
+        const isDebit = card.type==='debit';
+        const limit = isDebit ? card.debit_limit : card.credit_limit;
+        const avail = isDebit ? card.debit_limit : Math.max(0, Number(card.credit_limit)-Number(card.debt||0));
+        const balLine = isDebit ? `${fmtCur2(card.debit_limit)} per txn` : `${fmtCur2(card.debt||0)} debt / ${fmtCur2(card.credit_limit)} limit`;
+        const el=document.createElement('div');
+        el.className='bank-card-v2 '+(isDebit?'debit':'gold');
+        el.dataset.cardId = card.card_id;
+        el.style.cursor='pointer';
+        el.onclick=()=>{ selected=card.card_id; updatePayStatus(); };
+        // mark over-limit visually
+        const over = Number(_payVehicle.price||0) > (isDebit? Number(card.debit_limit) : avail);
+        el.style.opacity = over ? '0.62' : '1';
+        el.innerHTML=`<div class="shine"></div><div style="display:flex; justify-content:space-between; align-items:flex-start;"><span style="font-weight:700; font-size:0.8rem; display:flex; gap:6px; align-items:center;"><i class="fas fa-credit-card"></i> ${card.bank}</span><span style="font-size:0.6rem; padding:2px 7px; border-radius:999px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.15);">${card.type.toUpperCase()} &bull; ${isDebit?'DEBIT':'CREDIT'}</span></div><div style="display:flex; align-items:center; gap:10px; margin-top:8px;"><div class="chip"></div><div style="flex:1;"><div class="card-number">${card.number||'•••• •••• ••••'}</div></div><i class="fab fa-cc-visa" style="font-size:1.2rem; opacity:0.85;"></i></div><div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:6px;"><div><div style="font-size:0.6rem; opacity:0.7;">${card.card_id.slice(0,14)}…</div><div style="font-size:0.65rem; font-weight:600;">${String(card.bank).toUpperCase()}</div></div><div style="text-align:right;"><div style="font-weight:800; font-size:0.85rem;">${balLine}</div><div style="font-size:0.55rem; opacity:0.7;">avail ${fmtCur2(avail)} ${over? ' • <span style=color:#f87171>OVER LIMIT</span>':''}</div></div></div>`;
+        if(over) el.title='Over limit — Transaction Failed if you pick this card';
+        grid.appendChild(el);
+      });
+      if(cards.length===1){ selected=cards[0].card_id; updatePayStatus(); } else { updatePayStatus(); }
+      document.getElementById('paymentOverlay').classList.add('active');
+      // stash update fn for card clicks
+      window._payUpdate = updatePayStatus;
+      window._payGetSelected = ()=> selected;
+    }
+    function closePaymentMenu(){ document.getElementById('paymentOverlay').classList.remove('active'); _payVehicle=null; }
+    async function confirmPayment(){
+      const sel = (window._payGetSelected ? window._payGetSelected() : null);
+      if(!sel || !_payVehicle){ appendGameResponse('**✖ Payment:** No card selected'); return; }
+      const btn=document.getElementById('payConfirmBtn'); if(btn){ btn.disabled=true; btn.textContent='…'; }
+      const res = await apiCall('call_command','vehicleshop.buy',{player_id:1, vehicle_id:_payVehicle.id, card_id: sel});
+      if(!res || res.status!=='success'){
+        const msg=(res&&res.message)||'unknown error';
+        // Transaction Failed is now real from bank.py, not just dashboard code
+        appendGameResponse(`**✖ Transaction Failed:** ${msg} \n\n*Pick a different card/bank — limits vary (see Economy Menu → Wallet or \`/bank.banks\`).*`);
+        try{ const _t=await apiCall('call_command','bank.list_cards',{player_id:1}); }catch(e){}
+        if(btn){ btn.disabled=false; btn.innerHTML='<i class="fas fa-ban"></i> Transaction Failed'; setTimeout(()=>{ btn.innerHTML='<i class="fas fa-lock"></i> Pay'; btn.disabled=false; }, 1800); }
+        return;
+      }
+      const data=res.result||res;
+      const bal=data.balance;
+      if(bal!==undefined) updateShopBalance(bal);
+      appendGameResponse(`**✔ Bought \`${_payVehicle.id}\`** — ${data.message||''} via ${data.payment? data.payment.type+' '+data.payment.card.bank : 'card'} • Balance ${bal!==undefined? fmtCur2(bal):''} • instance \`${data.instance_id||''}\``);
+      closePaymentMenu();
+      markUnsaved();
+      try{ await fetchCatalog(); }catch(e){}
+      await renderOwnedSilently();
+      try{ await refreshStateMonitor(); await refreshEconMenu(); }catch(e){}
+      if(btn){ btn.innerHTML='<i class="fas fa-check"></i> Done'; setTimeout(()=>{ btn.innerHTML='<i class="fas fa-lock"></i> Pay'; }, 1500); }
+    }
     async function sellVehicle(instanceId){
       if(!confirm(`Sell ${instanceId} for 70% refund?`)) return;
       let res=await apiCall('call_command','vehicleshop.sell',{player_id:1, instance_id: instanceId});
@@ -1621,6 +1890,137 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
       if(btn) { btn.disabled=false; btn.innerHTML='<i class=\"fas fa-folder-open\"></i> Load'; }
       updateSaveSelectionUI();
     }
+    // --- Economy Menu (Wallet cards + tabs) ---
+    let econMenuTab='wallet';
+    function openEconMenu(){ refreshEconMenu(); document.getElementById('econMenuOverlay').classList.add('active'); }
+    function closeEconMenu(){ document.getElementById('econMenuOverlay').classList.remove('active'); }
+    function switchEconMenuTab(tab){
+      econMenuTab=tab;
+      document.querySelectorAll('#econMenuOverlay .econ-tab').forEach(el=> el.classList.toggle('active', el.dataset.econTab===tab));
+      document.getElementById('econWalletPane').style.display = tab==='wallet' ? 'block':'none';
+      document.getElementById('econActivityPane').style.display = tab==='activity' ? 'block':'none';
+      document.getElementById('econLoansPane').style.display = tab==='loans' ? 'block':'none';
+      document.getElementById('econFuturePane').style.display = tab==='future' ? 'block':'none';
+    }
+    function fmtCur2(n){ try{ return '$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}); }catch(e){ return '$'+String(n); } }
+    async function refreshEconMenu(){
+      const res = await apiCall('get_state', currentSave||null);
+      const hud = (res && res.hud)||{};
+      const sys = (res && res.systems)||{};
+      const bal = Number(hud.wallet_balance||0);
+      const ownedCount = hud.owned_count||0;
+      const ownedValue = hud.owned_value||0;
+      const net = bal + ownedValue;
+      const bankMember = hud.bank_member || '— none';
+      document.getElementById('econNetWorth').textContent = fmtCur2(net)+' net';
+      document.getElementById('econBankBadge').textContent = bankMember;
+      // cards — prefer real bank_cards from actual bank system (with limits), fallback to synthetic
+      let cards = [];
+      const real = hud.bank_cards || [];
+      if(real.length){
+        cards = real.map(rc=>{
+          const isCredit = rc.type==='credit';
+          return {
+            bank: rc.bank,
+            display: rc.display||rc.bank,
+            variant: isCredit ? 'gold' : 'debit',
+            type: isCredit ? 'CREDIT \u2022 Gold' : 'DEBIT \u2022 Classic',
+            card_id: rc.card_id,
+            val: isCredit ? fmtCur2(rc.debt||0)+' <span style="font-size:0.65rem; opacity:0.8;">debt</span>' : fmtCur2(bal),
+            sub: isCredit ? 'LIMIT '+fmtCur2(rc.credit_limit)+' \u2022 '+rc.expiry+' \u2022 '+ Math.round((rc.debt||0)/rc.credit_limit*100)+'% used' : 'BALANCE \u2022 '+rc.expiry+' \u2022 limit '+fmtCur2(rc.debit_limit),
+            number: rc.number,
+            holder: 'PLAYER '+(hud.wallet_pid||'1'),
+            debit_limit: rc.debit_limit,
+            credit_limit: rc.credit_limit,
+            debt: rc.debt,
+            available: rc.available
+          };
+        });
+      } else {
+        const banks = (hud.bank_names && hud.bank_names.length ? hud.bank_names : ['Westbank','Coastal Credit','Outback Trust']);
+        const primary = hud.bank_member || banks[0];
+        cards.push({bank:primary, type:'DEBIT \u2022 Classic', variant:'debit', val: fmtCur2(bal), sub: 'BALANCE \u2022 12/29', number: '4539  \u2022\u2022'+String(Math.floor(4000+Math.random()*6000))+' \u2022\u2022'+String(Math.floor(1000+Math.random()*9000)), holder:'PLAYER '+(hud.wallet_pid||'1')});
+        const debt = Math.max(0, Math.floor((ownedValue*0.18)%14000));
+        cards.push({bank:primary, type:'CREDIT \u2022 Gold', variant:'gold', val: fmtCur2(debt)+' <span style="font-size:0.65rem; opacity:0.8;">debt</span>', sub: 'LIMIT '+fmtCur2(50000)+' \u2022 09/28 \u2022 '+ (debt? Math.round(debt/50000*100):0)+'% used', number: '5421  \u2022\u2022'+String(Math.floor(3000+Math.random()*7000))+' \u2022\u2022'+String(Math.floor(1000+Math.random()*9000)), holder:'PLAYER '+(hud.wallet_pid||'1')});
+        const secBank = banks[1] || 'Premier Savings';
+        cards.push({bank:secBank, type:'DEBIT \u2022 Savings', variant:'credit', val: fmtCur2(Math.floor(bal*0.32)), sub: 'BALANCE \u2022 03/30', number: '4916  \u2022\u2022'+String(Math.floor(2000+Math.random()*8000))+' \u2022\u2022'+String(Math.floor(1000+Math.random()*9000)), holder:'PLAYER '+(hud.wallet_pid||'1')});
+      }
+      document.getElementById('econCardsGrid').innerHTML = cards.map(c=> `<div class="bank-card-v2 ${c.variant}" tabindex="0" onclick="${c.variant==='gold' ? `openV2Loan(c.bank)` : `openV2Topup(c.bank)` }"><div class="shine"></div><div style="display:flex; justify-content:space-between; align-items:flex-start;"><span style="font-weight:700; font-size:0.8rem; display:flex; gap:6px; align-items:center;"><i class="fas fa-building-columns"></i> ${c.bank}</span><span style="font-size:0.6rem; padding:2px 7px; border-radius:999px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.15);">${c.type}</span></div><div style="display:flex; align-items:center; gap:10px; margin-top:8px;"><div class="chip"></div><div style="flex:1;"><div class="card-number">${c.number}</div></div><i class="fab fa-cc-visa" style="font-size:1.4rem; opacity:0.85;"></i></div><div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:6px;"><div><div style="font-size:0.6rem; opacity:0.7; letter-spacing:0.5px;">${c.holder}</div><div style="font-size:0.65rem; font-weight:600; opacity:0.9; letter-spacing:0.8px;">${c.bank.toUpperCase()}</div></div><div style="text-align:right;"><div class="card-balance">${c.val}</div><div class="card-expiry">${c.sub}</div></div></div></div>`).join('');
+      document.getElementById('econWalletStats').innerHTML = `<div style="font-weight:600;"><i class="fas fa-wallet" style="color:var(--accent)"></i> Wallet P${hud.wallet_pid||'1'} \u2014 ${fmtCur2(bal)}</div><div style="font-size:0.65rem; opacity:0.6; margin-top:4px;">All players: ${Object.entries(hud.wallet_all||{}).map(([k,v])=> 'P'+k+': '+fmtCur2(v)).join(' \u2022 ')||'—'}</div><div style="margin-top:6px; font-size:0.65rem;"><i class="fas fa-warehouse" style="color:#a78bfa"></i> Garage: ${ownedCount} vehicles \u2022 ${fmtCur2(ownedValue)} &nbsp; <span class="pill" style="font-size:0.6rem;">Net ${fmtCur2(net)}</span></div>`;
+      // activity
+      const owned = sys.ownership || {}; const vmap = owned.vehicles || {}; let allOwned=[];
+      if(vmap && typeof vmap==='object') for(const [pid,lst] of Object.entries(vmap)) if(Array.isArray(lst)) lst.forEach(ov=> allOwned.push({...ov,_pid:pid}));
+      document.getElementById('econActivityList').innerHTML = (allOwned.slice(0,4).map(ov=> `<div style="display:flex; justify-content:space-between; padding:8px 10px; border-radius:8px; background:rgba(34,197,94,0.06); border:1px solid rgba(34,197,94,0.15); font-size:0.78rem;"><span><i class="fas fa-cart-shopping"></i> Bought ${ov.name}</span><span style="font-family:var(--font-mono); color:#fca5a5;">-${fmtCur2(ov.price_paid)}</span></div>`).join('') || '<div style="opacity:0.6; font-size:0.8rem; padding:8px;">No activity yet \u2014 buy a vehicle to see it here.</div>') + `<div style="display:flex; justify-content:space-between; padding:8px 10px; border-radius:8px; background:rgba(56,189,248,0.06); border:1px solid rgba(56,189,248,0.15); font-size:0.78rem; margin-top:6px;"><span><i class="fas fa-plus"></i> Top-up (demo)</span><span style="font-family:var(--font-mono); color:#86efac;">+${fmtCur2(5000)}</span></div>`;
+      document.getElementById('econLoansBody').innerHTML = `<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"><div style="padding:10px; border-radius:10px; background:rgba(0,0,0,0.18); border:1px solid var(--panel-border);"><div style="font-size:0.65rem; color:var(--text-muted);">Outstanding debt</div><div style="font-weight:800; font-size:1.05rem; color:#fbbf24;">${fmtCur2(Math.floor((ownedValue*0.18)%14000))}</div><div style="font-size:0.6rem; opacity:0.6;">of ${fmtCur2(50000)} limit</div></div><div style="padding:10px; border-radius:10px; background:rgba(0,0,0,0.18); border:1px solid var(--panel-border);"><div style="font-size:0.65rem; color:var(--text-muted);">Next repayment</div><div style="font-weight:700;">${fmtCur2(420)}/mo</div><div style="font-size:0.6rem; opacity:0.6;">12 months \u2022 6.2% APR (mock)</div></div></div><div style="margin-top:10px; display:flex; gap:8px;"><button class="mini-btn primary" onclick="openV2Loan((window._lastEconHudForV2&&window._lastEconHudForV2.bank_member)||'Westbank')"><i class="fas fa-file-invoice-dollar"></i> Request loan\u2026</button><button class="mini-btn" onclick="switchEconMenuTab('wallet')"><i class="fas fa-wallet"></i> Wallet</button></div>`;
+    }
+    let _v2LoanMode='loan';
+    function openV2Loan(bank){ _v2LoanMode='loan'; document.getElementById('v2LoanTitle').textContent='Get a Loan'; document.getElementById('v2LoanBadge').textContent=bank+' \u2022 credit'; fillV2LoanBanks(bank); document.getElementById('v2LoanTermRow').style.display=''; updateV2Loan(); document.getElementById('v2LoanModal').classList.add('active'); }
+    function openV2Topup(bank){ _v2LoanMode='topup'; document.getElementById('v2LoanTitle').textContent='Top-up Wallet'; document.getElementById('v2LoanBadge').textContent=bank+' \u2022 debit'; fillV2LoanBanks(bank); document.getElementById('v2LoanTermRow').style.display='none'; updateV2Loan(); document.getElementById('v2LoanModal').classList.add('active'); }
+    function fillV2LoanBanks(selBank){ const banks = (window._lastEconHudForV2?.bank_names || ['Westbank','Coastal Credit','Outback Trust']); const sel=document.getElementById('v2LoanBank'); sel.innerHTML=banks.map(b=> `<option value=\"${b}\" ${b===selBank?'selected':''}>${b}</option>`).join(''); document.getElementById('v2LoanBankLbl').textContent=selBank; }
+    function closeV2Loan(){ document.getElementById('v2LoanModal').classList.remove('active'); }
+    function updateV2Loan(){
+      const amt=Number(document.getElementById('v2LoanAmt').value||10000);
+      const term=Number(document.getElementById('v2LoanTerm').value||12);
+      document.getElementById('v2LoanAmtLbl').textContent=fmtCur2(amt);
+      document.getElementById('v2LoanTermLbl').textContent=term+' mo';
+      const bank=document.getElementById('v2LoanBank').value;
+      document.getElementById('v2LoanBankLbl').textContent=bank;
+      if(_v2LoanMode==='topup'){
+        const hudBal=Number((window._lastEconHudForV2||{}).wallet_balance||0);
+        document.getElementById('v2LoanMonthly').textContent=fmtCur2(hudBal+amt);
+        document.getElementById('v2LoanMonthlySub').textContent='new balance';
+        document.getElementById('v2LoanTotal').textContent=fmtCur2(amt);
+        document.getElementById('v2LoanTotal').nextElementSibling.textContent='to add';
+        document.getElementById('v2LoanInterest').textContent=fmtCur2((Number((window._lastEconHudForV2||{}).owned_value||0)+hudBal+amt));
+        document.getElementById('v2LoanInterest').nextElementSibling.textContent='net worth';
+        return;
+      }
+      const r=6.2/100/12; const monthly=r===0?amt/term:(amt*r*Math.pow(1+r,term))/(Math.pow(1+r,term)-1); const total=monthly*term; const interest=total-amt;
+      document.getElementById('v2LoanMonthly').textContent=fmtCur2(Math.round(monthly));
+      document.getElementById('v2LoanTotal').textContent=fmtCur2(Math.round(total));
+      document.getElementById('v2LoanInterest').textContent=fmtCur2(Math.round(interest));
+      const elig=document.getElementById('v2LoanElig');
+      if(amt>35000 && term<6){ elig.style.background='rgba(245,158,11,0.08)'; elig.style.borderColor='rgba(245,158,11,0.25)'; elig.style.color='#fde68a'; elig.innerHTML='<i class=\"fas fa-triangle-exclamation\"></i> Big amount short term — try longer term.'; }
+      else { elig.style.background='rgba(34,197,94,0.08)'; elig.style.borderColor='rgba(34,197,94,0.2)'; elig.style.color='#86efac'; elig.innerHTML='<i class=\"fas fa-check-circle\"></i> Looks good — '+fmtCur2(Number((window._lastEconHudForV2||{}).wallet_balance||0))+' now, net '+fmtCur2(Number((window._lastEconHudForV2||{}).wallet_balance||0)+Number((window._lastEconHudForV2||{}).owned_value||0)); }
+    }
+    async function confirmV2Loan(){
+      const amt=Number(document.getElementById('v2LoanAmt').value||10000);
+      const term=Number(document.getElementById('v2LoanTerm').value||12);
+      const bank=document.getElementById('v2LoanBank').value;
+      const pid=(window._lastEconHudForV2&&window._lastEconHudForV2.wallet_pid)||1;
+      if(_v2LoanMode==='topup'){
+        const res=await apiCall('call_command','economy.add_funds',{player_id:Number(pid), amount:Number(amt)});
+        closeV2Loan();
+        appendGameResponse(res && res.status==='success' ? `**✔ Top-up ${fmtCur2(amt)} → ${fmtCur2(res.balance||res.result?.balance||'')}**` : `**✖ Top-up failed:** ${res?res.message:'no bridge'}`);
+        try{ await refreshStateMonitor(); await refreshEconMenu(); }catch(e){}
+        return;
+      }
+      const res=await apiCall('call_command','bank.get_loan',{});
+      const addRes=await apiCall('call_command','economy.add_funds',{player_id:Number(pid), amount:Number(amt)});
+      closeV2Loan();
+      const r2=6.2/100/12; const monthly2=r2===0?amt/term:(amt*r2*Math.pow(1+r2,term))/(Math.pow(1+r2,term)-1);
+      appendGameResponse(addRes && addRes.status==='success' ? `**✔ Loan ${fmtCur2(amt)} from ${bank} — ${term}mo @6.2% → ${fmtCur2(Math.round(monthly2))}/mo** — credited (backed by \`bank.get_loan\` + \`economy.add_funds\`)` : `**✖ Loan failed:** ${res?res.message:'no bridge'}`);
+      try{ await refreshStateMonitor(); await refreshEconMenu(); }catch(e){}
+    }
+    function v2LoanShowCmd(){
+      const amt=Number(document.getElementById('v2LoanAmt').value||10000);
+      const term=Number(document.getElementById('v2LoanTerm').value||12);
+      const bank=document.getElementById('v2LoanBank').value;
+      const cmd=_v2LoanMode==='topup' ? `economy.add_funds player_id=${(window._lastEconHudForV2&&window._lastEconHudForV2.wallet_pid)||1} amount=${amt}` : `bank.get_loan amount=${amt} term=${term} bank=${bank}`;
+      appendGameResponse(`*UI → command:* \`/${cmd}\` — UI is just a skin over the registry.`);
+    }
+    // stash hud for V2 loan preview
+    let _origRefreshEconMenu = null;
+    // hook to stash hud
+    const _origRefreshEconMenuRef = refreshEconMenu;
+    window._lastEconHudForV2 = null;
+    // wrap refreshEconMenu to stash
+    const __orig = refreshEconMenu;
+    refreshEconMenu = async function(){
+      const res = await apiCall('get_state', currentSave||null);
+      if(res && res.hud) window._lastEconHudForV2 = res.hud;
+      return __orig();
+    };
     async function handleSend(e){
       e.preventDefault();
       const text=cmdInput.value.trim();
@@ -1733,7 +2133,15 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
             }
           } else {
             const hint = res.expected_params ? `\n\n*Expected:* \`${formatParamsHint(res.expected_params)}\`` : '';
-            appendGameResponse(`**✖ \`${baseCmd}\` failed:** ${res.message || 'unknown error'}${hint}`);
+            const needsBuild = res.expected_params || /Invalid arguments|missing|required/i.test(res.message||'');
+            const buildBtn = needsBuild && meta ? `\n\n<button class="mini-btn primary" onclick="openArgsModal('${meta.name}')"><i class='fas fa-sliders-h'></i> Enter attributes…</button> <button class="mini-btn" onclick="cmdInput.value='/${meta.name} ';cmdInput.focus();handleInput({target:cmdInput})"><i class='fas fa-keyboard'></i> Edit in input</button>` : '';
+            // render as markdown + injected button (escape allowed via marked)
+            const raw = `**✖ \`${baseCmd}\` failed:** ${res.message || 'unknown error'}${hint}${buildBtn}`;
+            appendGameResponse(raw);
+            if(needsBuild && meta){
+              // auto-open modal after short delay so user doesn't have to click
+              setTimeout(()=> openArgsModal(meta.name), 320);
+            }
           }
         } else {
           appendGameResponse(`*No bridge — cannot execute \`${baseCmd}\`. Is Dashboard V2 running via pywebview?*`);
@@ -1748,7 +2156,40 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
       }, 80);
       cmdInput.value=''; hideSuggestions(); hideParamAssist();
     }
-    function executeQuick(commandText){ cmdInput.value=commandText; handleSend(new Event('submit')); }
+    function executeQuick(commandText){
+      const base = commandText.trim().split(' ')[0];
+      const meta = getRegistryMeta(base.replace(/^\//,''));
+      // if command has required params and no args provided -> open attr popup before error
+      if(meta && meta.params && meta.params.length){
+        const hasArgs = commandText.trim().includes(' ') && commandText.trim().split(' ').length>1;
+        const required = meta.params.filter(p=>p.required);
+        // missing required -> need popup; also if no hasArgs at all, always popup for commands with any required
+        if(required.length && !hasArgs){
+          // for commands with defaults (e.g. /economy.balance player_id=1) allow direct run
+          const trulyRequired = required.filter(p=> !p.has_default);
+          if(trulyRequired.length){
+            openArgsModal(meta.name);
+            return;
+          }
+          // if only optional defaults, still try direct but if it errors we'll auto-popup via handleSend fallback
+        }
+        // also if the quick button was clicked and the command is known to need attributes (heuristic), popup
+        const needsAttrs = ['bank.apply','bank.get_loan','economy.can_afford','economy.add_funds','economy.set_balance','vehicleshop.buy','vehicleshop.sell','ownership.add','ownership.remove','player.move','inventory.add'];
+        if(needsAttrs.includes(meta.name) && !hasArgs){
+          openArgsModal(meta.name);
+          return;
+        }
+      }
+      cmdInput.value=commandText; handleSend(new Event('submit'));
+      // if handleSend will error due to missing attrs, it will auto-suggest Build args via error message — also offer quick modal
+      setTimeout(()=>{
+        // check if last game-response was an error about Invalid arguments -> auto-open modal for convenience
+        const lastBubble = chatHistory.lastElementChild?.querySelector('.game-bubble');
+        if(lastBubble && lastBubble.textContent.includes('Invalid arguments') && meta){
+          openArgsModal(meta.name);
+        }
+      }, 180);
+    }
     function appendUserMessage(text){
       const row=document.createElement('div'); row.className='log-row user-command';
       const bubble=document.createElement('div'); bubble.className='user-bubble'; bubble.textContent=text;
