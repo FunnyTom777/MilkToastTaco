@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    vehicles.xml — MTT Vehicle Shop Catalog (FS22-style)
+    Defines categories and vehicles sold in the Vehicle Shop.
+    Loaded by core/systems/shop/vehicle_shop.py (also via inventory loader pattern).
+    Add new categories/vehicles here; shop auto-discovers them.
+-->
+<vehicles version="1">
+    <!-- ================= CATEGORIES ================= -->
+    <categories>
+        <category id="cars"        name="Cars"        icon="fa-car"          color="#3b82f6"  description="Everyday cars and sport sedans" />
+        <category id="trucks"      name="Trucks"      icon="fa-truck"        color="#f97316"  description="Pickups and heavy haulers" />
+        <category id="tractors"    name="Tractors"    icon="fa-tractor"      color="#22c55e"  description="Farm tractors and implements" />
+        <category id="trailers"    name="Trailers"    icon="fa-trailer"      color="#a78bfa"  description="Trailers and transport" />
+        <category id="forestry"    name="Forestry"    icon="fa-tree"         color="#16a34a"  description="Forestry machines" />
+        <category id="construction" name="Construction" icon="fa-helmet-safety" color="#eab308" description="Construction &amp; utility" />
+    </categories>
+
+    <!-- ================= VEHICLES ================= -->
+    <!-- Cars -->
+    <vehicle>
+        <id>car_sedan_classic</id>
+        <name>Sedan Classic</name>
+        <category>cars</category>
+        <price>12500</price>
+        <image>car</image>
+        <description>A reliable 4-door classic. Great for commuting.</description>
+        <stats>
+            <power>145</power>
+            <top_speed>185</top_speed>
+            <weight>1320</weight>
+            <fuel_capacity>55</fuel_capacity>
+            <fuel_usage>7.2</fuel_usage>
+            <seats>5</seats>
+        </stats>
+    </vehicle>
+    <vehicle>
+        <id>car_hatch_sport</id>
+        <name>Hatch Sport GT</name>
+        <category>cars</category>
+        <price>18200</price>
+        <image>car</image>
+        <description>Zippy hatchback with a turbo kick.</description>
+        <stats>
+            <power>190</power>
+            <top_speed>210</top_speed>
+            <weight>1180</weight>
+            <fuel_capacity>48</fuel_capacity>
+            <fuel_usage>8.1</fuel_usage>
+            <seats>5</seats>
+        </stats>
+    </vehicle>
+    <vehicle>
+        <id>car_coupe_elite</id>
+        <name>Coupe Elite</name>
+        <category>cars</category>
+        <price>32500</price>
+        <image>car</image>
+        <description>Premium coupe — speed meets style.</description>
+        <stats>
+            <power>310</power>
+            <top_speed>260</top_speed>
+            <weight>1550</weight>
+            <fuel_capacity>62</fuel_capacity>
+            <fuel_usage>11.5</fuel_usage>
+            <seats>4</seats>
+        </stats>
+    </vehicle>
+    <vehicle>
+        <id>car_suv_adventure</id>
+        <name>SUV Adventure</name>
+        <category>cars</category>
+        <price>26800</price>
+        <image>car</image>
+        <description>All-terrain SUV with roof rails and grit.</description>
+        <stats>
+            <power>220</power>
+            <top_speed>195</top_speed>
+            <weight>1890</weight>
+            <fuel_capacity>72</fuel_capacity>
+            <fuel_usage>10.2</fuel_usage>
+            <seats>7</seats>
+        </stats>
+    </vehicle>
+
+    <!-- Trucks -->
+    <vehicle>
+        <id>truck_pickup_ranger</id>
+        <name>Pickup Ranger 150</name>
+        <category>trucks</category>
+        <price>28500</price>
+        <image>truck</image>
+        <description>Workhorse pickup — hauls, tows, delivers.</description>
+        <stats>
+            <power>260</power>
+            <top_speed>175</top_speed>
+            <weight>2100</weight>
+            <fuel_capacity>85</fuel_capacity>
+            <fuel_usage>12.4</fuel_usage>
+            <seats>5</seats>
+            <towing>3500</towing>
+        </stats>
+    </vehicle>
+    <vehicle>
+        <id>truck_heavy_hauler</id>
+        <name>Heavy Hauler 6x4</name>
+        <category>trucks</category>
+        <price>87500</price>
+        <image>truck</image>
+        <description>Heavy-duty hauler for trailers and timber.</description>
+        <stats>
+            <power>480</power>
+            <top_speed>120</top_speed>
+            <weight>8200</weight>
+            <fuel_capacity>300</fuel_capacity>
+            <fuel_usage>28.0</fuel_usage>
+            <seats>2</seats>
+            <towing>25000</towing>
+        </stats>
+    </vehicle>
+    <vehicle>
+        <id>truck_van_cargo</id>
+        <name>Cargo Van LWB</name>
+        <category>trucks</category>
+        <price>22300</price>
+        <image>truck</image>
+        <description>Panel van for deliveries and service calls.</description>
+        <stats>
+            <power>155</power>
+            <top_speed>160</top_speed>
+            <weight>1950</weight>
+            <fuel_capacity>75</fuel_capacity>
+            <fuel_usage>9.8</fuel_usage>
+            <seats>3</seats>
+        </stats>
+    </vehicle>
+
+    <!-- Tractors -->
+    <vehicle>
+        <id>tractor_compact_45</id>
+        <name>Compact 45</name>
+        <category>tractors</category>
+        <price>18900</price>
+        <image>tractor</image>
+        <description>Small but capable — perfect for small fields.</description>
+        <stats>
+            <power>45</power>
+            <top_speed>30</top_speed>
+            <weight>2200</weight>
+            <fuel_capacity>55</fuel_capacity>
+            <fuel_usage>6.5</fuel_usage>
+            <seats>1</seats>
+        </stats>
+    </vehicle>
+    <vehicle>
+        <id>tractor_farmpro_120</id>
+        <name>FarmPro 120</name>
+        <category>tractors</category>
+        <price>54200</price>
+        <image>tractor</image>
+        <description>Mid-range farm tractor — does a bit of everything.</description>
+        <stats>
+            <power>120</power>
+            <top_speed>42</top_speed>
+            <weight>4800</weight>
+            <fuel_capacity>180</fuel_capacity>
+            <fuel_usage>11.2</fuel_usage>
+            <seats>1</seats>
+        </stats>
+    </vehicle>
+    <vehicle>
+        <id>tractor_power_280</id>
+        <name>PowerTrac 280</name>
+        <category>tractors</category>
+        <price>128000</price>
+        <image>tractor</image>
+        <description>Big-frame powerhouse for heavy implements.</description>
+        <stats>
+            <power>280</power>
+            <top_speed>50</top_speed>
+            <weight>9200</weight>
+            <fuel_capacity>420</fuel_capacity>
+            <fuel_usage>22.5</fuel_usage>
+            <seats>1</seats>
+        </stats>
+    </vehicle>
+
+    <!-- Trailers -->
+    <vehicle>
+        <id>trailer_flatbed_small</id>
+        <name>Flatbed S</name>
+        <category>trailers</category>
+        <price>6200</price>
+        <image>trailer</image>
+        <description>Small flatbed for pallets and bales.</description>
+        <stats>
+            <power>0</power>
+            <top_speed>0</top_speed>
+            <weight>850</weight>
+            <fuel_capacity>0</fuel_capacity>
+            <capacity>8</capacity>
+        </stats>
+    </vehicle>
+    <vehicle>
+        <id>trailer_tipper_20k</id>
+        <name>Tipper 20k</name>
+        <category>trailers</category>
+        <price>18500</price>
+        <image>trailer</image>
+        <description>Tipping trailer — grain, silage, timber.</description>
+        <stats>
+            <power>0</power>
+            <top_speed>0</top_speed>
+            <weight>3400</weight>
+            <fuel_capacity>0</fuel_capacity>
+            <capacity>20000</capacity>
+        </stats>
+    </vehicle>
+    <vehicle>
+        <id>trailer_lowloader</id>
+        <name>Lowloader</name>
+        <category>trailers</category>
+        <price>34200</price>
+        <image>trailer</image>
+        <description>Low-bed for transporting tractors and machines.</description>
+        <stats>
+            <power>0</power>
+            <top_speed>0</top_speed>
+            <weight>4800</weight>
+            <fuel_capacity>0</fuel_capacity>
+            <capacity>28000</capacity>
+        </stats>
+    </vehicle>
+
+    <!-- Forestry -->
+    <vehicle>
+        <id>forestry_skidder</id>
+        <name>Skidder X1</name>
+        <category>forestry</category>
+        <price>76500</price>
+        <image>forestry</image>
+        <description>Skidder for dragging felled logs.</description>
+        <stats>
+            <power>210</power>
+            <top_speed>28</top_speed>
+            <weight>6800</weight>
+            <fuel_capacity>210</fuel_capacity>
+            <fuel_usage>18.5</fuel_usage>
+            <seats>1</seats>
+        </stats>
+    </vehicle>
+    <vehicle>
+        <id>forestry_harvester</id>
+        <name>Harvester FH-12</name>
+        <category>forestry</category>
+        <price>198000</price>
+        <image>forestry</image>
+        <description>Full harvester — fell, delimb, cut to length.</description>
+        <stats>
+            <power>320</power>
+            <top_speed>22</top_speed>
+            <weight>14500</weight>
+            <fuel_capacity>380</fuel_capacity>
+            <fuel_usage>34.0</fuel_usage>
+            <seats>1</seats>
+        </stats>
+    </vehicle>
+
+    <!-- Construction -->
+    <vehicle>
+        <id>construction_loader</id>
+        <name>Wheel Loader L80</name>
+        <category>construction</category>
+        <price>64200</price>
+        <image>construction</image>
+        <description>Wheel loader for gravel, soil and pallets.</description>
+        <stats>
+            <power>180</power>
+            <top_speed>38</top_speed>
+            <weight>8200</weight>
+            <fuel_capacity>190</fuel_capacity>
+            <fuel_usage>16.2</fuel_usage>
+            <seats>1</seats>
+        </stats>
+    </vehicle>
+    <vehicle>
+        <id>construction_excavator</id>
+        <name>Excavator CX-22</name>
+        <category>construction</category>
+        <price>112000</price>
+        <image>construction</image>
+        <description>Tracked excavator — dig deep.</description>
+        <stats>
+            <power>165</power>
+            <top_speed>6</top_speed>
+            <weight>11200</weight>
+            <fuel_capacity>260</fuel_capacity>
+            <fuel_usage>19.0</fuel_usage>
+            <seats>1</seats>
+        </stats>
+    </vehicle>
+</vehicles>

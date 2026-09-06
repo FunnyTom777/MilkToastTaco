@@ -105,6 +105,88 @@ class DashboardV2API:
     def get_saves(self):
         return self.list_saves()
 
+    def list_saves_detailed(self):
+        """Return saves with meta (name, saved_at, version) for save-menu grid."""
+        try:
+            from core.systems.save.manager import _resolve_save_dir, _sanitize_filename
+            from core.xml_loader import load_xml_file
+            save_dir = _resolve_save_dir()
+            saves = []
+            for p in sorted(save_dir.glob("*.xml")):
+                try:
+                    root = load_xml_file(str(p), strict=False)
+                    if root is None:
+                        saves.append({"name": p.stem, "exists": True, "saved_at": None, "version": None, "error": "corrupt"})
+                        continue
+                    saves.append({
+                        "name": p.stem,
+                        "exists": True,
+                        "saved_at": root.get("saved_at"),
+                        "version": root.get("version"),
+                        "save_name_attr": root.get("name", p.stem),
+                    })
+                except Exception as e:
+                    saves.append({"name": p.stem, "exists": True, "saved_at": None, "error": str(e)})
+            return {"status": "success", "saves": saves}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    def save_game(self, save_name: str):
+        """Save current state to a slot/file. Exposed to JS save-menu."""
+        try:
+            # Ensure all providers are registered before saving (so empty saves don't happen on fresh boot)
+            try:
+                import core.systems.economy.wallet  # noqa: F401
+                import core.systems.player.ownership  # noqa: F401
+                import core.systems.shop.vehicle_shop  # noqa: F401
+                import core.systems.inventory.manager  # noqa: F401
+                import core.systems.player_manager  # noqa: F401
+            except Exception:
+                pass
+            from core.systems.save.manager import save_game as _save
+            if not save_name or not str(save_name).strip():
+                return {"status": "error", "message": "save_name required"}
+            path = _save(str(save_name).strip())
+            self._current_save = str(save_name).strip()
+            # also update _current_data cache by re-reading?
+            try:
+                self.load_save(self._current_save)
+            except Exception:
+                pass
+            return {"status": "success", "save": self._current_save, "path": path, "message": f"Saved to {self._current_save}.xml"}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    def get_save_slot_info(self, slot: int):
+        """Helper for JS: get info for slot 1..20 (maps to save name slot<slot>)."""
+        try:
+            slot = int(slot)
+            if not 1 <= slot <= 20:
+                return {"status": "error", "message": "slot must be 1..20"}
+            name = f"slot{slot}"
+            return self.load_save(name)
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    def load_game(self, save_name: str):
+        """Restore live game state from a save (for slot Load)."""
+        try:
+            from core.systems.save.manager import load_game as _load
+            if not save_name or not str(save_name).strip():
+                return {"status": "error", "message": "save_name required"}
+            ok = _load(str(save_name).strip())
+            if not ok:
+                return {"status": "error", "message": f"Save '{save_name}' not found or failed to load"}
+            self._current_save = str(save_name).strip()
+            # refresh cache
+            try:
+                self.load_save(self._current_save)
+            except Exception:
+                pass
+            return {"status": "success", "save": self._current_save, "message": f"Loaded {self._current_save}.xml"}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
     def load_save(self, save_name: str):
         try:
             from core.xml_loader import load_xml_file

@@ -244,6 +244,78 @@
     .toggle-group { display:flex; background:rgba(255,255,255,0.06); border-radius:6px; padding:2px; gap:2px; }
     .toggle-group button { padding:4px 8px; border-radius:4px; border:none; background:transparent; color:var(--text-muted); font-size:0.72rem; cursor:pointer; font-family:var(--font-mono); }
     .toggle-group button.active { background:var(--panel-bg); color:var(--text-main); box-shadow:0 1px 3px rgba(0,0,0,0.2); border:1px solid var(--panel-border); }
+    /* Vehicle Shop — FS22-style overlay */
+    .shop-overlay { display:none; position:fixed; inset:0; z-index:250; background:rgba(8,10,14,0.86); backdrop-filter: blur(6px); align-items:center; justify-content:center; padding:18px; }
+    .shop-overlay.active { display:flex; }
+    .shop-window { width:min(1180px, 96vw); height:min(760px, 92vh); background: linear-gradient(180deg, var(--panel-bg) 0%, #0f1115 100%); border:1px solid var(--panel-border); border-radius:14px; box-shadow: 0 24px 64px rgba(0,0,0,0.55); display:flex; flex-direction:column; overflow:hidden; }
+    .shop-header { display:flex; align-items:center; justify-content:space-between; padding:0.85rem 1rem; border-bottom:1px solid var(--panel-border); background: rgba(0,0,0,0.18); gap:10px; }
+    .shop-title { font-weight:800; letter-spacing:0.6px; text-transform:uppercase; display:flex; align-items:center; gap:10px; font-size:0.95rem; }
+    .shop-title small { font-weight:400; opacity:0.6; text-transform:none; font-size:0.78rem; }
+    .shop-tabs { display:flex; gap:6px; background:rgba(255,255,255,0.05); border:1px solid var(--panel-border); border-radius:999px; padding:3px; }
+    .shop-tab { padding:6px 14px; border-radius:999px; border:none; background:transparent; color:var(--text-muted); font-weight:700; font-size:0.78rem; cursor:pointer; transition:all 0.15s var(--ease); }
+    .shop-tab.active { background:var(--accent); color:#000; box-shadow:0 2px 8px rgba(0,0,0,0.25); }
+    .shop-close { width:34px; height:34px; border-radius:8px; border:1px solid var(--panel-border); background:rgba(255,255,255,0.04); color:var(--text-main); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+    .shop-close:hover { background:rgba(239,68,68,0.15); border-color:rgba(239,68,68,0.4); color:#ef4444; }
+    .shop-meta { display:flex; align-items:center; gap:10px; font-family:var(--font-mono); font-size:0.72rem; color:var(--text-muted); }
+    .shop-balance { padding:4px 9px; border-radius:999px; border:1px solid var(--accent-border); background:var(--accent-subtle); color:var(--accent); font-weight:700; }
+    .shop-body { flex:1; overflow:hidden; display:flex; flex-direction:column; }
+    .shop-breadcrumb { padding:0.6rem 1rem; border-bottom:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; gap:8px; font-size:0.78rem; color:var(--text-muted); }
+    .shop-breadcrumb a { color:var(--accent); cursor:pointer; text-decoration:none; font-weight:600; }
+    .shop-breadcrumb a:hover { text-decoration:underline; }
+    .shop-grid { flex:1; overflow-y:auto; padding:14px; display:grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap:12px; align-content:start; }
+    .shop-card { background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(0,0,0,0.22) 100%); border:1px solid var(--panel-border); border-radius:12px; overflow:hidden; cursor:pointer; transition: all 0.16s var(--ease); display:flex; flex-direction:column; min-height:168px; }
+    .shop-card:hover { transform: translateY(-2px); border-color:var(--accent); box-shadow: 0 8px 22px rgba(0,0,0,0.35), 0 0 0 1px var(--accent-subtle); }
+    .shop-card.selected { border-color:var(--accent); box-shadow: 0 0 0 2px var(--accent-subtle); }
+    .shop-card-img { height:92px; display:flex; align-items:center; justify-content:center; background: radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.08) 0%, transparent 55%), linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.28) 100%); border-bottom:1px solid var(--panel-border); position:relative; }
+    .shop-card-img i { font-size:36px; opacity:0.92; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35)); }
+    .shop-card-img .cat-badge { position:absolute; top:8px; right:8px; font-size:0.58rem; padding:2px 6px; border-radius:999px; background:rgba(0,0,0,0.45); border:1px solid rgba(255,255,255,0.10); color:#fff; letter-spacing:0.4px; }
+    .shop-card-body { padding:9px 10px 8px; display:flex; flex-direction:column; gap:4px; flex:1; }
+    .shop-card-name { font-weight:700; font-size:0.84rem; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .shop-card-sub { font-size:0.68rem; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .shop-card-foot { display:flex; align-items:center; justify-content:space-between; margin-top:auto; padding-top:6px; }
+    .shop-price { font-family:var(--font-mono); font-weight:800; font-size:0.82rem; color:var(--accent); }
+    .shop-buy-btn { font-size:0.68rem; padding:4px 8px; border-radius:6px; border:1px solid var(--accent); background:var(--accent); color:#000; font-weight:800; cursor:pointer; transition:all 0.14s ease; }
+    .shop-buy-btn:hover { background:var(--accent-hover); transform: translateY(-1px); }
+    .shop-buy-btn:disabled { opacity:0.45; cursor:not-allowed; transform:none; }
+    .shop-empty { grid-column:1/-1; text-align:center; padding:48px 20px; color:var(--text-muted); }
+    .shop-stats-bar { min-height:46px; border-top:1px solid var(--panel-border); background: rgba(0,0,0,0.22); padding:0.6rem 1rem; display:flex; align-items:center; gap:14px; font-family:var(--font-mono); font-size:0.75rem; color:var(--text-muted); flex-wrap:wrap; }
+    .shop-stats-bar strong { color:var(--text-main); font-size:0.78rem; }
+    .shop-stats-bar .stat { display:inline-flex; align-items:center; gap:6px; padding:3px 8px; border-radius:999px; background:rgba(255,255,255,0.05); border:1px solid var(--panel-border); }
+    .shop-stats-bar .stat b { color:var(--accent); }
+    @media (max-width: 700px){ .shop-grid{ grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); } .shop-window{ height:96vh; } }
+    /* Save area (top-right) + save-menu */
+    .save-area { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; border:1px solid var(--panel-border); background:rgba(255,255,255,0.06); font-family:var(--font-mono); font-size:0.72rem; cursor:pointer; user-select:none; transition: all 0.18s var(--ease); }
+    .save-area:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
+    .save-area.saved { border-color: rgba(34,197,94,0.45); background: rgba(34,197,94,0.12); color: #86efac; }
+    .save-area.unsaved { border-color: rgba(239,68,68,0.50); background: rgba(239,68,68,0.14); color: #fca5a5; animation: savePulse 1.6s ease-in-out infinite; }
+    .save-area.saved #save-status-dot, .save-area.unsaved #save-status-dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+    .save-area.saved #save-status-dot { background:#22c55e; box-shadow:0 0 6px #22c55e; }
+    .save-area.unsaved #save-status-dot { background:#ef4444; box-shadow:0 0 6px #ef4444; }
+    @keyframes savePulse{ 0%,100%{ opacity:1; } 50%{ opacity:0.55; } }
+    .save-menu-overlay { display:none; position:fixed; inset:0; z-index:260; background:rgba(8,10,14,0.78); backdrop-filter: blur(5px); align-items:center; justify-content:center; padding:16px; }
+    .save-menu-overlay.active { display:flex; }
+    .save-menu-window { width:min(720px, 96vw); max-height:88vh; background: linear-gradient(180deg, var(--panel-bg) 0%, #0f1115 100%); border:1px solid var(--panel-border); border-radius:14px; box-shadow:0 24px 64px rgba(0,0,0,0.55); display:flex; flex-direction:column; overflow:hidden; }
+    .save-menu-header { display:flex; align-items:center; justify-content:space-between; padding:0.85rem 1rem; border-bottom:1px solid var(--panel-border); background:rgba(0,0,0,0.18); }
+    .save-menu-title { font-weight:800; letter-spacing:0.5px; text-transform:uppercase; display:flex; align-items:center; gap:8px; font-size:0.9rem; }
+    .save-menu-body { padding:14px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:12px; }
+    .save-slots-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:9px; }
+    @media (max-width: 560px){ .save-slots-grid{ grid-template-columns: repeat(2, 1fr); } }
+    .save-slot { background: rgba(255,255,255,0.03); border:1px solid var(--panel-border); border-radius:10px; padding:9px 10px; cursor:pointer; transition: all 0.15s var(--ease); text-align:left; display:flex; flex-direction:column; gap:4px; min-height:72px; }
+    .save-slot:hover { border-color: var(--accent-border); background: var(--accent-subtle); transform: translateY(-1px); }
+    .save-slot.selected { border-color: var(--accent); background: var(--accent-subtle); box-shadow: 0 0 0 1px var(--accent-subtle), 0 4px 12px rgba(0,0,0,0.25); }
+    .save-slot.empty { opacity:0.72; border-style:dashed; }
+    .save-slot.has-save { opacity:1; }
+    .save-slot-num { font-family:var(--font-mono); font-weight:800; font-size:0.78rem; letter-spacing:0.3px; display:flex; align-items:center; gap:6px; }
+    .save-slot-meta { font-size:0.66rem; color:var(--text-muted); font-family:var(--font-mono); line-height:1.25; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .save-slot-time { font-size:0.62rem; color:var(--text-muted); }
+    .save-menu-actions { display:flex; gap:8px; padding:12px 14px; border-top:1px solid var(--panel-border); background:rgba(0,0,0,0.16); align-items:center; justify-content:space-between; flex-wrap:wrap; }
+    .save-menu-actions .left { display:flex; gap:8px; align-items:center; font-family:var(--font-mono); font-size:0.72rem; color:var(--text-muted); }
+    .save-action-btn { padding:7px 14px; border-radius:8px; border:1px solid var(--panel-border); font-weight:700; font-size:0.78rem; cursor:pointer; transition: all 0.14s ease; display:inline-flex; align-items:center; gap:6px; }
+    .save-action-btn.primary { background: var(--accent); color:#000; border-color: var(--accent); }
+    .save-action-btn.primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+    .save-action-btn.secondary { background: rgba(255,255,255,0.04); color: var(--text-main); }
+    .save-action-btn.secondary:hover { background: var(--accent-subtle); border-color: var(--accent); color: var(--accent); }
+    .save-action-btn:disabled { opacity:0.45; cursor:not-allowed; transform:none; }
   </style>
 </head>
 <body>
@@ -259,7 +331,9 @@
       <span class="theme-badge" id="theme-badge"><i class="fas fa-palette"></i> <span id="theme-label">default</span></span>
     </div>
     <div class="system-status">
-      <span id="save-indicator" class="pill" style="font-family:var(--font-mono)"><i class="fas fa-save"></i> <span id="save-name">live</span></span>
+      <div id="saveArea" class="save-area saved" onclick="openSaveMenu()" role="button" tabindex="0" title="Click to manage saves (green = saved, red = unsaved)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openSaveMenu();}">
+        <i class="fas fa-save"></i> <span id="save-name">live</span> <span class="save-status-dot" id="save-status-dot"></span>
+      </div>
       <span id="clock">00:00 AM</span>
       <div class="status-dot" title="SYS_READY"></div>
       <span id="sys-ready">SYS_READY</span>
@@ -272,11 +346,13 @@
       <div>
         <div class="section-label"><i class="fas fa-satellite-dish"></i> State Monitor</div>
         <div class="stat-card">Player HP <span id="stat-hp">100/100</span></div>
-        <div class="stat-card">Mana <span id="stat-mana">45/100</span></div>
-        <div class="stat-card">Zone <span id="stat-zone">sector_09</span></div>
         <div class="stat-card">Players <span id="stat-players">—</span></div>
-        <div class="stat-card">Inventory <span id="stat-inv">—</span></div>
-        <div class="stat-card">Pos <span id="stat-pos" style="font-size:0.7rem">0.0, 0.0, 0.0</span></div>
+      </div>
+
+      <div>
+        <div class="section-label"><i class="fas fa-store"></i> Vehicle Shop</div>
+        <button class="quick-btn" onclick="openShop()" style="background:var(--accent-subtle); border-color:var(--accent);"><span><i class="fas fa-shop"></i> Open Vehicle Shop</span><span style="opacity:0.6;">/vehicleshop</span></button>
+        <button class="quick-btn" onclick="openShopTab('owned')"><span><i class="fas fa-warehouse"></i> My Vehicles</span><span id="owned-count-badge" class="pill" style="font-size:0.65rem;">0</span></button>
       </div>
 
       <div>
@@ -286,10 +362,12 @@
         <button class="quick-btn" onclick="executeQuick('/clear')"><span><i class="fas fa-trash"></i> /clear</span><span style="opacity:0.5;">↵</span></button>
       </div>
 
-      <div>
-        <div class="section-label"><i class="fas fa-palette"></i> XMB Theme</div>
-        <div class="theme-grid" id="theme-grid"></div>
-        <div style="margin-top:8px; font-size:0.68rem; color:var(--text-muted); text-align:center;"><span class="kbd">↑</span><span class="kbd">↓</span> quick cmds • <span class="kbd">Tab</span> focus • theme saves to <code style="opacity:0.7">xmbsettings.xml</code></div>
+      <div id="xmb-theme-section">
+        <div class="section-label" id="xmb-theme-toggle" role="button" tabindex="0" aria-expanded="false" onclick="toggleXmbTheme()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleXmbTheme();}" style="cursor:pointer; user-select:none;"><i class="fas fa-palette"></i> XMB Theme <i id="xmb-theme-chevron" class="fas fa-chevron-down" style="margin-left:auto; font-size:0.65rem; opacity:0.6; transition:transform 0.18s var(--ease);"></i></div>
+        <div id="xmb-theme-body" style="display:none;">
+          <div class="theme-grid" id="theme-grid"></div>
+          <div style="margin-top:8px; font-size:0.68rem; color:var(--text-muted); text-align:center;"><span class="kbd">↑</span><span class="kbd">↓</span> quick cmds • <span class="kbd">Tab</span> focus • theme saves to <code style="opacity:0.7">xmbsettings.xml</code></div>
+        </div>
       </div>
 
       <div style="display:flex; gap:8px; margin-top:4px;">
@@ -323,6 +401,53 @@
   <div class="footer-bar">
     <span><i class="fas fa-circle" style="color:var(--status-green); font-size:0.55rem;"></i> MTT Dashboard V2 • <span id="footer-theme">default</span> • XMB-synced</span>
     <span><span class="kbd">↑</span><span class="kbd">↓</span> nav • <span class="kbd">A</span>/<span class="kbd">Enter</span> select • <span class="kbd">→</span> input</span>
+  </div>
+
+  <!-- Vehicle Shop Overlay (FS22-style) -->
+  <div id="shopOverlay" class="shop-overlay" onclick="if(event.target===this) closeShop()">
+    <div class="shop-window" role="dialog" aria-modal="true" aria-label="Vehicle Shop">
+      <div class="shop-header">
+        <div class="shop-title"><i class="fas fa-shop" style="color:var(--accent)"></i> Vehicle Shop
+          <span class="shop-meta"><span id="shopBalance" class="shop-balance"><i class="fas fa-coins"></i> $—</span> <span id="shopOwnedMeta" class="pill" style="font-size:0.65rem;"><i class="fas fa-warehouse"></i> <span id="shopOwnedCount">0</span> owned</span></span>
+        </div>
+        <div class="shop-tabs">
+          <button class="shop-tab active" data-tab="shop" onclick="switchShopTab('shop')">Shop</button>
+          <button class="shop-tab" data-tab="owned" onclick="switchShopTab('owned')">Owned</button>
+        </div>
+        <button class="shop-close" onclick="closeShop()" aria-label="Close">✕</button>
+      </div>
+      <div class="shop-body">
+        <div class="shop-breadcrumb" id="shopBreadcrumb"><a onclick="renderShopCategories()">Categories</a> <span style="opacity:0.35">›</span> <span id="shopCrumbLabel">All</span></div>
+        <div id="shopGrid" class="shop-grid"></div>
+        <div id="ownedGrid" class="shop-grid" style="display:none;"></div>
+      </div>
+      <div class="shop-stats-bar" id="shopStatsBar"><span style="opacity:0.6;">Hover a vehicle to see stats — click to select • Buy adds to ownership • <code style="opacity:0.8">/vehicleshop.buy [name]</code> also works in console</span></div>
+    </div>
+  </div>
+
+  <!-- Save Menu (20 slots) -->
+  <div id="saveMenuOverlay" class="save-menu-overlay" onclick="if(event.target===this) closeSaveMenu()">
+    <div class="save-menu-window" role="dialog" aria-modal="true" aria-label="Save / Load">
+      <div class="save-menu-header">
+        <div class="save-menu-title"><i class="fas fa-floppy-disk" style="color:var(--accent)"></i> Save / Load <span id="saveMenuCurrent" class="pill" style="font-size:0.65rem; font-family:var(--font-mono);">live</span> <span id="saveMenuStatus" class="pill" style="font-size:0.62rem;"></span></div>
+        <button class="shop-close" onclick="closeSaveMenu()" aria-label="Close">✕</button>
+      </div>
+      <div class="save-menu-body">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+          <div style="font-size:0.74rem; color:var(--text-muted);"><i class="fas fa-circle-info"></i> Choose a slot (1–20). <span style="color:var(--accent)">Save</span> writes current state, <span style="color:var(--accent)">Load</span> restores it. Red indicator = unsaved changes.</div>
+          <button class="mini-btn" onclick="refreshSaveSlots()"><i class="fas fa-sync"></i> Refresh</button>
+        </div>
+        <div id="saveSlotsGrid" class="save-slots-grid"></div>
+        <div id="saveSlotDetail" style="font-family:var(--font-mono); font-size:0.72rem; color:var(--text-muted); background:rgba(0,0,0,0.18); border:1px solid var(--panel-border); border-radius:8px; padding:8px 10px; min-height:32px;">Select a slot…</div>
+      </div>
+      <div class="save-menu-actions">
+        <div class="left"><span id="saveSelectedLabel">No slot selected</span> <span id="saveSelectedMeta" style="opacity:0.7;"></span></div>
+        <div style="display:flex; gap:8px;">
+          <button id="btnSaveSlot" class="save-action-btn primary" disabled onclick="doSaveSlot()"><i class="fas fa-floppy-disk"></i> Save</button>
+          <button id="btnLoadSlot" class="save-action-btn secondary" disabled onclick="doLoadSlot()"><i class="fas fa-folder-open"></i> Load</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Build Args Modal -->
@@ -374,6 +499,7 @@
     // BUILTIN: always available even if pywebview offline
     const BUILTIN_COMMANDS = [
       { cmd: '/stats', desc: 'Display live state (HUD)', category: 'builtin' },
+      { cmd: '/vehicleshop', desc: 'Open Vehicle Shop', category: 'builtin' },
       { cmd: '/saves', desc: 'List saves/*.xml', category: 'builtin' },
       { cmd: '/load', desc: 'Load save: /load [name]', category: 'builtin' },
       { cmd: '/clear', desc: 'Clear console logs', category: 'builtin' },
@@ -594,25 +720,29 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
       await apiCall('set_theme', id);
     }
 
+    function toggleXmbTheme(){
+      const body=document.getElementById('xmb-theme-body');
+      const chev=document.getElementById('xmb-theme-chevron');
+      const toggle=document.getElementById('xmb-theme-toggle');
+      if(!body) return;
+      const isHidden = body.style.display==='none' || body.style.display==='';
+      body.style.display = isHidden ? 'block' : 'none';
+      if(chev) chev.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+      if(toggle) toggle.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+    }
+
     // --- State Monitor (live via get_state) ---
     async function refreshStateMonitor(){
       const res = await apiCall('get_state', currentSave||null);
       if(!res || res.status!=='success'){
-        document.getElementById('stat-players').textContent = '—';
-        document.getElementById('stat-inv').textContent = '—';
+        const sp=document.getElementById('stat-players'); if(sp) sp.textContent='—';
         return;
       }
       const hud = res.hud||{};
       savesList = res.saves||[];
       currentSave = res.current_save||currentSave;
-      const pos = hud.player_pos || [0,0,0];
-      document.getElementById('stat-players').textContent = String(hud.player_count ?? '—');
-      document.getElementById('stat-inv').textContent = `${hud.inventory_stacks||0} stacks / ${hud.inventory_items||0} items`;
-      document.getElementById('stat-pos').textContent = pos.map(n=>Number(n).toFixed(1)).join(', ');
-      document.getElementById('save-name').textContent = currentSave || 'live';
-      // zone from world or fallback
-      const zone = (res.systems && res.systems.world && (res.systems.world.zone||res.systems.world.biome)) || 'sector_09';
-      document.getElementById('stat-zone').textContent = String(zone).slice(0,18);
+      const elPlayers=document.getElementById('stat-players'); if(elPlayers) elPlayers.textContent = String(hud.player_count ?? '—');
+      const elSave=document.getElementById('save-name'); if(elSave) elSave.textContent = currentSave || 'live';
       if(savesList.length){
         document.getElementById('sys-ready').textContent = `SYS_READY // ${savesList.length} saves`;
       }
@@ -859,7 +989,15 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
         }
         return;
       }
-      if(e.key==='Escape'){ hideSuggestions(); hideParamAssist(); }
+      if(e.key==='Escape'){
+        hideSuggestions(); hideParamAssist();
+        const ov=document.getElementById('shopOverlay');
+        if(ov && ov.classList.contains('active')){ closeShop(); e.preventDefault(); return; }
+        const sv=document.getElementById('saveMenuOverlay');
+        if(sv && sv.classList.contains('active')){ closeSaveMenu(); e.preventDefault(); return; }
+        const am=document.getElementById('argsModal');
+        if(am && am.classList.contains('active')){ closeArgsModal(); e.preventDefault(); return; }
+      }
     }
     function updateSelection(items){
       items.forEach((item,i)=> item.classList.toggle('selected', i===selectedIndex));
@@ -1058,10 +1196,448 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
       return toks; // fallback positional array
     }
 
+    // --- Vehicle Shop helpers (FS22) -------------------------------------------------
+    let shopCatalog=null, shopCurrentCategory=null, shopTab='shop';
+    async function fetchCatalog(){
+      // Try backend catalog via command registry
+      let res = await apiCall('call_command', 'vehicleshop.get_catalog', {});
+      if(res && res.status==='success' && res.result && res.result.catalog){ shopCatalog=res.result.catalog; }
+      else if(res && res.status==='success' && res.catalog){ shopCatalog=res.catalog; }
+      else {
+        res = await apiCall('call_command', 'vehicleshop.open', {});
+        if(res && res.status==='success' && (res.catalog || (res.result && res.result.catalog))){
+          shopCatalog=res.catalog || res.result.catalog;
+        }
+      }
+      // Update balance/owned meta if present
+      try{
+        const br= await apiCall('call_command', 'economy.balance', {player_id:1});
+        if(br && br.status==='success' && br.result && br.result.balance!==undefined) updateShopBalance(br.result.balance);
+        else if(br && br.balance!==undefined) updateShopBalance(br.balance);
+      }catch(e){}
+      try{
+        const ow= await apiCall('call_command', 'vehicleshop.owned', {player_id:1});
+        const cnt = (ow && ow.result && ow.result.count!==undefined) ? ow.result.count : (ow && ow.count!==undefined? ow.count: 0);
+        const badge=document.getElementById('owned-count-badge'); if(badge) badge.textContent=String(cnt);
+        const sc=document.getElementById('shopOwnedCount'); if(sc) sc.textContent=String(cnt);
+      }catch(e){}
+      return shopCatalog;
+    }
+    function updateShopBalance(bal){
+      const el=document.getElementById('shopBalance');
+      if(el) el.innerHTML='<i class="fas fa-coins"></i> $' + Number(bal).toLocaleString();
+    }
+    function iconForCategory(cat){
+      const map={cars:'fa-car', trucks:'fa-truck', tractors:'fa-tractor', trailers:'fa-trailer', forestry:'fa-tree', construction:'fa-helmet-safety'};
+      if(cat && cat.icon) return cat.icon;
+      return map[(cat?.id||'').toLowerCase()] || 'fa-car';
+    }
+    function iconForVehicle(v){
+      const cat=(v.category||'').toLowerCase();
+      const map={cars:'fa-car', trucks:'fa-truck', tractors:'fa-tractor', trailers:'fa-trailer', forestry:'fa-tree', construction:'fa-helmet-safety'};
+      if(v.image && v.image.includes('fa-')) return v.image;
+      if(v.image==='car'||cat==='cars') return 'fa-car';
+      if(v.image==='truck'||cat==='trucks') return 'fa-truck';
+      if(cat==='tractors') return 'fa-tractor';
+      if(cat==='trailers') return 'fa-trailer';
+      if(cat==='forestry') return 'fa-tree';
+      if(cat==='construction') return 'fa-helmet-safety';
+      return map[cat] || 'fa-car-side';
+    }
+    function formatStats(v){
+      if(!v || !v.stats) return '';
+      const s=v.stats;
+      const parts=[];
+      if(s.power!==undefined) parts.push(`<span class="stat"><i class="fas fa-bolt"></i> <b>${s.power}</b> HP</span>`);
+      if(s.top_speed!==undefined) parts.push(`<span class="stat"><i class="fas fa-gauge-high"></i> <b>${s.top_speed}</b> km/h</span>`);
+      if(s.weight!==undefined) parts.push(`<span class="stat"><i class="fas fa-weight-hanging"></i> <b>${Number(s.weight).toLocaleString()}</b> kg</span>`);
+      if(s.fuel_capacity!==undefined) parts.push(`<span class="stat"><i class="fas fa-gas-pump"></i> <b>${s.fuel_capacity}</b>L</span>`);
+      if(s.towing!==undefined) parts.push(`<span class="stat"><i class="fas fa-link"></i> <b>${Number(s.towing).toLocaleString()}</b> kg tow</span>`);
+      if(s.capacity!==undefined) parts.push(`<span class="stat"><i class="fas fa-cubes"></i> <b>${Number(s.capacity).toLocaleString()}</b> cap</span>`);
+      if(s.seats!==undefined) parts.push(`<span class="stat"><i class="fas fa-users"></i> <b>${s.seats}</b> seats</span>`);
+      return parts.join(' ');
+    }
+    function showShopStats(v){
+      const bar=document.getElementById('shopStatsBar');
+      if(!bar) return;
+      if(!v){
+        bar.innerHTML='<span style="opacity:0.6;">Hover a vehicle to see stats — click to select • Buy adds to ownership • <code style="opacity:0.8">/vehicleshop.buy [name]</code> also works in console</span>';
+        return;
+      }
+      const statsHtml = formatStats(v) || '<span class="stat"><i class="fas fa-info-circle"></i> No stats</span>';
+      bar.innerHTML = `<strong>${v.name}</strong> <span style="opacity:0.5;">${v.category}</span> <span style="opacity:0.5;">•</span> ${statsHtml} <span style="margin-left:auto; opacity:0.7;">$${Number(v.price).toLocaleString()}</span>`;
+    }
+    async function openShop(){
+      const overlay=document.getElementById('shopOverlay');
+      if(!overlay) return;
+      overlay.classList.add('active');
+      shopTab='shop';
+      document.querySelectorAll('.shop-tab').forEach(b=> b.classList.toggle('active', b.dataset.tab==='shop'));
+      document.getElementById('shopGrid').style.display='';
+      document.getElementById('ownedGrid').style.display='none';
+      document.getElementById('shopBreadcrumb').style.display='';
+      if(!shopCatalog){
+        document.getElementById('shopGrid').innerHTML='<div class="shop-empty"><i class="fas fa-spinner fa-spin"></i> Loading catalog…</div>';
+        await fetchCatalog();
+      }
+      renderShopCategories();
+      // refresh owned count
+      try{ const ow=await apiCall('call_command','vehicleshop.owned',{player_id:1}); const cnt=(ow&&ow.result&&ow.result.count)||(ow&&ow.count)||0; document.getElementById('shopOwnedCount').textContent=String(cnt); document.getElementById('owned-count-badge').textContent=String(cnt);}catch(e){}
+    }
+    function openShopTab(tab){
+      openShop().then(()=> switchShopTab(tab));
+    }
+    function closeShop(){
+      const o=document.getElementById('shopOverlay');
+      if(o) o.classList.remove('active');
+    }
+    function switchShopTab(tab){
+      shopTab=tab;
+      document.querySelectorAll('.shop-tab').forEach(b=> b.classList.toggle('active', b.dataset.tab===tab));
+      const sg=document.getElementById('shopGrid'), og=document.getElementById('ownedGrid'), bc=document.getElementById('shopBreadcrumb');
+      if(tab==='owned'){
+        if(sg) sg.style.display='none';
+        if(og) og.style.display='';
+        if(bc) bc.style.display='none';
+        renderOwned();
+      } else {
+        if(sg) sg.style.display='';
+        if(og) og.style.display='none';
+        if(bc) bc.style.display='';
+        if(shopCurrentCategory) renderShopVehicles(shopCurrentCategory);
+        else renderShopCategories();
+      }
+    }
+    function renderShopCategories(){
+      shopCurrentCategory=null;
+      const grid=document.getElementById('shopGrid');
+      const crumb=document.getElementById('shopCrumbLabel');
+      if(crumb) crumb.textContent='Categories';
+      if(!shopCatalog || !shopCatalog.categories){
+        grid.innerHTML='<div class="shop-empty">No categories — catalog load failed. Try <code>vehicleshop.get_catalog</code>.</div>';
+        return;
+      }
+      showShopStats(null);
+      grid.innerHTML='';
+      shopCatalog.categories.forEach(cat=>{
+        const count = (shopCatalog.counts && shopCatalog.counts[cat.id]) || (shopCatalog.vehicles||[]).filter(v=> (v.category||'').toLowerCase()===cat.id.toLowerCase()).length;
+        const card=document.createElement('div');
+        card.className='shop-card';
+        card.onclick=()=> renderShopVehicles(cat.id);
+        card.onmouseenter=()=> {
+          const bar=document.getElementById('shopStatsBar');
+          if(bar) bar.innerHTML=`<strong>${cat.name}</strong> <span style="opacity:0.6">${cat.description||''}</span> <span style="margin-left:auto;" class="pill">${count} vehicles</span>`;
+        };
+        card.onmouseleave=()=> showShopStats(null);
+        card.innerHTML=`
+          <div class="shop-card-img" style="background: radial-gradient(ellipse at 30% 20%, ${cat.color}22 0%, transparent 60%), linear-gradient(180deg, ${cat.color}14 0%, rgba(0,0,0,0.22) 100%); border-color:${cat.color}44;">
+            <i class="fas ${iconForCategory(cat)}" style="color:${cat.color};"></i>
+            <span class="cat-badge">${count} items</span>
+          </div>
+          <div class="shop-card-body">
+            <div class="shop-card-name">${cat.name}</div>
+            <div class="shop-card-sub">${cat.description||''}</div>
+            <div class="shop-card-foot"><span class="pill" style="font-size:0.62rem;">${cat.id}</span><span style="font-size:0.68rem; color:var(--accent); font-weight:700;">Browse →</span></div>
+          </div>`;
+        grid.appendChild(card);
+      });
+    }
+    function renderShopVehicles(categoryId){
+      shopCurrentCategory=categoryId;
+      const grid=document.getElementById('shopGrid');
+      const crumb=document.getElementById('shopCrumbLabel');
+      const cat = (shopCatalog.categories||[]).find(c=> c.id.toLowerCase()===String(categoryId).toLowerCase());
+      if(crumb) crumb.textContent= cat ? cat.name : categoryId;
+      const vehicles=(shopCatalog.vehicles||[]).filter(v=> (v.category||'').toLowerCase()===String(categoryId).toLowerCase());
+      if(!vehicles.length){
+        grid.innerHTML=`<div class="shop-empty"><i class="fas fa-box-open" style="font-size:1.4rem; opacity:0.5;"></i><div style="margin-top:8px;">No vehicles in <code>${categoryId}</code></div><div style="margin-top:10px;"><a onclick="renderShopCategories()" style="color:var(--accent); cursor:pointer; font-weight:700;">← Back to categories</a></div></div>`;
+        return;
+      }
+      showShopStats(null);
+      grid.innerHTML='';
+      // back card
+      const back=document.createElement('div');
+      back.className='shop-card';
+      back.style.minHeight='120px';
+      back.style.borderStyle='dashed';
+      back.innerHTML=`<div class="shop-card-img" style="height:68px;"><i class="fas fa-arrow-left"></i></div><div class="shop-card-body" style="align-items:center; justify-content:center; text-align:center;"><div class="shop-card-name">Back</div><div class="shop-card-sub">Categories</div></div>`;
+      back.onclick=()=> renderShopCategories();
+      grid.appendChild(back);
+      vehicles.forEach(v=>{
+        const card=document.createElement('div');
+        card.className='shop-card';
+        card.dataset.vehicleId=v.id;
+        card.onmouseenter=()=> showShopStats(v);
+        card.onmouseleave=()=> showShopStats(null);
+        card.onclick=()=> {
+          document.querySelectorAll('#shopGrid .shop-card').forEach(c=> c.classList.remove('selected'));
+          card.classList.add('selected');
+          showShopStats(v);
+        };
+        card.innerHTML=`
+          <div class="shop-card-img">
+            <i class="fas ${iconForVehicle(v)}"></i>
+            <span class="cat-badge">${v.category}</span>
+          </div>
+          <div class="shop-card-body">
+            <div class="shop-card-name" title="${v.name}">${v.name}</div>
+            <div class="shop-card-sub" title="${v.description||''}">${v.description||''}</div>
+            <div class="shop-card-foot">
+              <span class="shop-price">$${Number(v.price).toLocaleString()}</span>
+              <button class="shop-buy-btn" onclick="event.stopPropagation(); buyVehicle('${v.id}')"><i class="fas fa-cart-plus"></i> Buy</button>
+            </div>
+          </div>`;
+        grid.appendChild(card);
+      });
+    }
+    async function buyVehicle(vehicleId){
+      const btn = document.querySelector(`[data-vehicle-id="${vehicleId}"] .shop-buy-btn`);
+      if(btn){ btn.disabled=true; btn.textContent='…'; }
+      appendGameResponse(`**🛒 Buying** \`${vehicleId}\`…`);
+      let res = await apiCall('call_command', 'vehicleshop.buy', {player_id:1, vehicle_id: vehicleId});
+      if(!res || res.status!=='success'){
+        const msg=(res&&res.message)||'unknown error';
+        appendGameResponse(`**✖ Buy failed:** ${msg}`);
+        if(btn){ btn.disabled=false; btn.innerHTML='<i class="fas fa-cart-plus"></i> Buy'; }
+        // also show toast
+        try{ const _ptu=await apiCall('call_command','system.warn',{text:`Buy failed: ${msg}`}); }catch(e){}
+        return;
+      }
+      const data=res.result || res;
+      const bal = data.balance;
+      if(bal!==undefined && bal!==null) updateShopBalance(bal);
+      appendGameResponse(`**✔ Bought \`${vehicleId}\`** — ${data.message||''} ${bal!==undefined? '• Balance $'+Number(bal).toLocaleString():''} • instance \`${data.instance_id||''}\``);
+      markUnsaved();
+      try{ await fetchCatalog(); }catch(e){}
+      await renderOwnedSilently();
+      if(btn){ btn.disabled=false; btn.innerHTML='<i class="fas fa-check"></i> Owned'; btn.style.background='#22c55e'; btn.style.borderColor='#22c55e'; setTimeout(()=>{ btn.innerHTML='<i class="fas fa-cart-plus"></i> Buy'; btn.style.background=''; btn.style.borderColor=''; }, 1800); }
+    }
+    async function renderOwned(){
+      const og=document.getElementById('ownedGrid');
+      if(!og) return;
+      og.innerHTML='<div class="shop-empty"><i class="fas fa-spinner fa-spin"></i> Loading owned…</div>';
+      let res = await apiCall('call_command','vehicleshop.owned',{player_id:1});
+      let vehicles=[];
+      let bal=null;
+      if(res && res.status==='success'){
+        vehicles=(res.result&&res.result.vehicles) || res.vehicles || [];
+        bal=(res.result&&res.result.balance) ?? res.balance;
+      }
+      if(bal!==null && bal!==undefined) updateShopBalance(bal);
+      const badge=document.getElementById('owned-count-badge'); if(badge) badge.textContent=String(vehicles.length);
+      const sc=document.getElementById('shopOwnedCount'); if(sc) sc.textContent=String(vehicles.length);
+      if(!vehicles.length){
+        og.innerHTML='<div class="shop-empty"><i class="fas fa-warehouse" style="font-size:1.6rem; opacity:0.3;"></i><div style="margin-top:10px; font-weight:700;">No owned vehicles yet</div><div style="margin-top:6px;">Visit <a onclick="switchShopTab(\'shop\')" style="color:var(--accent); cursor:pointer; font-weight:700;">Shop</a> to buy one — or run <code>/vehicleshop.buy [name]</code></div></div>';
+        return;
+      }
+      og.innerHTML='';
+      vehicles.forEach(ov=>{
+        // ov has instance_id, vehicle_id, name, category, price_paid, license_plate, stats
+        const card=document.createElement('div');
+        card.className='shop-card';
+        card.onmouseenter=()=> {
+          const bar=document.getElementById('shopStatsBar');
+          if(bar) bar.innerHTML=`<strong>${ov.name}</strong> <span class="pill">${ov.instance_id}</span> <span class="pill">${ov.license_plate||''}</span> ${formatStats(ov)} <span style="margin-left:auto;">Paid $${Number(ov.price_paid).toLocaleString()}</span>`;
+        };
+        card.onmouseleave=()=> showShopStats(null);
+        card.innerHTML=`
+          <div class="shop-card-img">
+            <i class="fas ${iconForVehicle(ov)}"></i>
+            <span class="cat-badge">${ov.license_plate||ov.instance_id}</span>
+          </div>
+          <div class="shop-card-body">
+            <div class="shop-card-name" title="${ov.name}">${ov.name}</div>
+            <div class="shop-card-sub">${ov.category} • <span style="font-family:var(--font-mono);">${ov.vehicle_id}</span></div>
+            <div class="shop-card-foot">
+              <span style="font-family:var(--font-mono); font-size:0.70rem; opacity:0.7;">$${Number(ov.price_paid).toLocaleString()}</span>
+              <button class="shop-buy-btn" style="background:rgba(239,68,68,0.12); color:#f87171; border-color:rgba(239,68,68,0.35);" onclick="sellVehicle('${ov.instance_id}')"><i class="fas fa-dollar-sign"></i> Sell</button>
+            </div>
+          </div>`;
+        og.appendChild(card);
+      });
+    }
+    async function renderOwnedSilently(){ try{ await renderOwned(); }catch(e){} }
+    async function sellVehicle(instanceId){
+      if(!confirm(`Sell ${instanceId} for 70% refund?`)) return;
+      let res=await apiCall('call_command','vehicleshop.sell',{player_id:1, instance_id: instanceId});
+      if(!res || res.status!=='success'){
+        appendGameResponse(`**✖ Sell failed:** ${(res&&res.message)||'unknown'}`);
+        return;
+      }
+      const data=res.result||res;
+      if(data.balance!==undefined) updateShopBalance(data.balance);
+      appendGameResponse(`**✔ Sold \`${instanceId}\`** — refund $${Number(data.refund||0).toLocaleString()} • Balance $${Number(data.balance||0).toLocaleString()}`);
+      await renderOwned();
+      markUnsaved();
+    }
+    // --- Save menu (top-right, 1-20 slots) ----------------------------------------
+    let hasUnsavedChanges = false;
+    let selectedSaveSlot = null;
+    let saveSlotsCache = []; // from list_saves_detailed
+    function setSaveStatus(isSaved){
+      hasUnsavedChanges = !isSaved;
+      const area=document.getElementById('saveArea');
+      const statusDot=document.getElementById('save-status-dot');
+      const menuStatus=document.getElementById('saveMenuStatus');
+      if(area){ area.classList.toggle('saved', isSaved); area.classList.toggle('unsaved', !isSaved); area.title = isSaved ? 'All changes saved — click to manage saves' : 'Unsaved changes — click to save'; }
+      if(menuStatus){ menuStatus.textContent = isSaved ? '✔ saved' : '● unsaved'; menuStatus.style.color = isSaved ? '#86efac' : '#fca5a5'; menuStatus.style.borderColor = isSaved ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.35)'; menuStatus.style.background = isSaved ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.14)'; }
+    }
+    function markUnsaved(){ setSaveStatus(false); }
+    function markSaved(){ setSaveStatus(true); }
+    async function openSaveMenu(){
+      const ov=document.getElementById('saveMenuOverlay');
+      if(ov) ov.classList.add('active');
+      await refreshSaveSlots();
+      // update current label
+      const cur=document.getElementById('saveMenuCurrent'); if(cur) cur.textContent = currentSave || 'live';
+      const area=document.getElementById('saveArea'); if(area){ /* keep status */ }
+    }
+    function closeSaveMenu(){ const ov=document.getElementById('saveMenuOverlay'); if(ov) ov.classList.remove('active'); }
+    async function refreshSaveSlots(){
+      const grid=document.getElementById('saveSlotsGrid');
+      if(grid) grid.innerHTML='<div style=\"grid-column:1/-1; text-align:center; padding:18px; color:var(--text-muted);\"><i class=\"fas fa-spinner fa-spin\"></i> Loading slots…</div>';
+      let res = await apiCall('list_saves_detailed');
+      if(!res || res.status!=='success'){ res = await apiCall('list_saves'); if(res && res.saves){ saveSlotsCache = res.saves.map(n=>({name:n, exists:true})); } else saveSlotsCache=[]; }
+      else { saveSlotsCache = res.saves||[]; }
+      // also include raw list_saves for any missing
+      try{
+        const raw=await apiCall('list_saves');
+        if(raw && raw.saves){
+          const existing=new Set(saveSlotsCache.map(s=>s.name));
+          raw.saves.forEach(n=>{ if(!existing.has(n)) saveSlotsCache.push({name:n, exists:true, saved_at:null}); });
+        }
+      }catch(e){}
+      renderSaveSlots();
+    }
+    function renderSaveSlots(){
+      const grid=document.getElementById('saveSlotsGrid');
+      if(!grid) return;
+      grid.innerHTML='';
+      const slotMap=new Map(saveSlotsCache.map(s=>[s.name, s]));
+      for(let i=1;i<=20;i++){
+        const slotName=`slot${i}`;
+        const info=slotMap.get(slotName);
+        const exists=!!info;
+        const div=document.createElement('button');
+        div.type='button';
+        div.className='save-slot '+(exists?'has-save':'empty') + (selectedSaveSlot===i?' selected':'');
+        div.onclick=()=> selectSaveSlot(i);
+        div.setAttribute('aria-label', `Slot ${i}`);
+        let timeStr='';
+        if(exists && info.saved_at){
+          try{ const d=new Date(info.saved_at); timeStr=d.toLocaleString([], {month:'short', day:'2-digit', hour:'2-digit', minute:'2-digit'}); }catch(e){ timeStr=String(info.saved_at).slice(0,16); }
+        }
+        div.innerHTML=`
+          <div class="save-slot-num"><i class="fas ${exists?'fa-floppy-disk':'fa-plus'}" style="opacity:0.7;"></i> Slot ${i} ${exists?'<span style=\"margin-left:auto; font-size:0.58rem; padding:1px 5px; border-radius:999px; background:rgba(34,197,94,0.14); border:1px solid rgba(34,197,94,0.3); color:#86efac;\">used</span>':'<span style=\"margin-left:auto; font-size:0.58rem; opacity:0.5;\">empty</span>'}</div>
+          <div class="save-slot-meta">${exists ? (info.save_name_attr||info.name) : 'Empty slot'}</div>
+          <div class="save-slot-time">${exists ? (timeStr||'') : '—'}</div>
+        `;
+        grid.appendChild(div);
+      }
+      updateSaveSelectionUI();
+    }
+    function selectSaveSlot(i){
+      selectedSaveSlot=i;
+      renderSaveSlots();
+      updateSaveSelectionUI();
+      const detail=document.getElementById('saveSlotDetail');
+      const slotName=`slot${i}`;
+      const info=saveSlotsCache.find(s=>s.name===slotName);
+      if(detail){
+        if(info && info.saved_at){
+          let t=''; try{ t=new Date(info.saved_at).toLocaleString(); }catch(e){ t=String(info.saved_at); }
+          detail.innerHTML=`<strong>Slot ${i}</strong> — <code>${slotName}.xml</code> • saved ${t} • version ${info.version||'?'}` + (info.error?` • <span style=\"color:#f87171;\">${info.error}</span>`:'');
+        } else if(info){
+          detail.innerHTML=`<strong>Slot ${i}</strong> — <code>${slotName}.xml</code> • exists (no timestamp)`;
+        } else {
+          detail.innerHTML=`<strong>Slot ${i}</strong> — <code>${slotName}.xml</code> • <span style=\"opacity:0.7;\">Empty — Save will create it.</span>`;
+        }
+      }
+    }
+    function updateSaveSelectionUI(){
+      const btnSave=document.getElementById('btnSaveSlot');
+      const btnLoad=document.getElementById('btnLoadSlot');
+      const lbl=document.getElementById('saveSelectedLabel');
+      const meta=document.getElementById('saveSelectedMeta');
+      if(!btnSave||!btnLoad) return;
+      if(selectedSaveSlot===null){
+        btnSave.disabled=true; btnLoad.disabled=true;
+        if(lbl) lbl.textContent='No slot selected';
+        if(meta) meta.textContent='';
+        return;
+      }
+      const slotName=`slot${selectedSaveSlot}`;
+      const exists=saveSlotsCache.some(s=>s.name===slotName);
+      btnSave.disabled=false;
+      btnLoad.disabled=!exists;
+      if(lbl) lbl.textContent=`Slot ${selectedSaveSlot} — ${slotName}.xml`;
+      if(meta) meta.textContent=exists ? 'will overwrite' : 'new save';
+    }
+    async function doSaveSlot(){
+      if(selectedSaveSlot===null) return;
+      const slotName=`slot${selectedSaveSlot}`;
+      const btn=document.getElementById('btnSaveSlot');
+      if(btn) { btn.disabled=true; btn.innerHTML='<i class=\"fas fa-spinner fa-spin\"></i> Saving…'; }
+      const res=await apiCall('save_game', slotName);
+      if(res && res.status==='success'){
+        appendGameResponse(`**✔ Saved** to \`${slotName}.xml\` — ${res.message||''}`);
+        currentSave=slotName;
+        const elSave=document.getElementById('save-name'); if(elSave) elSave.textContent=currentSave;
+        const elCur=document.getElementById('saveMenuCurrent'); if(elCur) elCur.textContent=currentSave;
+        markSaved();
+        await refreshSaveSlots();
+        // also refresh monitors
+        try{ await refreshStateMonitor(); }catch(e){}
+      } else {
+        appendGameResponse(`**✖ Save failed:** ${res?res.message:'no bridge'}`);
+      }
+      if(btn) { btn.disabled=false; btn.innerHTML='<i class=\"fas fa-floppy-disk\"></i> Save'; }
+      updateSaveSelectionUI();
+    }
+    async function doLoadSlot(){
+      if(selectedSaveSlot===null) return;
+      const slotName=`slot${selectedSaveSlot}`;
+      const btn=document.getElementById('btnLoadSlot');
+      if(btn) { btn.disabled=true; btn.innerHTML='<i class=\"fas fa-spinner fa-spin\"></i> Loading…'; }
+      // Restore live state via load_game (writes to global providers), then update UI via get_state
+      let res=await apiCall('load_game', slotName);
+      if(!res || res.status!=='success'){ res=await apiCall('load_save', slotName); }
+      const gRes=await apiCall('get_state', slotName);
+      if((res && res.status==='success') || (gRes && gRes.status==='success')){
+        currentSave=slotName;
+        const elSave=document.getElementById('save-name'); if(elSave) elSave.textContent=currentSave;
+        const elCur=document.getElementById('saveMenuCurrent'); if(elCur) elCur.textContent=currentSave;
+        appendGameResponse(`**✔ Loaded** \`${slotName}.xml\` — State Monitor updated.`);
+        markSaved();
+        try{ await refreshStateMonitor(); }catch(e){}
+        try{ await refreshSaveSlots(); }catch(e){}
+        // refresh shop owned etc if open
+        try{ const ow=await apiCall('call_command','vehicleshop.owned',{player_id:1}); const cnt=(ow&&ow.result&&ow.result.count)||0; document.getElementById('shopOwnedCount').textContent=String(cnt); document.getElementById('owned-count-badge').textContent=String(cnt); }catch(e){}
+      } else {
+        const msg=(res&&res.message)||(gRes&&gRes.message)||'unknown';
+        appendGameResponse(`**✖ Load failed:** ${msg} — \`${slotName}\``);
+        // try direct load_game via bridge? fallback
+      }
+      if(btn) { btn.disabled=false; btn.innerHTML='<i class=\"fas fa-folder-open\"></i> Load'; }
+      updateSaveSelectionUI();
+    }
     async function handleSend(e){
       e.preventDefault();
       const text=cmdInput.value.trim();
       if(!text) return;
+      // Vehicle Shop overlay trigger (FS22) — must be before generic dispatch
+      if(text.toLowerCase()==='/vehicleshop' || text.toLowerCase()==='/vehicleshop.open'){
+        appendUserMessage(text);
+        appendGameResponse(`**🏪 Vehicle Shop** — opening shop…\n*Categories → Vehicles (grid) → hover for stats at bottom. Buy adds to ownership. Also: \`/vehicleshop.buy [name]\` works in console.*`);
+        await openShop();
+        cmdInput.value=''; hideSuggestions(); hideParamAssist(); return;
+      }
+      if(text.toLowerCase().startsWith('/vehicleshop ') && !text.includes('.')){
+        appendUserMessage(text);
+        appendGameResponse(`**🏪 Vehicle Shop** — opening shop…`);
+        await openShop();
+        cmdInput.value=''; hideSuggestions(); hideParamAssist(); return;
+      }
       if(text==='/clear'){ chatHistory.innerHTML=''; cmdInput.value=''; hideSuggestions(); hideParamAssist(); return; }
       if(text==='/quit'){ await apiCall('quit_dashboard'); setTimeout(()=>window.close(),250); return; }
       // /help with optional arg: "/help" or "/help /player.move"
@@ -1096,8 +1672,11 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
         const res=await apiCall('load_save', name) || await apiCall('get_state', name);
         if(res && res.status==='success'){
           currentSave=name;
+          const elSave=document.getElementById('save-name'); if(elSave) elSave.textContent=currentSave;
+          const elCur=document.getElementById('saveMenuCurrent'); if(elCur) elCur.textContent=currentSave;
           await refreshStateMonitor();
           appendGameResponse(`**Loaded** \`${name}.xml\` — State Monitor updated.`);
+          markSaved();
         } else {
           appendGameResponse(`**Load failed:** ${res?res.message:'no bridge'} — \`${name}\``);
         }
@@ -1143,8 +1722,14 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
             }
             appendGameResponse(md);
             // auto refresh monitor if state mutated
-            if(['player.move','player.add','player.remove','inventory.add','inventory.remove_item','inventory.set_max_weight','bank.apply'].includes(meta.name)){
+            if(['player.move','player.add','player.remove','inventory.add','inventory.remove_item','inventory.set_max_weight','bank.apply','vehicleshop.buy','vehicleshop.sell','ownership.add','ownership.remove','ownership.clear','economy.add_funds','economy.set_balance'].includes(meta.name)){
               try{ await refreshStateMonitor(); }catch(e){}
+              markUnsaved();
+            } else if(['vehicleshop.list_categories','vehicleshop.list_vehicles','vehicleshop.info','vehicleshop.owned','vehicleshop.get_catalog','vehicleshop.open','ownership.list','economy.balance','economy.can_afford','player.get','inventory.list','inventory.has','inventory.get'].includes(meta.name)){
+              // read-only — no dirty
+            } else {
+              // generic mutating fallback: if command name suggests write, mark unsaved
+              if(/(buy|sell|add|remove|set|move|clear|apply|delete)/i.test(meta.name)) markUnsaved();
             }
           } else {
             const hint = res.expected_params ? `\n\n*Expected:* \`${formatParamsHint(res.expected_params)}\`` : '';
