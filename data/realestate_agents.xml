@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    realestate_agents.xml — MTT Real Estate Agents Catalog
+    Loaded by core/systems/realestate/realestate.py
+
+    Each <agent> represents a real estate agency / individual agent.
+    Rating is 0.0-5.0, fee_percent is added to purchases/rent as commission.
+    Higher rating = better service (future: faster sales, lower haggle etc).
+    Specialty lists what property types the agent prefers (informational).
+-->
+<agents version="1">
+    <agent id="agent_sunny_estate" name="Sunny Estate Co." display="Sunny Estate Co." rating="4.8" fee_percent="2.5" phone="555-0101" specialty="house,apartment,vacant_land" agency="Sunny Group" description="Top-rated agency for family homes. Friendly fees, premium listings." color="#f59e0b" />
+    <agent id="agent_outback_realty" name="Outback Realty" display="Outback Realty" rating="4.2" fee_percent="1.8" phone="555-0102" specialty="farm,vacant_land,business" agency="Outback Trust" description="Rural &amp; farm specialists. Low fees, honest deals." color="#16a34a" />
+    <agent id="agent_city_central" name="City Central Agents" display="City Central" rating="4.5" fee_percent="3.0" phone="555-0103" specialty="apartment,business,commercial" agency="City Central" description="Downtown apartments and storefronts. Premium locations cost a bit more." color="#3b82f6" />
+    <agent id="agent_budget_homes" name="Budget Homes Direct" display="Budget Homes" rating="3.6" fee_percent="1.0" phone="555-0104" specialty="house,apartment,vacant_land" agency="Budget Direct" description="Cheapest fees in town. You get what you pay for — but the price is right!" color="#6b7280" />
+    <agent id="agent_luxe_properties" name="Luxe Properties" display="Luxe Properties" rating="4.9" fee_percent="4.5" phone="555-0105" specialty="house,business,commercial" agency="Luxe Group" description="Luxury homes and commercial flagships. White-glove service, premium commission." color="#8b5cf6" />
+</agents>

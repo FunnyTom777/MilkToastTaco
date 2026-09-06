@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    properties.xml — MTT Real Estate Catalog
+    Loaded by core/systems/realestate/realestate.py
+
+    Each <property> is a purchasable or rentable listing.
+    - type: house | apartment | vacant_land | business | commercial | farm
+    - agent_id: references data/realestate_agents.xml <agent id="">
+    - for_sale / for_rent flags control Buy vs Rent availability
+    - price = purchase price, rent_price = per-period rent (weekly)
+    - <stats> holds extensible property stats: beds, baths, parking, garage_spaces,
+      land_sqm, land_acres, floors, year_built, condition, vacant (bool), etc.
+      New stats can be added without code changes — they are passed as dict.
+
+    Parking/Garage:
+      parking = outdoor parking spaces
+      garage_spaces = enclosed garage spaces
+      total vehicle capacity = parking + garage_spaces
+
+    Vacant blocks set <vacant>true</vacant> and typically have beds=0, parking=0-2.
+
+    Future businesses will reuse this file with type="business" and extra stats like
+    income_per_day, staff_slots, etc.
+-->
+<properties version="1">
+
+    <!-- =============== HOUSES =============== -->
+    <property id="house_maple_12" name="12 Maple Street" type="house" agent_id="agent_sunny_estate" location="Maple District" for_sale="true" for_rent="false" price="145000" rent_price="0" image="house" description="Cozy 3-bed family home with backyard and single garage. Perfect starter house.">
+        <stats>
+            <beds>3</beds>
+            <baths>1</baths>
+            <parking>1</parking>
+            <garage_spaces>1</garage_spaces>
+            <land_sqm>620</land_sqm>
+            <land_acres>0.15</land_acres>
+            <floors>1</floors>
+            <year_built>1998</year_built>
+            <condition>good</condition>
+            <furnished>false</furnished>
+            <vacant>false</vacant>
+        </stats>
+    </property>
+
+    <property id="house_oakridge_4" name="4 Oakridge Drive" type="house" agent_id="agent_sunny_estate" location="Oakridge" for_sale="true" for_rent="true" price="285000" rent_price="420" image="house" description="Modern 4-bed, 2-bath on a large block. Double garage + driveway parking for 2 more.">
+        <stats>
+            <beds>4</beds>
+            <baths>2</baths>
+            <parking>2</parking>
+            <garage_spaces>2</garage_spaces>
+            <land_sqm>850</land_sqm>
+            <land_acres>0.21</land_acres>
+            <floors>2</floors>
+            <year_built>2015</year_built>
+            <condition>excellent</condition>
+            <furnished>false</furnished>
+            <vacant>false</vacant>
+        </stats>
+    </property>
+
+    <property id="house_luxe_hilltop" name="Hilltop Manor" type="house" agent_id="agent_luxe_properties" location="Hilltop Estate" for_sale="true" for_rent="false" price="890000" rent_price="0" image="house" description="Luxury 5-bed manor with pool, 4-car garage and triple parking. The dream house.">
+        <stats>
+            <beds>5</beds>
+            <baths>3</baths>
+            <parking>3</parking>
+            <garage_spaces>4</garage_spaces>
+            <land_sqm>2400</land_sqm>
+            <land_acres>0.59</land_acres>
+            <floors>2</floors>
+            <year_built>2021</year_built>
+            <condition>luxury</condition>
+            <furnished>true</furnished>
+            <vacant>false</vacant>
+            <has_pool>true</has_pool>
+        </stats>
+    </property>
+
+    <!-- =============== APARTMENTS =============== -->
+    <property id="apt_city_tower_7b" name="City Tower Apt 7B" type="apartment" agent_id="agent_city_central" location="Downtown" for_sale="false" for_rent="true" price="0" rent_price="280" image="apartment" description="Central 2-bed apartment, balcony city views. 1 secure parking bay.">
+        <stats>
+            <beds>2</beds>
+            <baths>1</baths>
+            <parking>1</parking>
+            <garage_spaces>0</garage_spaces>
+            <land_sqm>75</land_sqm>
+            <floors>1</floors>
+            <year_built>2018</year_built>
+            <condition>good</condition>
+            <furnished>true</furnished>
+            <vacant>false</vacant>
+        </stats>
+    </property>
+
+    <property id="apt_riverside_3a" name="Riverside Loft 3A" type="apartment" agent_id="agent_city_central" location="Riverside" for_sale="true" for_rent="true" price="195000" rent_price="350" image="apartment" description="Industrial-chic loft with river views, 2 beds, rooftop access.">
+        <stats>
+            <beds>2</beds>
+            <baths>2</baths>
+            <parking>1</parking>
+            <garage_spaces>1</garage_spaces>
+            <land_sqm>110</land_sqm>
+            <floors>1</floors>
+            <year_built>2012</year_built>
+            <condition>good</condition>
+            <furnished>false</furnished>
+            <vacant>false</vacant>
+        </stats>
+    </property>
+
+    <property id="apt_budget_studio" name="Budget Studio #14" type="apartment" agent_id="agent_budget_homes" location="Westside" for_sale="true" for_rent="true" price="65000" rent_price="150" image="apartment" description="Tiny but cheap! 1-bed studio, no garage, street parking only.">
+        <stats>
+            <beds>1</beds>
+            <baths>1</baths>
+            <parking>0</parking>
+            <garage_spaces>0</garage_spaces>
+            <land_sqm>35</land_sqm>
+            <floors>1</floors>
+            <year_built>2005</year_built>
+            <condition>fair</condition>
+            <furnished>false</furnished>
+            <vacant>false</vacant>
+        </stats>
+    </property>
+
+    <!-- =============== VACANT LAND =============== -->
+    <property id="land_outback_acre_5" name="Outback Acre Lot 5" type="vacant_land" agent_id="agent_outback_realty" location="Outback North" for_sale="true" for_rent="false" price="45000" rent_price="0" image="vacant" description="Flat 2-acre vacant block. Bring your own house! Room for a big shed and plenty of parking.">
+        <stats>
+            <beds>0</beds>
+            <baths>0</baths>
+            <parking>2</parking>
+            <garage_spaces>0</garage_spaces>
+            <land_sqm>8094</land_sqm>
+            <land_acres>2.0</land_acres>
+            <floors>0</floors>
+            <year_built>0</year_built>
+            <condition>vacant</condition>
+            <vacant>true</vacant>
+        </stats>
+    </property>
+
+    <property id="land_meadow_block_b" name="Meadow Block B" type="vacant_land" agent_id="agent_budget_homes" location="Meadow Fields" for_sale="true" for_rent="false" price="32000" rent_price="0" image="vacant" description="Affordable 600 sqm vacant lot in expanding suburb. Start your build here.">
+        <stats>
+            <beds>0</beds>
+            <baths>0</baths>
+            <parking>1</parking>
+            <garage_spaces>0</garage_spaces>
+            <land_sqm>600</land_sqm>
+            <land_acres>0.15</land_acres>
+            <floors>0</floors>
+            <year_built>0</year_built>
+            <condition>vacant</condition>
+            <vacant>true</vacant>
+        </stats>
+    </property>
+
+    <!-- =============== FARMS =============== -->
+    <property id="farm_green_acres" name="Green Acres Farm" type="farm" agent_id="agent_outback_realty" location="Green Valley" for_sale="true" for_rent="false" price="420000" rent_price="0" image="farm" description="Working farm: 15 acres, barn with 6-vehicle shed, 3-bed farmhouse included.">
+        <stats>
+            <beds>3</beds>
+            <baths>2</baths>
+            <parking>4</parking>
+            <garage_spaces>6</garage_spaces>
+            <land_sqm>60702</land_sqm>
+            <land_acres>15.0</land_acres>
+            <floors>1</floors>
+            <year_built>1985</year_built>
+            <condition>good</condition>
+            <furnished>false</furnished>
+            <vacant>false</vacant>
+            <shed_capacity>6</shed_capacity>
+        </stats>
+    </property>
+
+    <!-- =============== BUSINESS / COMMERCIAL (future) =============== -->
+    <property id="biz_corner_store" name="Corner Store on Main" type="business" agent_id="agent_luxe_properties" location="Main Street" for_sale="true" for_rent="true" price="310000" rent_price="580" image="business" description="Established corner store. 2 parking bays in rear. Business system coming soon — buy now for future income!">
+        <stats>
+            <beds>0</beds>
+            <baths>1</baths>
+            <parking>2</parking>
+            <garage_spaces>1</garage_spaces>
+            <land_sqm>320</land_sqm>
+            <floors>1</floors>
+            <year_built>2002</year_built>
+            <condition>good</condition>
+            <vacant>false</vacant>
+            <business_type>retail</business_type>
+            <future_income>120</future_income>
+        </stats>
+    </property>
+
+    <property id="biz_workshop_central" name="Central Workshop" type="commercial" agent_id="agent_city_central" location="Industrial Estate" for_sale="true" for_rent="true" price="275000" rent_price="500" image="commercial" description="Large workshop with 4-bay garage and yard parking for 6. Perfect for vehicle storage and future businesses.">
+        <stats>
+            <beds>0</beds>
+            <baths>1</baths>
+            <parking>6</parking>
+            <garage_spaces>4</garage_spaces>
+            <land_sqm>1200</land_sqm>
+            <land_acres>0.30</land_acres>
+            <floors>1</floors>
+            <year_built>2010</year_built>
+            <condition>good</condition>
+            <vacant>false</vacant>
+            <business_type>workshop</business_type>
+        </stats>
+    </property>
+
+</properties>
