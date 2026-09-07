@@ -71,6 +71,7 @@ THEMES: Dict[str, Dict[str, str]] = {
 DEFAULT_SETTINGS = {
     "fullscreen": False,
     "theme": "default",
+    "dev_mode": False,
 }
 
 VALID_THEMES = set(THEMES.keys())
@@ -85,7 +86,7 @@ def load_settings(path: Path | str | None = None) -> Dict[str, object]:
     try:
         tree = ET.parse(file_path)
         root = tree.getroot()
-        # Expect <xmb_settings><fullscreen>true</fullscreen><theme>dark_purple</theme></xmb_settings>
+        # Expect <xmb_settings><fullscreen>true</fullscreen><theme>dark_purple</theme><dev_mode>true</dev_mode></xmb_settings>
         fs_el = root.find("fullscreen")
         if fs_el is not None and fs_el.text is not None:
             val = fs_el.text.strip().lower()
@@ -95,6 +96,10 @@ def load_settings(path: Path | str | None = None) -> Dict[str, object]:
             t = theme_el.text.strip()
             if t in VALID_THEMES:
                 settings["theme"] = t
+        dev_el = root.find("dev_mode")
+        if dev_el is not None and dev_el.text is not None:
+            val = dev_el.text.strip().lower()
+            settings["dev_mode"] = val in ("true", "1", "yes", "on")
     except ET.ParseError:
         # corrupt -> return defaults
         pass
@@ -111,12 +116,15 @@ def save_settings(settings: Dict[str, object], path: Path | str | None = None) -
     theme = str(settings.get("theme", DEFAULT_SETTINGS["theme"]))
     if theme not in VALID_THEMES:
         theme = DEFAULT_SETTINGS["theme"]
+    dev_mode = bool(settings.get("dev_mode", DEFAULT_SETTINGS["dev_mode"]))
 
     root = ET.Element("xmb_settings")
     fs_el = ET.SubElement(root, "fullscreen")
     fs_el.text = "true" if fullscreen else "false"
     theme_el = ET.SubElement(root, "theme")
     theme_el.text = theme
+    dev_el = ET.SubElement(root, "dev_mode")
+    dev_el.text = "true" if dev_mode else "false"
 
     ET.indent(root, space="  ")
     tree = ET.ElementTree(root)

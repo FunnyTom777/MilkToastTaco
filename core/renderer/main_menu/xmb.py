@@ -120,6 +120,12 @@ class XMBDashboardAPI:
             "game_state": self.game_state,
         }
 
+    @menu_option("game_modes", "Game Modes", "fa-gamepad", "Dashboard",
+                 "Browse all Dashboard versions — V2 is stable, others require Dev Mode. Press Enter to open.")
+    def open_dashboard_submenu(self):
+        """Open Dashboard submenu — handled in JS overlay (filtered by Dev Mode)."""
+        return {"status": "success", "message": "Dashboard submenu opened"}
+
     @menu_option("game_modes", "Game Modes", "fa-gamepad", "View Military Campaigns",
                  "Browse historical and modern combat campaigns, from WWI dogfights to "
                  "network-centric modern warfare, and launch a mission.")
@@ -177,6 +183,12 @@ class XMBDashboardAPI:
         """Open XMB theme settings."""
         return {"status": "success", "message": "XMB theme settings opened"}
 
+    @menu_option("xmb_options", "XMB Options", "fa-sliders", "General Config Settings",
+                 "Configure general behavior — Dev Mode controls access to extra Dashboards.")
+    def open_xmb_general_config(self):
+        """Open General Config settings (Dev Mode etc)."""
+        return {"status": "success", "message": "General config settings opened"}
+
     # --- Misc -----------------------------------------------------------
 
     def _spawn_dashboard(self):
@@ -207,10 +219,8 @@ class XMBDashboardAPI:
             "message": "Dashboard launched",
         }
 
-    @menu_option("misc", "Misc", "fa-ellipsis-h", "Launch MTT Dashboard",
-                 "This dashboard is outdated. Please use Dashboard V2 Instead")
     def launch_dashboard(self):
-        """Launch Dashboard (player mode) — deprecated, blocked."""
+        """Launch Dashboard (player mode) — deprecated, blocked. Kept for Dashboard submenu API, not in Misc."""
         return {"status": "error", "message": "This dashboard is outdated. Please use Dashboard V2 Instead"}
 
     def _spawn_dashboard_v2(self):
@@ -233,10 +243,8 @@ class XMBDashboardAPI:
             pass
         return {"status": "success", "message": "Dashboard V2 launched"}
 
-    @menu_option("misc", "Misc", "fa-ellipsis-h", "Dashboard V2",
-                 "Open MTT Dashboard V2 — Game System Debugger with XMB themes. Fullscreen follows XMB settings. Uses the same pywebview engine.")
     def launch_dashboard_v2(self):
-        """Launch Dashboard V2 (Debugger — XMB-themed)."""
+        """Launch Dashboard V2 (Debugger — XMB-themed). Kept for submenu API."""
         return self._spawn_dashboard_v2()
 
     def _spawn_dashboard_v3(self):
@@ -259,10 +267,8 @@ class XMBDashboardAPI:
             pass
         return {"status": "success", "message": "Dashboard V3 launched"}
 
-    @menu_option("misc", "Misc", "fa-ellipsis-h", "Dashboard V3",
-                 "Open MTT Dashboard V3 — Console Hub. Controller-first, no commands, pure UI menus. Big-screen friendly. Gamepad + keyboard.")
     def launch_dashboard_v3(self):
-        """Launch Dashboard V3 (Console Hub)."""
+        """Launch Dashboard V3 (Console Hub). Kept for submenu API."""
         return self._spawn_dashboard_v3()
 
     def _spawn_dashboard_v4(self):
@@ -285,10 +291,8 @@ class XMBDashboardAPI:
             pass
         return {"status": "success", "message": "Dashboard V4 (ImGui) launched"}
 
-    @menu_option("misc", "Misc", "fa-ellipsis-h", "Dashboard V4",
-                 "Open MTT Dashboard V4 — Dear ImGui console hub. Native PyImGui + OpenGL, controller + keyboard + mouse. Replaces HTML dashboards.")
     def launch_dashboard_v4(self):
-        """Launch Dashboard V4 (ImGui Console Hub)."""
+        """Launch Dashboard V4 (ImGui Console Hub). Kept for submenu API."""
         return self._spawn_dashboard_v4()
 
     @menu_option("misc", "Misc", "fa-ellipsis-h", "Quit",
@@ -374,6 +378,22 @@ class XMBDashboardAPI:
         """Return available themes."""
         from core.renderer.main_menu.xmb_settings import THEMES
         return {"status": "success", "themes": THEMES}
+
+    # --- General Config (Dev Mode) ------------------------------------------
+
+    def get_dev_mode(self):
+        """Get current Dev Mode state."""
+        from core.renderer.main_menu.xmb_settings import load_settings
+        settings = load_settings()
+        return {"status": "success", "dev_mode": bool(settings.get("dev_mode", False))}
+
+    def set_dev_mode(self, enabled: bool):
+        """Set Dev Mode preference."""
+        from core.renderer.main_menu.xmb_settings import load_settings, save_settings
+        settings = load_settings()
+        settings["dev_mode"] = bool(enabled)
+        save_settings(settings)
+        return {"status": "success", "dev_mode": bool(settings["dev_mode"]), "settings": settings}
 
     def get_menu_structure(self) -> List[Dict[str, Any]]:
         """Get the dynamically-built menu structure for the XMB interface.

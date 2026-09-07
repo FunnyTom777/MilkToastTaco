@@ -497,6 +497,127 @@
         @media (max-width: 600px) {
             .theme-grid { grid-template-columns: repeat(2, 1fr); }
         }
+        /* Dashboard XMB submenu — proper XMB style, not a popup */
+        #dashboard-xmb-layer {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            display: block;
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.3s var(--ease), visibility 0.3s var(--ease);
+            /* subtle drill-down veil — keeps waves visible but dims main XMB */
+            background: radial-gradient(ellipse at 30% 50%, rgba(0,0,0,0.22) 0%, rgba(0,0,0,0.55) 100%);
+            backdrop-filter: blur(1.5px);
+        }
+        #dashboard-xmb-layer.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        #dashboard-xmb-layer.hidden #dashboard-xmb-row {
+            transform: translateX(40px);
+            opacity: 0;
+        }
+        #dashboard-xmb-row {
+            position: absolute;
+            top: 40vh;
+            left: 30vw;
+            display: flex;
+            transition: transform var(--transition-speed) var(--ease), opacity var(--transition-speed) var(--ease);
+            will-change: transform;
+        }
+        /* breadcrumb / back hint above the category */
+        .xmb-submenu-breadcrumb {
+            position: absolute;
+            top: calc(40vh - 46px);
+            left: 30vw;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75rem;
+            font-weight: 300;
+            letter-spacing: 1.2px;
+            color: rgba(255,255,255,0.55);
+            text-transform: uppercase;
+            transition: opacity 0.25s var(--ease);
+        }
+        .xmb-submenu-breadcrumb i { font-size: 0.7rem; opacity: 0.7; }
+        .xmb-submenu-breadcrumb strong { color: rgba(255,255,255,0.9); font-weight: 400; }
+        #dashboard-xmb-layer.hidden .xmb-submenu-breadcrumb { opacity: 0; }
+        /* dev gate note anchored bottom-left like controls-hint */
+        .xmb-submenu-devnote {
+            position: absolute;
+            bottom: 6.5vh;
+            left: 3vw;
+            right: 46vw;
+            font-size: 0.78rem;
+            color: rgba(255,255,255,0.45);
+            line-height: 1.45;
+            font-weight: 300;
+        }
+        .xmb-submenu-devnote strong { color: #fde68a; font-weight: 400; }
+        .xmb-submenu-devnote i { margin-right: 4px; }
+        /* badge inline next to item label — XMB native */
+        .xmb-badge {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.62rem;
+            letter-spacing: 0.6px;
+            padding: 2px 7px;
+            border-radius: 999px;
+            margin-left: 10px;
+            font-weight: 600;
+            vertical-align: middle;
+            border: 1px solid transparent;
+            text-transform: uppercase;
+        }
+        .xmb-badge.stable { background: rgba(34,197,94,0.18); border-color: rgba(34,197,94,0.35); color: #86efac; }
+        .xmb-badge.dev { background: rgba(251,191,36,0.18); border-color: rgba(251,191,36,0.35); color: #fde68a; }
+        .xmb-badge.legacy { background: rgba(156,163,175,0.18); border-color: rgba(156,163,175,0.3); color: #d1d5db; }
+        /* hide main XMB when any XMB submenu open — only submenu + background remain */
+        body.dashboard-open #xmb-viewport,
+        body.settings-open #xmb-viewport { opacity: 0; visibility: hidden; pointer-events: none; filter: blur(1.5px); transform: scale(0.98); transition: opacity 0.28s var(--ease), visibility 0.28s var(--ease), filter 0.28s var(--ease), transform 0.28s var(--ease); }
+        body.dashboard-open #clock, body.settings-open #clock,
+        body.dashboard-open #controls-hint, body.settings-open #controls-hint,
+        body.dashboard-open #gamepad-hint, body.settings-open #gamepad-hint { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.25s var(--ease), visibility 0.25s var(--ease); }
+        /* submenu active item glow — stronger than main XMB */
+        #dashboard-xmb-layer .item, #settings-xmb-layer .item { color: rgba(255,255,255,0.42); }
+        #dashboard-xmb-layer .item.active, #settings-xmb-layer .item.active { color: #ffffff !important; font-size: 1.38rem; font-weight: 500; text-shadow: 0 0 12px rgba(255,255,255,0.85), 0 0 22px rgba(96,165,250,0.45), 0 0 36px rgba(139,92,246,0.22); transform: translateX(14px); }
+        /* Settings XMB submenu — mirrors dashboard layer */
+        #settings-xmb-layer {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            display: block;
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.3s var(--ease), visibility 0.3s var(--ease);
+            background: radial-gradient(ellipse at 30% 50%, rgba(0,0,0,0.22) 0%, rgba(0,0,0,0.55) 100%);
+            backdrop-filter: blur(1.5px);
+        }
+        #settings-xmb-layer.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+        #settings-xmb-layer.hidden #settings-xmb-row { transform: translateX(40px); opacity: 0; }
+        #settings-xmb-row {
+            position: absolute;
+            top: 40vh;
+            left: 30vw;
+            display: flex;
+            transition: transform var(--transition-speed) var(--ease), opacity var(--transition-speed) var(--ease);
+            will-change: transform;
+        }
+        #settings-xmb-layer.hidden .xmb-submenu-breadcrumb { opacity: 0; }
+        /* theme swatch inline */
+        .xmb-swatch { display:inline-block; width:14px; height:14px; border-radius:999px; margin-right:8px; border:1px solid rgba(255,255,255,0.2); vertical-align:middle; }
+        .xmb-badge.on { background: rgba(34,197,94,0.18); border-color: rgba(34,197,94,0.4); color: #86efac; }
+        .xmb-badge.off { background: rgba(107,114,128,0.16); border-color: rgba(107,114,128,0.3); color: #9ca3af; }
+        .xmb-badge.active { background: rgba(99,102,241,0.22); border-color: #818cf8; color: #c7d2fe; box-shadow: 0 0 10px rgba(99,102,241,0.25); }
+        .dev-gate-note { text-align: center; font-size: 0.8rem; color: rgba(255,255,255,0.45); margin-top: 14px; line-height: 1.4; }
+        .dev-gate-note strong { color: #fde68a; }
+        /* General config modal reuse */
+        .general-modal { max-width: 560px; text-align: left; }
+        .general-modal h2 { text-align: center; }
+        .general-modal .modal-icon { text-align: center; display: block; }
     </style>
 </head>
 <body>
@@ -567,6 +688,62 @@
         </div>
     </div>
 
+    <!-- General Config Overlay (Dev Mode) -->
+    <div id="general-config-overlay" class="overlay hidden" onclick="if(event.target===this) hideGeneralConfig()">
+        <div class="modal general-modal">
+            <div class="modal-icon"><i class="fas fa-screwdriver-wrench" style="color:#fbbf24"></i></div>
+            <h2>General Config Settings</h2>
+            <p style="text-align:center; margin-bottom:18px; color:#aaa; font-size:0.9rem;">General behavior toggles. Saved to <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px; font-size:0.8rem;">xmbsettings.xml</code></p>
+            <div id="setting-row-devmode" class="setting-row">
+                <div class="setting-label">
+                    <span><i class="fas fa-flask"></i> Dev Mode</span>
+                    <span>When off you only see Dashboard V2. Turn on to reveal all 4 dashboards</span>
+                </div>
+                <div id="devmode-toggle" class="toggle" onclick="toggleDevMode()" role="switch" aria-checked="false" tabindex="-1">
+                    <div class="toggle-knob"></div>
+                </div>
+            </div>
+            <div class="settings-actions">
+                <button id="general-done-btn" class="btn-primary" onclick="hideGeneralConfig()"><i class="fas fa-check" style="margin-right:6px"></i> Done</button>
+            </div>
+            <div class="kbd-hint"><kbd>↑</kbd><kbd>↓</kbd> navigate • <kbd>ENTER</kbd>/<kbd>←</kbd><kbd>→</kbd> toggle • <kbd>BACKSPACE</kbd>/<kbd>ESC</kbd> close</div>
+        </div>
+    </div>
+
+    <!-- Dashboard XMB Submenu — proper XMB (not a modal) -->
+    <div id="dashboard-xmb-layer" class="hidden" aria-hidden="true" onclick="if(event.target===this) hideDashboardSubmenu()">
+        <div class="xmb-submenu-breadcrumb"><i class="fas fa-chevron-left"></i> Game Modes <span style="opacity:0.5">›</span> <strong>Dashboard</strong> <span style="opacity:0.35; margin-left:8px; letter-spacing:0.8px; text-transform:none; font-size:0.68rem;"><kbd style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-bottom-width:2px; padding:1px 5px; border-radius:4px; font-family:inherit;">B</kbd> / <kbd style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-bottom-width:2px; padding:1px 5px; border-radius:4px; font-family:inherit;">BACKSPACE</kbd> back</span></div>
+        <div id="dashboard-xmb-row">
+            <div class="category-group active" id="dash-cat">
+                <div class="category-icon-container">
+                    <i class="category-icon fas fa-table-columns"></i>
+                    <div class="category-title">Dashboard</div>
+                </div>
+                <div class="items-column-wrapper" style="opacity:1; visibility:visible">
+                    <div class="items-column" id="dash-col"></div>
+                </div>
+            </div>
+        </div>
+        <div id="dashboard-dev-note" class="xmb-submenu-devnote"></div>
+    </div>
+
+    <!-- XMB Settings XMB Submenu — proper XMB (not a modal) -->
+    <div id="settings-xmb-layer" class="hidden" aria-hidden="true" onclick="if(event.target===this) hideSettingsXMB()">
+        <div class="xmb-submenu-breadcrumb"><i class="fas fa-chevron-left"></i> XMB Options <span style="opacity:0.5">›</span> <strong>Settings</strong> <span style="opacity:0.35; margin-left:8px; letter-spacing:0.8px; text-transform:none; font-size:0.68rem;"><kbd style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-bottom-width:2px; padding:1px 5px; border-radius:4px; font-family:inherit;">B</kbd> / <kbd style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-bottom-width:2px; padding:1px 5px; border-radius:4px; font-family:inherit;">BACKSPACE</kbd> back</span></div>
+        <div id="settings-xmb-row">
+            <div class="category-group active" id="settings-cat">
+                <div class="category-icon-container">
+                    <i class="category-icon fas fa-sliders"></i>
+                    <div class="category-title">XMB Options</div>
+                </div>
+                <div class="items-column-wrapper" style="opacity:1; visibility:visible">
+                    <div class="items-column" id="settings-col"></div>
+                </div>
+            </div>
+        </div>
+        <div id="settings-dev-note" class="xmb-submenu-devnote"></div>
+    </div>
+
     <script>
         // --- Theme definitions (mirrors python xmb_settings.THEMES) ---
         const THEMES = {
@@ -580,10 +757,26 @@
         const THEME_IDS = Object.keys(THEMES);
         let currentTheme = "default";
         let fullscreenEnabled = false;
+        let devModeEnabled = false;
 
         // --- Settings keyboard navigation state ---
         let settingsFocusRow = 0; // 0=fullscreen toggle, 1=theme grid, 2=done button
         let settingsThemeIndex = 0; // index into THEME_IDS when row==1
+
+        // --- Dashboard submenu data + dev-mode gating ---
+        const ALL_DASHBOARDS = [
+            { id: "v2",      name: "MTT Dashboard V2",      badge: "Stable", icon: "fa-rocket",     desc: "Game System Debugger — XMB themes, fullscreen follows settings. Recommended.", api: "launch_dashboard_v2", terminal: "python -m core.renderer.dashboard_v2.dashboard_v2" },
+            { id: "legacy",  name: "MTT Dashboard",         badge: "Legacy", icon: "fa-table-columns", desc: "Original dashboard — outdated, please use V2 instead.", api: "launch_dashboard",   terminal: "python -m core.renderer.dashboard.dashboard" },
+            { id: "v3",      name: "Dashboard V3",          badge: "Dev",    icon: "fa-gamepad",    desc: "Console Hub — controller-first, no commands, pure UI.", api: "launch_dashboard_v3", terminal: "python -m core.renderer.dashboard_v3.dashboard_v3" },
+            { id: "v4",      name: "Dashboard V4",          badge: "Dev",    icon: "fa-cubes",      desc: "Dear ImGui hub — native PyImGui + OpenGL, controller + KBM.", api: "launch_dashboard_v4", terminal: "python -m core.renderer.dashboard_v4.dashboard_v4" },
+        ];
+        let dashboardFocusIndex = 0; // index into filtered list
+        let generalFocusRow = 0; // 0=dev toggle, 1=done
+
+        function getFilteredDashboards() {
+            if (devModeEnabled) return ALL_DASHBOARDS.slice();
+            return ALL_DASHBOARDS.filter(d => d.id === "v2");
+        }
 
         function applyTheme(themeId) {
             const t = THEMES[themeId] || THEMES.default;
@@ -687,45 +880,66 @@
                         let t = (res.settings.theme || 'default').trim();
                         if (THEMES[t]) currentTheme = t;
                         else currentTheme = 'default';
+                        devModeEnabled = !!res.settings.dev_mode;
                         loadedFromPython = true;
                     }
                 }
+                // fallback: also check localStorage if python didn't load (browser preview)
                 if (!loadedFromPython) {
                     const fs = localStorage.getItem('xmb_fullscreen');
                     if (fs !== null) fullscreenEnabled = fs === 'true';
                     const th = localStorage.getItem('xmb_theme');
                     if (th && THEMES[th]) currentTheme = th;
+                    const dm = localStorage.getItem('xmb_dev_mode');
+                    if (dm !== null) devModeEnabled = dm === 'true';
+                } else {
+                    // sync python -> localStorage for browser preview consistency
+                    try { localStorage.setItem('xmb_dev_mode', String(devModeEnabled)); } catch(e) {}
+                    try { localStorage.setItem('xmb_fullscreen', String(fullscreenEnabled)); } catch(e) {}
+                    try { localStorage.setItem('xmb_theme', currentTheme); } catch(e) {}
+                }
+                // also try dedicated dev_mode API for forward compat
+                if (window.pywebview && window.pywebview.api && window.pywebview.api.get_dev_mode) {
+                    try {
+                        const dmRes = await window.pywebview.api.get_dev_mode();
+                        if (dmRes && typeof dmRes.dev_mode === 'boolean') devModeEnabled = !!dmRes.dev_mode;
+                    } catch(e) {}
                 }
             } catch(e) { console.error('load settings failed', e); }
             const idx = THEME_IDS.indexOf(currentTheme);
             settingsThemeIndex = idx === -1 ? 0 : idx;
             applyTheme(currentTheme);
             updateFullscreenToggleUI();
+            updateDevModeToggleUI();
             buildThemeGrid();
         }
 
-        function updateSettingsFocusUI() {
-            const rowEl = document.getElementById('setting-row-fullscreen');
-            const toggleEl = document.getElementById('fullscreen-toggle');
-            const doneBtn = document.getElementById('settings-done-btn');
-            // clear all kb-focus
-            rowEl.classList.remove('kb-focus');
-            if (toggleEl) toggleEl.classList.remove('kb-focus');
-            if (doneBtn) doneBtn.classList.remove('kb-focus');
-            document.querySelectorAll('.theme-option').forEach(el => el.classList.remove('kb-focus'));
+        function updateDevModeToggleUI() {
+            const tog = document.getElementById('devmode-toggle');
+            if (!tog) return;
+            tog.classList.toggle('on', devModeEnabled);
+            tog.setAttribute('aria-checked', String(devModeEnabled));
+        }
 
-            if (settingsFocusRow === 0) {
-                rowEl.classList.add('kb-focus');
-                if (toggleEl) toggleEl.classList.add('kb-focus');
-            } else if (settingsFocusRow === 1) {
-                const grid = document.getElementById('theme-grid');
-                const items = grid ? grid.querySelectorAll('.theme-option') : [];
-                if (items[settingsThemeIndex]) items[settingsThemeIndex].classList.add('kb-focus');
-                // also highlight row context subtly
-                rowEl.classList.remove('kb-focus');
-            } else if (settingsFocusRow === 2) {
-                if (doneBtn) doneBtn.classList.add('kb-focus');
-            }
+        async function toggleDevMode() {
+            devModeEnabled = !devModeEnabled;
+            updateDevModeToggleUI();
+            playTick('select');
+            try {
+                if (window.pywebview && window.pywebview.api && window.pywebview.api.set_dev_mode) {
+                    await window.pywebview.api.set_dev_mode(devModeEnabled);
+                } else {
+                    localStorage.setItem('xmb_dev_mode', String(devModeEnabled));
+                }
+            } catch(e) { console.error('set_dev_mode failed', e); }
+            // legacy no-op
+            try { updateGeneralConfigFocusUI(); } catch(e) {}
+            if (isDashboardOpen()) { buildDashboardList(); updateDashboardFocusUI(); }
+            if (isSettingsOpen()) { buildSettingsXMBList(); updateSettingsXMBFocusUI(); }
+        }
+        // legacy modal focus — now proxied to XMB layer
+        function updateSettingsFocusUI() {
+            if (isSettingsOpen()) { buildSettingsXMBList(); updateSettingsXMBFocusUI(); }
         }
 
         // --- Popup helpers ---
@@ -748,37 +962,267 @@
             if (btn) btn.classList.remove('kb-focus');
             playTick('move');
         }
-        function showSettings() {
-            const overlay = document.getElementById('settings-overlay');
-            overlay.classList.remove('hidden');
-            // init focus: start on fullscreen toggle
-            settingsFocusRow = 0;
-            // sync theme index to current theme
-            const idx = THEME_IDS.indexOf(currentTheme);
-            settingsThemeIndex = idx === -1 ? 0 : idx;
-            updateSettingsFocusUI();
-            playTick('select');
-        }
-        function hideSettings() {
-            const overlay = document.getElementById('settings-overlay');
-            if (overlay.classList.contains('hidden')) return;
-            overlay.classList.add('hidden');
-            // clear focus
-            document.getElementById('setting-row-fullscreen').classList.remove('kb-focus');
-            document.getElementById('fullscreen-toggle').classList.remove('kb-focus');
-            document.getElementById('settings-done-btn').classList.remove('kb-focus');
-            document.querySelectorAll('.theme-option').forEach(el => el.classList.remove('kb-focus'));
-            playTick('move');
-        }
-
         function isPopupOpen() {
             return !document.getElementById('popup-overlay').classList.contains('hidden');
         }
         function isSettingsOpen() {
-            return !document.getElementById('settings-overlay').classList.contains('hidden');
+            const el = document.getElementById('settings-xmb-layer');
+            return el && !el.classList.contains('hidden');
+        }
+        // legacy: general config now merged into settings XMB layer
+        function isGeneralConfigOpen() { return false; }
+        function isDashboardOpen() {
+            const el = document.getElementById('dashboard-xmb-layer');
+            return el && !el.classList.contains('hidden');
         }
         function isOverlayOpen() {
-            return isPopupOpen() || isSettingsOpen();
+            return isPopupOpen() || isSettingsOpen() || isDashboardOpen();
+        }
+
+        // --- XMB Settings helpers (proper XMB style, replaces modal dialogs) ---
+        let settingsXMBFocus = 0;
+        // helper to get ordered settings items for XMB list
+        function getSettingsXMBItems() {
+            const items = [];
+            // 0: Fullscreen toggle
+            items.push({ id: 'fullscreen', name: fullscreenEnabled ? 'Fullscreen: On' : 'Fullscreen: Off', desc: 'Launch the XMB directly in fullscreen mode (saves to xmbsettings.xml).', badge: fullscreenEnabled ? 'ON' : 'OFF', badgeCls: fullscreenEnabled ? 'on' : 'off', icon: 'fa-expand' });
+            // 1..n: Themes as individual XMB items
+            THEME_IDS.forEach(tid => {
+                const t = THEMES[tid];
+                const active = tid === currentTheme;
+                items.push({ id: 'theme:'+tid, themeId: tid, name: t.name, desc: t.desc + (active ? ' — Active' : ''), badge: active ? 'Active' : '', badgeCls: active ? 'active' : '', swatch: t.bg, icon: 'fa-palette', active });
+            });
+            // last: Dev Mode toggle
+            items.push({ id: 'devmode', name: devModeEnabled ? 'Dev Mode: On' : 'Dev Mode: Off', desc: 'When off you only see Dashboard V2. Turn on to reveal all 4 dashboards (saves to xmbsettings.xml).', badge: devModeEnabled ? 'ON' : 'OFF', badgeCls: devModeEnabled ? 'on' : 'off', icon: 'fa-flask' });
+            return items;
+        }
+        function buildSettingsXMBList() {
+            const col = document.getElementById('settings-col');
+            const noteEl = document.getElementById('settings-dev-note');
+            if (!col) return;
+            const items = getSettingsXMBItems();
+            if (settingsXMBFocus >= items.length) settingsXMBFocus = items.length - 1;
+            if (settingsXMBFocus < 0) settingsXMBFocus = 0;
+            col.innerHTML = '';
+            items.forEach((it, idx) => {
+                const el = document.createElement('div');
+                el.className = 'item' + (idx === settingsXMBFocus ? ' active' : '');
+                el.id = `settings-item-${idx}`;
+                let prefix = '';
+                if (it.swatch) prefix = `<span class="xmb-swatch" style="background:${it.swatch}"></span>`;
+                else if (it.icon) prefix = `<i class="fas ${it.icon}" style="margin-right:8px; opacity:0.7"></i>`;
+                const badge = it.badge ? `<span class="xmb-badge ${it.badgeCls}">${it.badge}</span>` : '';
+                el.innerHTML = `${prefix}${it.name}${badge}`;
+                el.onclick = () => { settingsXMBFocus = idx; updateSettingsXMBFocusUI(); activateSettingsXMBItem(idx); };
+                col.appendChild(el);
+            });
+            noteEl.innerHTML = '<i class="fas fa-circle-info"></i> Saved to <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px; font-size:0.78rem;">xmbsettings.xml</code> — changes apply instantly.';
+            updateSettingsXMBInfoPanel();
+        }
+        function updateSettingsXMBFocusUI() {
+            const col = document.getElementById('settings-col');
+            if (!col) return;
+            const offset = -(settingsXMBFocus * itemHeight);
+            col.style.transform = `translateY(${offset}px)`;
+            col.querySelectorAll('.item').forEach((el, idx) => el.classList.toggle('active', idx === settingsXMBFocus));
+            updateSettingsXMBInfoPanel();
+        }
+        function updateSettingsXMBInfoPanel() {
+            const panel = document.getElementById('info-panel');
+            const titleEl = document.getElementById('info-title');
+            const descEl = document.getElementById('info-desc');
+            const items = getSettingsXMBItems();
+            const it = items[settingsXMBFocus];
+            if (!it) return;
+            panel.classList.remove('visible');
+            setTimeout(() => {
+                titleEl.innerText = it.name.replace(/:.*/, '').trim() || it.name;
+                // for themes show full name + desc, for toggles show state desc
+                descEl.innerText = it.desc;
+                panel.classList.add('visible');
+            }, 120);
+        }
+        function showSettingsXMB(initialIndex = 0) {
+            const layer = document.getElementById('settings-xmb-layer');
+            const items = getSettingsXMBItems();
+            settingsXMBFocus = Math.max(0, Math.min(initialIndex, items.length - 1));
+            buildSettingsXMBList();
+            layer.classList.remove('hidden');
+            layer.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('settings-open');
+            updateSettingsXMBFocusUI();
+            playTick('select');
+        }
+        function hideSettingsXMB() {
+            const layer = document.getElementById('settings-xmb-layer');
+            if (layer.classList.contains('hidden')) return;
+            layer.classList.add('hidden');
+            layer.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('settings-open');
+            playTick('move');
+            setTimeout(() => updateInfoPanel(), 120);
+        }
+        // compat aliases (old modal names)
+        function showSettings() { showSettingsXMB(0); }
+        function hideSettings() { hideSettingsXMB(); }
+        function showGeneralConfig() { const items=getSettingsXMBItems(); const idx=items.findIndex(i=>i.id==='devmode'); showSettingsXMB(idx===-1?0:idx); }
+        function hideGeneralConfig() { hideSettingsXMB(); }
+        function updateGeneralConfigFocusUI() {}
+        function updateSettingsFocusUI() { if (isSettingsOpen()) buildSettingsXMBList(); }
+        function handleGeneralConfigKey(e) { return handleSettingsXMBKey(e); }
+        async function activateSettingsXMBItem(idx) {
+            const items = getSettingsXMBItems();
+            const it = items[idx];
+            if (!it) return;
+            if (it.id === 'fullscreen') { await toggleFullscreenSetting(); buildSettingsXMBList(); updateSettingsXMBFocusUI(); }
+            else if (it.id && it.id.startsWith('theme:')) { await selectTheme(it.themeId); buildSettingsXMBList(); updateSettingsXMBFocusUI(); }
+            else if (it.id === 'devmode') { await toggleDevMode(); buildSettingsXMBList(); updateSettingsXMBFocusUI(); }
+        }
+        function handleSettingsXMBKey(e) {
+            const key = e.key;
+            const items = getSettingsXMBItems();
+            const total = items.length || 1;
+            if (key === 'Escape' || key === 'Backspace' || key === 'ArrowLeft') { e.preventDefault(); hideSettingsXMB(); return true; }
+            if (key === 'ArrowUp') { e.preventDefault(); settingsXMBFocus = (settingsXMBFocus - 1 + total) % total; playTick('move'); updateSettingsXMBFocusUI(); return true; }
+            if (key === 'ArrowDown') { e.preventDefault(); settingsXMBFocus = (settingsXMBFocus + 1) % total; playTick('move'); updateSettingsXMBFocusUI(); return true; }
+            if (key === 'ArrowRight') { e.preventDefault(); playTick('move'); return true; }
+            if (key === 'Enter' || key === ' ' || key === 'Spacebar') { e.preventDefault(); activateSettingsXMBItem(settingsXMBFocus); return true; }
+            return false;
+        }
+        // keep old name for navigation dispatcher
+        function handleSettingsKey(e) { return handleSettingsXMBKey(e); }
+
+        // --- Dashboard XMB submenu helpers (proper XMB style) ---
+        function buildDashboardList() {
+            const col = document.getElementById('dash-col');
+            const noteEl = document.getElementById('dashboard-dev-note');
+            const filtered = getFilteredDashboards();
+            if (dashboardFocusIndex >= filtered.length) dashboardFocusIndex = Math.max(0, filtered.length - 1);
+            if (dashboardFocusIndex < 0) dashboardFocusIndex = 0;
+            col.innerHTML = '';
+            filtered.forEach((d, idx) => {
+                const el = document.createElement('div');
+                el.className = 'item' + (idx === dashboardFocusIndex ? ' active' : '');
+                el.id = `dash-item-${idx}`;
+                const badgeCls = d.badge === 'Stable' ? 'stable' : (d.badge === 'Dev' ? 'dev' : 'legacy');
+                el.innerHTML = `${d.name} <span class="xmb-badge ${badgeCls}">${d.badge}</span>`;
+                el.onclick = () => { dashboardFocusIndex = idx; updateDashboardFocusUI(); launchDashboardByIndex(idx); };
+                col.appendChild(el);
+            });
+            // badge for note
+            if (!devModeEnabled) {
+                noteEl.innerHTML = '<i class="fas fa-lock"></i> Dev Mode is <strong>off</strong> — only V2 is shown. Enable in <strong>XMB Options → General Config Settings</strong> to unlock all dashboards.';
+            } else {
+                noteEl.innerHTML = '<i class="fas fa-flask" style="color:#fde68a"></i> Dev Mode is <strong>on</strong> — all dashboards unlocked. <span style="opacity:0.6">Includes legacy/dev builds.</span>';
+            }
+            updateDashboardInfoPanel();
+        }
+        function updateDashboardFocusUI() {
+            const filtered = getFilteredDashboards();
+            const col = document.getElementById('dash-col');
+            if (!col) return;
+            // translate like main XMB
+            const offset = -(dashboardFocusIndex * itemHeight);
+            col.style.transform = `translateY(${offset}px)`;
+            col.querySelectorAll('.item').forEach((el, idx) => {
+                el.classList.toggle('active', idx === dashboardFocusIndex);
+            });
+            updateDashboardInfoPanel();
+        }
+        function updateDashboardInfoPanel() {
+            const panel = document.getElementById('info-panel');
+            const titleEl = document.getElementById('info-title');
+            const descEl = document.getElementById('info-desc');
+            const filtered = getFilteredDashboards();
+            const d = filtered[dashboardFocusIndex];
+            if (!d) return;
+            // reuse same info-panel but show dashboard desc; mimic XMB fade
+            panel.classList.remove('visible');
+            setTimeout(() => {
+                titleEl.innerText = d.name;
+                descEl.innerText = d.desc;
+                panel.classList.add('visible');
+            }, 120);
+        }
+        function showDashboardSubmenu() {
+            const layer = document.getElementById('dashboard-xmb-layer');
+            dashboardFocusIndex = 0;
+            buildDashboardList();
+            layer.classList.remove('hidden');
+            layer.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('dashboard-open');
+            // ensure info panel updates after build
+            updateDashboardFocusUI();
+            playTick('select');
+        }
+        function hideDashboardSubmenu() {
+            const layer = document.getElementById('dashboard-xmb-layer');
+            if (layer.classList.contains('hidden')) return;
+            layer.classList.add('hidden');
+            layer.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('dashboard-open');
+            playTick('move');
+            // restore main XMB info panel for current category/item
+            setTimeout(() => updateInfoPanel(), 120);
+        }
+        async function launchDashboardByIndex(idx) {
+            const filtered = getFilteredDashboards();
+            const d = filtered[idx];
+            if (!d) return;
+            playTick('select');
+            if (d.id === 'legacy') {
+                hideDashboardSubmenu();
+                showPopup(`<strong style=\"color:#fbbf24\"><i class=\"fas fa-triangle-exclamation\" style=\"margin-right:6px\"></i> Dashboard Outdated</strong><br>This dashboard is outdated. Please use Dashboard V2 Instead <i class=\"fas fa-arrow-right\" style=\"color:#60a5fa; margin-left:4px\"></i>`);
+                return;
+            }
+            if (window.pywebview && window.pywebview.api && window.pywebview.api[d.api]) {
+                try {
+                    const res = await window.pywebview.api[d.api]();
+                    if (res && res.status === 'success') {
+                        hideDashboardSubmenu();
+                        const iconColor = d.id==='v2' ? '#60a5fa' : d.id==='v3' ? '#22c55e' : '#a78bfa';
+                        showPopup(`<strong>${d.name}</strong> launching...<br><span style=\"opacity:0.7\">${d.desc} XMB is closing — ${d.name} will appear. <i class=\"fas ${d.icon}\" style=\"color:${iconColor}\"></i></span>`);
+                        setTimeout(()=>{ try{ window.close(); }catch(e){} }, 900);
+                        return;
+                    } else if (res && res.status === 'error') {
+                        showPopup(`Failed to launch ${d.name}:<br><code style=\"background:rgba(255,255,255,0.08); padding:4px 8px; border-radius:6px;\">${res.message||'unknown error'}</code>`);
+                        return;
+                    }
+                } catch(e){ console.error(e); }
+                showPopup(`Failed to launch ${d.name} — check console/py logs.<br><span style=\"opacity:0.7\">You can also run <code>${d.terminal}</code></span>`);
+            } else {
+                showPopup(`${d.name} launch needs the desktop app (pywebview).<br>Preview: run <code style=\"background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;\">${d.terminal}</code> in your terminal. <i class=\"fas fa-terminal\" style=\"color:#34d399\"></i>`);
+            }
+        }
+        function handleDashboardKey(e) {
+            const key = e.key;
+            const filtered = getFilteredDashboards();
+            const total = filtered.length || 1;
+            if (key === 'Escape' || key === 'Backspace' || key === 'ArrowLeft') { e.preventDefault(); hideDashboardSubmenu(); return true; }
+            if (key === 'ArrowUp') {
+                e.preventDefault();
+                dashboardFocusIndex = (dashboardFocusIndex - 1 + total) % total;
+                playTick('move');
+                updateDashboardFocusUI();
+                return true;
+            }
+            if (key === 'ArrowDown') {
+                e.preventDefault();
+                dashboardFocusIndex = (dashboardFocusIndex + 1) % total;
+                playTick('move');
+                updateDashboardFocusUI();
+                return true;
+            }
+            if (key === 'ArrowRight') {
+                // Right in XMB normally would drill deeper; here just feedback
+                e.preventDefault(); playTick('move'); return true;
+            }
+            if (key === 'Enter' || key === ' ' || key === 'Spacebar') {
+                e.preventDefault();
+                launchDashboardByIndex(dashboardFocusIndex);
+                return true;
+            }
+            return false;
         }
 
         function getThemeGridCols() {
@@ -803,135 +1247,7 @@
             return false;
         }
 
-        function handleSettingsKey(e) {
-            const key = e.key;
-            const cols = getThemeGridCols();
-            const themeCount = THEME_IDS.length;
-
-            // Back / close
-            if (key === 'Escape' || key === 'Backspace') {
-                e.preventDefault();
-                hideSettings();
-                return true;
-            }
-
-            // Navigation within settings
-            if (key === 'ArrowUp') {
-                e.preventDefault();
-                if (settingsFocusRow === 1) {
-                    // if in theme grid, try move up within grid first
-                    if (settingsThemeIndex >= cols) {
-                        settingsThemeIndex -= cols;
-                        playTick('move');
-                        updateSettingsFocusUI();
-                    } else {
-                        // top row of grid -> go to toggle row
-                        settingsFocusRow = 0;
-                        playTick('move');
-                        updateSettingsFocusUI();
-                    }
-                } else if (settingsFocusRow === 2) {
-                    // Done -> go to theme grid, focus last row's same column
-                    settingsFocusRow = 1;
-                    // keep same column as before, or last item
-                    if (settingsThemeIndex >= themeCount) settingsThemeIndex = themeCount - 1;
-                    playTick('move');
-                    updateSettingsFocusUI();
-                } else if (settingsFocusRow === 0) {
-                    // toggle -> wrap to Done
-                    settingsFocusRow = 2;
-                    playTick('move');
-                    updateSettingsFocusUI();
-                }
-                return true;
-            }
-            if (key === 'ArrowDown') {
-                e.preventDefault();
-                if (settingsFocusRow === 0) {
-                    settingsFocusRow = 1;
-                    // when entering grid, keep current theme index (already synced)
-                    playTick('move');
-                    updateSettingsFocusUI();
-                } else if (settingsFocusRow === 1) {
-                    if (settingsThemeIndex + cols < themeCount) {
-                        settingsThemeIndex += cols;
-                        playTick('move');
-                        updateSettingsFocusUI();
-                    } else {
-                        // past bottom -> go to Done
-                        settingsFocusRow = 2;
-                        playTick('move');
-                        updateSettingsFocusUI();
-                    }
-                } else if (settingsFocusRow === 2) {
-                    settingsFocusRow = 0;
-                    playTick('move');
-                    updateSettingsFocusUI();
-                }
-                return true;
-            }
-            if (key === 'ArrowLeft') {
-                e.preventDefault();
-                if (settingsFocusRow === 1) {
-                    // move left within grid with wrap per row
-                    const row = Math.floor(settingsThemeIndex / cols);
-                    const rowStart = row * cols;
-                    const rowEnd = Math.min(rowStart + cols - 1, themeCount - 1);
-                    if (settingsThemeIndex > rowStart) {
-                        settingsThemeIndex--;
-                    } else {
-                        // wrap to end of row
-                        settingsThemeIndex = rowEnd;
-                    }
-                    playTick('move');
-                    updateSettingsFocusUI();
-                } else if (settingsFocusRow === 0) {
-                    // Left on toggle = turn off
-                    if (fullscreenEnabled) {
-                        toggleFullscreenSetting();
-                    } else {
-                        playTick('move');
-                    }
-                }
-                return true;
-            }
-            if (key === 'ArrowRight') {
-                e.preventDefault();
-                if (settingsFocusRow === 1) {
-                    const row = Math.floor(settingsThemeIndex / cols);
-                    const rowStart = row * cols;
-                    const rowEnd = Math.min(rowStart + cols - 1, themeCount - 1);
-                    if (settingsThemeIndex < rowEnd) {
-                        settingsThemeIndex++;
-                    } else {
-                        settingsThemeIndex = rowStart;
-                    }
-                    playTick('move');
-                    updateSettingsFocusUI();
-                } else if (settingsFocusRow === 0) {
-                    // Right on toggle = turn on
-                    if (!fullscreenEnabled) {
-                        toggleFullscreenSetting();
-                    } else {
-                        playTick('move');
-                    }
-                }
-                return true;
-            }
-            if (key === 'Enter' || key === ' ' || key === 'Spacebar') {
-                e.preventDefault();
-                if (settingsFocusRow === 0) {
-                    toggleFullscreenSetting();
-                } else if (settingsFocusRow === 1) {
-                    const tid = THEME_IDS[settingsThemeIndex];
-                    if (tid) selectTheme(tid);
-                } else if (settingsFocusRow === 2) {
-                    hideSettings();
-                }
-                return true;
-            }
-            return false;
-        }
+        // legacy modal grid handler removed — now XMB style (handleSettingsXMBKey). Alias kept above.
 
         // ---- Gamepad / Controller Support (D-Pad + A/B) ----
         // Maps to keyboard: D-Pad -> Arrow keys, A (btn 0) -> Enter, B (btn 1) -> Backspace
@@ -1047,6 +1363,7 @@
                 items: [
                     { name: "Play Career Mode", desc: "Start a new or continue an existing Career Mode save. Build a reputation, own property, and grow across industries over time." },
                     { name: "Play Sandbox Mode", desc: "Jump into a free-play world with no objectives. Spawn vehicles, tune the economy, and build without restriction." },
+                    { name: "Dashboard", desc: "Browse all Dashboard versions — V2 is stable, others require Dev Mode. Press Enter to open." },
                     { name: "View Military Campaigns", desc: "Browse historical and modern combat campaigns, from WWI dogfights to network-centric modern warfare, and launch a mission." }
                 ]
             },
@@ -1065,7 +1382,8 @@
                 icon: "fa-sliders",
                 items: [
                     { name: "Display Settings", desc: "Configure fullscreen and display preferences for the XMB." },
-                    { name: "Theme Settings", desc: "Change the XMB visual theme — colors, waves, and accents." }
+                    { name: "Theme Settings", desc: "Change the XMB visual theme — colors, waves, and accents." },
+                    { name: "General Config Settings", desc: "Configure general behavior — Dev Mode controls access to extra Dashboards." }
                 ]
             },
             {
@@ -1073,9 +1391,6 @@
                 title: "Misc",
                 icon: "fa-ellipsis-h",
                 items: [
-                    { name: "Launch MTT Dashboard", desc: "This dashboard is outdated. Please use Dashboard V2 Instead" },
-                    { name: "Dashboard V2", desc: "Open MTT Dashboard V2 — Game System Debugger with XMB themes. Fullscreen follows XMB settings. Uses the same pywebview engine." },
-                    { name: "Dashboard V3", desc: "Open MTT Dashboard V3 — Console Hub. Controller-first, no commands, pure UI menus. Big-screen friendly. Gamepad + keyboard." },
                     { name: "Quit", desc: "Save progress and return to desktop." }
                 ]
             }
@@ -1143,6 +1458,28 @@
             // --- local UI actions that don't need pywebview ---
             const notImplementedMsg = 'This feature is not implemented yet.<br><strong>Try using the Dashboard</strong> for now! <i class="fas fa-rocket" style="color:#60a5fa"></i>';
 
+            // Game Modes -> Dashboard submenu (dev-mode filtered)
+            if (catId === 'game_modes' && selectedItem.name === 'Dashboard') {
+                // Ensure fresh dev_mode value before opening
+                try {
+                    if (window.pywebview && window.pywebview.api && window.pywebview.api.get_dev_mode) {
+                        const r = await window.pywebview.api.get_dev_mode();
+                        if (r && typeof r.dev_mode === 'boolean') devModeEnabled = !!r.dev_mode;
+                    } else if (window.pywebview && window.pywebview.api && window.pywebview.api.get_xmb_settings) {
+                        const r2 = await window.pywebview.api.get_xmb_settings();
+                        if (r2 && r2.settings) devModeEnabled = !!r2.settings.dev_mode;
+                    } else {
+                        const dm = localStorage.getItem('xmb_dev_mode');
+                        if (dm !== null) devModeEnabled = dm === 'true';
+                    }
+                } catch(e) {}
+                showDashboardSubmenu();
+                // also ping python for analytics
+                if (window.pywebview && window.pywebview.api && window.pywebview.api.open_dashboard_submenu) {
+                    try { await window.pywebview.api.open_dashboard_submenu(); } catch(e) {}
+                }
+                return;
+            }
             if (catId === 'game_modes' && (selectedItem.name === 'Play Career Mode' || selectedItem.name === 'Play Sandbox Mode' || selectedItem.name === 'View Military Campaigns')) {
                 showPopup(notImplementedMsg);
                 if (window.pywebview && window.pywebview.api) {
@@ -1155,7 +1492,34 @@
                 return;
             }
             if (catId === 'xmb_options') {
-                showSettings();
+                // sync settings before opening XMB submenu
+                try {
+                    if (window.pywebview && window.pywebview.api && window.pywebview.api.get_xmb_settings) {
+                        const r = await window.pywebview.api.get_xmb_settings();
+                        if (r && r.settings) {
+                            fullscreenEnabled = !!r.settings.fullscreen;
+                            devModeEnabled = !!r.settings.dev_mode;
+                            let t=(r.settings.theme||'default').trim();
+                            if (THEMES[t]) currentTheme=t;
+                        }
+                    }
+                } catch(e) {}
+                // focus: Display -> fullscreen (0), Theme -> first theme (1), General -> devMode (last)
+                let focusIdx = 0;
+                if (selectedItem.name === 'Theme Settings') focusIdx = 1;
+                else if (selectedItem.name === 'General Config Settings') {
+                    const items = getSettingsXMBItems();
+                    const devIdx = items.findIndex(i=>i.id==='devmode');
+                    focusIdx = devIdx===-1?0:devIdx;
+                }
+                showSettingsXMB(focusIdx);
+                if (window.pywebview && window.pywebview.api) {
+                    try {
+                        if (selectedItem.name === 'Display Settings') await window.pywebview.api.open_xmb_display_settings();
+                        else if (selectedItem.name === 'Theme Settings') await window.pywebview.api.open_xmb_theme_settings();
+                        else if (selectedItem.name === 'General Config Settings') await window.pywebview.api.open_xmb_general_config();
+                    } catch(e) {}
+                }
                 return;
             }
             // Dashboard V2 — XMB-themed debugger (new)
@@ -1336,9 +1700,17 @@
         
         function setupNavigation() {
             window.addEventListener('keydown', (e) => {
-                // Overlay priority: popup first, then settings
+                // Overlay priority: popup > dashboard > general config > settings
                 if (isPopupOpen()) {
                     handlePopupKey(e);
+                    return;
+                }
+                if (isDashboardOpen()) {
+                    handleDashboardKey(e);
+                    return;
+                }
+                if (isGeneralConfigOpen()) {
+                    handleGeneralConfigKey(e);
                     return;
                 }
                 if (isSettingsOpen()) {
