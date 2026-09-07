@@ -77,7 +77,7 @@
     #clock { font-weight: 300; letter-spacing: 1px; }
 
     /* Main Container Grid */
-    .dashboard-container { display: grid; grid-template-columns: 260px 1fr; flex: 1; overflow: hidden; }
+    .dashboard-container { display: grid; grid-template-columns: 299px 1fr; flex: 1; overflow: hidden; }
 
     /* Sidebar Controls */
     aside {
@@ -132,6 +132,37 @@
     /* Chat / Terminal Workspace */
     main { display: flex; flex-direction: column; background-color: transparent; position: relative; overflow: hidden; }
     .chat-history { flex: 1; padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1.1rem; }
+    /* Homepage — intro + big quick tiles */
+    .home-view { flex:1; overflow-y:auto; padding:1.5rem; display:flex; flex-direction:column; gap:1.25rem; }
+    .home-view.hidden, .terminal-view.hidden { display:none !important; }
+    .terminal-view { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+    .home-tabs { display:flex; gap:6px; padding:0.6rem 1rem; border-bottom:1px solid var(--panel-border); background:rgba(0,0,0,0.18); align-items:center; }
+    .home-tab { padding:6px 14px; border-radius:999px; border:1px solid var(--panel-border); background:rgba(255,255,255,0.04); color:var(--text-muted); font-weight:700; font-size:0.78rem; cursor:pointer; transition:all 0.15s var(--ease); display:flex; align-items:center; gap:6px; }
+    .home-tab.active { background:var(--accent); color:#000; border-color:var(--accent); box-shadow:0 2px 8px rgba(0,0,0,0.25); }
+    .intro-card { background: linear-gradient(135deg, var(--panel-bg) 0%, #0f1115 100%); border:1px solid var(--panel-border); border-radius:14px; padding:1.25rem 1.4rem; box-shadow:0 8px 24px rgba(0,0,0,0.25); position:relative; overflow:hidden; }
+    .intro-card::before { content:""; position:absolute; inset:0; background: radial-gradient(ellipse at 30% 10%, var(--accent-subtle) 0%, transparent 55%); pointer-events:none; }
+    .intro-kicker { font-size:0.68rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--accent); font-weight:700; display:flex; align-items:center; gap:6px; }
+    .intro-title { font-size:1.35rem; font-weight:800; letter-spacing:-0.02em; margin-top:0.25rem; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .intro-title small { font-size:0.70rem; font-weight:600; padding:3px 8px; border-radius:999px; background:rgba(249,115,22,0.12); border:1px solid var(--accent-border); color:var(--accent); }
+    .intro-desc { font-size:0.88rem; color:var(--text-muted); line-height:1.5; margin-top:0.6rem; max-width: 720px; }
+    .intro-quest-placeholder { margin-top:0.9rem; padding:0.75rem 0.9rem; border-radius:10px; background:rgba(255,255,255,0.03); border:1px dashed var(--panel-border); display:flex; align-items:center; gap:10px; font-size:0.78rem; color:var(--text-muted); }
+    .intro-quest-placeholder .qp-icon { width:32px; height:32px; border-radius:8px; background:var(--accent-subtle); border:1px solid var(--accent-border); display:flex; align-items:center; justify-content:center; color:var(--accent); flex-shrink:0; }
+    .quick-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap:14px; }
+    @media (max-width: 700px){ .quick-grid{ grid-template-columns: repeat(2, 1fr); } }
+    .quick-tile { background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(0,0,0,0.22) 100%); border:1px solid var(--panel-border); border-radius:14px; padding:1.1rem 1rem; display:flex; flex-direction:column; align-items:flex-start; gap:0.7rem; cursor:pointer; transition: all 0.18s var(--ease); min-height:148px; text-align:left; position:relative; overflow:hidden; }
+    .quick-tile:hover { transform: translateY(-3px); border-color:var(--accent); box-shadow:0 12px 28px rgba(0,0,0,0.35), 0 0 0 1px var(--accent-subtle); }
+    .quick-tile-icon { width:44px; height:44px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:1.25rem; border:1px solid rgba(255,255,255,0.12); }
+    .quick-tile h3 { font-size:0.95rem; font-weight:800; letter-spacing:-0.01em; margin:0; display:flex; align-items:center; gap:6px; }
+    .quick-tile p { font-size:0.76rem; color:var(--text-muted); line-height:1.4; margin:0; }
+    .quick-tile .tile-meta { margin-top:auto; font-size:0.62rem; color:var(--text-muted); font-family:var(--font-mono); display:flex; align-items:center; gap:6px; }
+    .quick-tile.economy .quick-tile-icon{ background:rgba(249,115,22,0.15); color:var(--accent); border-color:var(--accent-border); }
+    .quick-tile.banks .quick-tile-icon{ background:rgba(56,189,248,0.14); color:#38bdf8; border-color:rgba(56,189,248,0.30); }
+    .quick-tile.shop .quick-tile-icon{ background:rgba(34,197,94,0.14); color:#22c55e; border-color:rgba(34,197,94,0.30); }
+    .quick-tile.realestate .quick-tile-icon{ background:rgba(245,158,11,0.14); color:#f59e0b; border-color:rgba(245,158,11,0.30); }
+    .home-stats-row { display:grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap:10px; }
+    .home-stat { background:rgba(0,0,0,0.18); border:1px solid var(--panel-border); border-radius:10px; padding:0.7rem 0.8rem; font-family:var(--font-mono); font-size:0.75rem; display:flex; flex-direction:column; gap:4px; }
+    .home-stat b{ font-size:0.95rem; color:var(--text-main); }
+    .home-stat span{ opacity:0.6; font-size:0.65rem; }
     .log-row { display: flex; width: 100%; }
     .log-row.user-command { justify-content: flex-start; }
     .user-bubble {
@@ -316,6 +347,20 @@
     .bank-card-v2 .card-number{font-family:var(--font-mono); letter-spacing:1.5px; font-size:0.95rem; margin:8px 0 4px; opacity:0.95;}
     .bank-card-v2 .card-balance{font-weight:800; font-size:1.05rem;}
     .bank-card-v2 .card-expiry{font-family:var(--font-mono); font-size:0.6rem; opacity:0.7;}
+    /* Banks — nice friendly cards grid (join / membership) */
+    .banks-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; margin-top:10px;}
+    .bank-join-card{background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(0,0,0,0.22) 100%); border:1px solid var(--panel-border); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; transition:all 0.16s var(--ease);}
+    .bank-join-card:hover{transform:translateY(-2px); border-color:var(--accent); box-shadow:0 8px 22px rgba(0,0,0,0.35), 0 0 0 1px var(--accent-subtle);}
+    .bank-join-card.is-member{border-color:rgba(34,197,94,0.35); background: linear-gradient(180deg, rgba(34,197,94,0.06) 0%, rgba(0,0,0,0.22) 100%);}
+    .bank-join-card.is-member:hover{border-color:#22c55e; box-shadow:0 8px 22px rgba(0,0,0,0.35), 0 0 0 1px rgba(34,197,94,0.20);}
+    .bank-join-head{padding:10px 12px; display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(255,255,255,0.06);}
+    .bank-join-icon{width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; border:1px solid rgba(255,255,255,0.12); flex-shrink:0;}
+    .bank-tier{font-size:0.58rem; padding:2px 6px; border-radius:999px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.06); letter-spacing:0.4px; text-transform:uppercase; font-weight:700;}
+    .bank-tier.starter{background:rgba(59,130,246,0.15); border-color:rgba(59,130,246,0.35); color:#93c5fd;}
+    .bank-tier.standard{background:rgba(249,115,22,0.12); border-color:rgba(249,115,22,0.30); color:#fed7aa;}
+    .bank-tier.premium{background:linear-gradient(135deg, rgba(139,92,246,0.18) 0%, rgba(249,115,22,0.12) 100%); border-color:rgba(139,92,246,0.35); color:#ddd6fe;}
+    .bank-fee-free{font-size:0.62rem; padding:2px 6px; border-radius:999px; background:rgba(34,197,94,0.14); border:1px solid rgba(34,197,94,0.30); color:#86efac; font-weight:700;}
+    .bank-fee-paid{font-size:0.62rem; padding:2px 6px; border-radius:999px; background:rgba(245,158,11,0.14); border:1px solid rgba(245,158,11,0.30); color:#fde68a; font-weight:700;}
     .save-menu-window { width:min(720px, 96vw); max-height:88vh; background: linear-gradient(180deg, var(--panel-bg) 0%, #0f1115 100%); border:1px solid var(--panel-border); border-radius:14px; box-shadow:0 24px 64px rgba(0,0,0,0.55); display:flex; flex-direction:column; overflow:hidden; }
     .save-menu-header { display:flex; align-items:center; justify-content:space-between; padding:0.85rem 1rem; border-bottom:1px solid var(--panel-border); background:rgba(0,0,0,0.18); }
     .save-menu-title { font-weight:800; letter-spacing:0.5px; text-transform:uppercase; display:flex; align-items:center; gap:8px; font-size:0.9rem; }
@@ -378,10 +423,9 @@
       <div>
         <div class="section-label"><i class="fas fa-coins"></i> Economy</div>
         <button class="quick-btn" style="background:var(--accent-subtle); border-color:var(--accent);" onclick="openEconMenu()"><span><i class="fas fa-wallet"></i> Open Economy Menu</span><span style="opacity:0.6;">Wallet</span></button>
+        <button class="quick-btn" style="background:linear-gradient(135deg, rgba(59,130,246,0.10) 0%, rgba(34,197,94,0.08) 100%); border-color:rgba(59,130,246,0.35);" onclick="openBanks()"><span><i class="fas fa-building-columns" style="color:#38bdf8"></i> Banks</span><span id="banks-count-badge" class="pill" style="font-size:0.62rem;">0 banks</span></button>
         <button class="quick-btn" onclick="executeQuick('/economy.balance')"><span><i class="fas fa-eye"></i> /economy.balance</span><span style="opacity:0.5;">1</span></button>
-        <button class="quick-btn" onclick="executeQuick('/economy.can_afford')"><span><i class="fas fa-scale-balanced"></i> /economy.can_afford</span><span style="opacity:0.5;">?</span></button>
-        <button class="quick-btn" onclick="executeQuick('/vehicleshop.owned')"><span><i class="fas fa-list"></i> /vehicleshop.owned</span><span style="opacity:0.5;">↗</span></button>
-        <button class="quick-btn" onclick="executeQuick('/bank.apply')"><span><i class="fas fa-id-card"></i> /bank.apply</span><span style="opacity:0.5;">+</span></button>
+        <button class="quick-btn" onclick="executeQuick('/bank.banks')"><span><i class="fas fa-list"></i> /bank.banks</span><span style="opacity:0.5;">catalog</span></button>
       </div>
 
       <div>
@@ -420,24 +464,91 @@
       <div id="gamepad-hint" style="font-size:0.68rem; color:var(--text-muted); letter-spacing:0.3px;"><i class="fas fa-gamepad"></i> <span id="gp-status">No controller — keyboard ready</span></div>
     </aside>
 
-    <!-- Main Command Area -->
+    <!-- Main Area — Homepage + Terminal -->
     <main>
-      <div class="chat-history" id="chatHistory">
-        <div class="log-row game-response">
-          <div class="game-bubble">
-            <p><strong>System initialized.</strong> Dashboard V2 ready. Type <code>/</code> to open available system hooks or test options. Theme is synced from <code>xmbsettings.xml</code>.</p>
+      <div class="home-tabs" role="tablist" aria-label="Main view">
+        <button class="home-tab active" id="tabHome" data-view="home" onclick="switchMainView('home')" aria-selected="true"><i class="fas fa-house"></i> Home</button>
+        <button class="home-tab" id="tabTerminal" data-view="terminal" onclick="switchMainView('terminal')" aria-selected="false"><i class="fas fa-terminal"></i> Terminal</button>
+        <span style="margin-left:auto; font-size:0.68rem; color:var(--text-muted); display:flex; align-items:center; gap:6px;"><span class="kbd">H</span> home <span class="kbd">T</span> terminal</span>
+      </div>
+
+      <!-- Homepage -->
+      <div class="home-view" id="homeView">
+        <div class="intro-card">
+          <div class="intro-kicker"><i class="fas fa-sparkles"></i> Intro • Dashboard V2</div>
+          <div class="intro-title">Welcome to Milk Toast Taco <small id="homeVersionBadge">v2 • Banks ready</small> <span id="homeSaveBadge" class="pill" style="font-size:0.62rem; font-family:var(--font-mono);">live</span></div>
+          <p class="intro-desc">Your new home base. Jump into Economy, grab a bank, shop vehicles, or browse property — everything is one click away. Bank cards start at <b>0</b> — join a bank to get going. <span style="opacity:0.7;">Theme stays synced with XMB.</span></p>
+          <div class="intro-quest-placeholder">
+            <div class="qp-icon"><i class="fas fa-compass"></i></div>
+            <div style="flex:1;">
+              <div style="font-weight:700; color:var(--text-main);">Guided intro / quest system — coming soon</div>
+              <div style="font-size:0.72rem; margin-top:2px;">Future: step-by-step onboarding, first bank join, first vehicle buy, first property. For now use the big tiles below.</div>
+            </div>
+            <span class="pill" style="font-size:0.62rem; background:var(--accent-subtle); border-color:var(--accent-border); color:var(--accent);">SOON</span>
+          </div>
+          <div class="home-stats-row" id="homeStatsRow" style="margin-top:1rem;">
+            <div class="home-stat"><span><i class="fas fa-wallet" style="color:var(--accent)"></i> Wallet</span><b id="homeStatWallet">$—</b><span id="homeStatWalletSub">P1 • live</span></div>
+            <div class="home-stat"><span><i class="fas fa-building-columns" style="color:#38bdf8"></i> Banks</span><b id="homeStatBanks">— none</b><span id="homeStatBanksSub">0 banks • $0/mo</span></div>
+            <div class="home-stat"><span><i class="fas fa-warehouse" style="color:#a78bfa"></i> Garage</span><b id="homeStatGarage">0 vehicles</b><span id="homeStatGarageSub">$0 value</span></div>
+            <div class="home-stat"><span><i class="fas fa-house" style="color:#f59e0b"></i> Property</span><b id="homeStatProperty">0 owned</b><span id="homeStatPropertySub">0/0 parking</span></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label" style="margin-bottom:0.7rem;"><i class="fas fa-bolt"></i> Quick Options — big tiles</div>
+          <div class="quick-grid">
+            <button class="quick-tile economy" onclick="openEconMenu()" aria-label="Open Economy">
+              <div class="quick-tile-icon"><i class="fas fa-coins"></i></div>
+              <h3>Economy <span class="pill" style="font-size:0.58rem; background:var(--accent-subtle); border-color:var(--accent-border); color:var(--accent);">Wallet</span></h3>
+              <p>Wallet, cards, loans. See balance &amp; net worth. Top-up &amp; credit.</p>
+              <span class="tile-meta"><i class="fas fa-arrow-right"></i> Open Economy Menu</span>
+            </button>
+            <button class="quick-tile banks" onclick="openBanks()" aria-label="Open Banks">
+              <div class="quick-tile-icon"><i class="fas fa-building-columns"></i></div>
+              <h3>Banks <span class="pill" style="font-size:0.58rem; background:rgba(56,189,248,0.12); border-color:rgba(56,189,248,0.30); color:#7dd3fc;">Join</span></h3>
+              <p>6 banks, fees &amp; limits. Join to get debit + credit cards instantly.</p>
+              <span class="tile-meta"><i class="fas fa-arrow-right"></i> Browse banks — no Build Args</span>
+            </button>
+            <button class="quick-tile shop" onclick="openShop()" aria-label="Open Vehicle Shop">
+              <div class="quick-tile-icon"><i class="fas fa-shop"></i></div>
+              <h3>Vehicle Shop</h3>
+              <p>FS22-style grid. Browse categories, buy with card (limits enforced).</p>
+              <span class="tile-meta"><i class="fas fa-arrow-right"></i> Open Shop • <span id="homeShopCount" class="pill" style="font-size:0.58rem;">—</span></span>
+            </button>
+            <button class="quick-tile realestate" onclick="openRealEstate()" aria-label="Open Real Estate">
+              <div class="quick-tile-icon"><i class="fas fa-house-chimney"></i></div>
+              <h3>Real Estate</h3>
+              <p>Houses, apartments, land. Buy/rent, store vehicles in garages.</p>
+              <span class="tile-meta"><i class="fas fa-arrow-right"></i> Browse properties</span>
+            </button>
+          </div>
+          <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="mini-btn" onclick="switchMainView('terminal')"><i class="fas fa-terminal"></i> Open Terminal ( /commands )</button>
+            <button class="mini-btn" onclick="openSaveMenu()"><i class="fas fa-floppy-disk"></i> Save / Load</button>
+            <button class="mini-btn" onclick="refreshStateMonitor()"><i class="fas fa-sync"></i> Refresh</button>
           </div>
         </div>
       </div>
-      <div class="input-wrapper">
-        <div class="suggestions-popup" id="suggestionsBox"></div>
-        <div class="param-assist" id="paramAssist"></div>
-        <form class="command-form" id="commandForm" onsubmit="handleSend(event)">
-          <div class="input-container">
-            <input type="text" id="cmdInput" class="command-input" placeholder="Enter command starting with '/'..." autocomplete="off" oninput="handleInput(event)" onkeydown="handleKeyDown(event)" />
+
+      <!-- Terminal (previous chat/command UI) -->
+      <div class="terminal-view hidden" id="terminalView">
+        <div class="chat-history" id="chatHistory">
+          <div class="log-row game-response">
+            <div class="game-bubble">
+              <p><strong>System initialized.</strong> Dashboard V2 ready. Type <code>/</code> to open available system hooks or test options. Theme is synced from <code>xmbsettings.xml</code>.</p>
+            </div>
           </div>
-          <button type="submit" class="send-btn">Execute</button>
-        </form>
+        </div>
+        <div class="input-wrapper">
+          <div class="suggestions-popup" id="suggestionsBox"></div>
+          <div class="param-assist" id="paramAssist"></div>
+          <form class="command-form" id="commandForm" onsubmit="handleSend(event)">
+            <div class="input-container">
+              <input type="text" id="cmdInput" class="command-input" placeholder="Enter command starting with '/'..." autocomplete="off" oninput="handleInput(event)" onkeydown="handleKeyDown(event)" />
+            </div>
+            <button type="submit" class="send-btn">Execute</button>
+          </form>
+        </div>
       </div>
     </main>
   </div>
@@ -620,7 +731,7 @@
       </div>
       <div class="save-menu-body" style="gap:14px;">
         <div id="econWalletPane">
-          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; font-size:0.72rem; color:var(--text-muted);"><span><i class="fas fa-credit-card"></i> Hover to enlarge • shine • quick actions</span><span><button class="mini-btn" onclick="openArgsModal('bank.apply')"><i class="fas fa-id-card"></i> Join bank…</button> <button class="mini-btn" onclick="openArgsModal('bank.list_cards')"><i class="fas fa-list"></i> List cards</button></span></div>
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; font-size:0.72rem; color:var(--text-muted);"><span><i class="fas fa-credit-card"></i> Hover to enlarge • shine • see Banks for membership</span><span><button class="mini-btn" style="background:var(--accent-subtle); border-color:var(--accent); color:var(--accent);" onclick="openBanks()"><i class="fas fa-building-columns"></i> Open Banks…</button> <button class="mini-btn" onclick="refreshEconMenu()"><i class="fas fa-sync"></i> Refresh</button></span></div>
           <div id="econCardsGrid" class="econ-card-grid" style="margin-top:10px;"></div>
           <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-top:14px;">
             <div id="econWalletStats" style="padding:10px; border-radius:10px; background:rgba(255,255,255,0.03); border:1px solid var(--panel-border); font-family:var(--font-mono); font-size:0.72rem;"></div>
@@ -648,6 +759,45 @@
       <div class="save-menu-actions">
         <div class="left"><span id="econMenuHint" style="opacity:0.7;">Wallet tab • cards enlarge on hover</span></div>
         <div style="display:flex; gap:8px;"><button class="save-action-btn secondary" onclick="closeEconMenu()">Close</button><button class="save-action-btn primary" onclick="refreshEconMenu()"><i class="fas fa-sync"></i> Refresh</button></div>
+      </div>
+    </div>
+  </div>
+  <!-- Banks Menu — join & membership (user-friendly, no Build Args) -->
+  <div id="banksOverlay" class="save-menu-overlay" onclick="if(event.target===this) closeBanks()">
+    <div class="save-menu-window" role="dialog" aria-modal="true" aria-label="Banks" style="width:min(1100px,96vw); max-height:92vh;">
+      <div class="save-menu-header">
+        <div class="save-menu-title"><i class="fas fa-building-columns" style="color:#38bdf8"></i> Banks <span id="banksMemberBadge" class="pill" style="font-size:0.62rem; font-family:var(--font-mono);">0 memberships</span> <span id="banksFeeBadge" class="pill" style="font-size:0.62rem; background:rgba(245,158,11,0.12); border-color:rgba(245,158,11,0.30); color:#fde68a;">$0/mo fees</span> <span id="banksBalanceBadge" class="shop-balance" style="font-size:0.65rem;"><i class="fas fa-coins"></i> $—</span></div>
+        <button class="shop-close" onclick="closeBanks()" aria-label="Close">✕</button>
+      </div>
+      <div class="save-menu-body" style="gap:14px;">
+        <div id="banksMembershipPane" style="display:none;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+            <div style="font-weight:700; display:flex; align-items:center; gap:8px;"><i class="fas fa-id-card" style="color:#22c55e"></i> Your Memberships <span id="banksMembershipCount" class="pill" style="font-size:0.62rem;">0</span></div>
+            <div style="font-size:0.70rem; color:var(--text-muted);">Total fees <b id="banksTotalFee" style="color:#fde68a">$0/mo</b> • cards enlarge on hover • shine</div>
+          </div>
+          <div id="banksMembershipGrid" class="econ-card-grid" style="margin-top:10px;"></div>
+          <div id="banksMembershipEmpty" style="display:none; text-align:center; padding:18px; background:rgba(255,255,255,0.03); border:1px dashed var(--panel-border); border-radius:10px; margin-top:10px; color:var(--text-muted);">
+            <div style="font-size:1.4rem; opacity:0.4;"><i class="fas fa-building-columns"></i></div>
+            <div style="font-weight:700; margin-top:6px;">No memberships yet</div>
+            <div style="font-size:0.72rem; margin-top:4px;">New players start with <b>0 cards</b> and <b>no bank</b>. Join a bank below to get your debit + credit cards.</div>
+            <div style="margin-top:10px;"><span class="pill"><i class="fas fa-arrow-down"></i> Browse banks below</span></div>
+          </div>
+        </div>
+        <div>
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+            <div style="font-weight:700; display:flex; align-items:center; gap:8px;"><i class="fas fa-landmark" style="color:var(--accent)"></i> Available Banks <span id="banksAvailableCount" class="pill" style="font-size:0.62rem;">6</span></div>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <span style="font-size:0.68rem; color:var(--text-muted);">Compare limits &amp; fees →</span>
+              <button class="mini-btn" onclick="refreshBanks()"><i class="fas fa-sync"></i> Refresh</button>
+            </div>
+          </div>
+          <div style="font-size:0.70rem; color:var(--text-muted); margin-top:4px;"><i class="fas fa-circle-info"></i> Each bank issues <b>2 cards</b> (debit + credit) on join. Debit = cash limit per transaction, Credit = credit line (pay debt via wallet). Joining is free — monthly fee shown is subscription.</div>
+          <div id="banksGrid" class="banks-grid"></div>
+        </div>
+      </div>
+      <div class="save-menu-actions">
+        <div class="left"><span id="banksHint" style="opacity:0.7;">Pick a bank → Join → cards appear in Memberships &amp; Wallet</span></div>
+        <div style="display:flex; gap:8px;"><button class="save-action-btn secondary" onclick="closeBanks()">Close</button><button class="save-action-btn primary" onclick="refreshBanks()"><i class="fas fa-sync"></i> Refresh</button></div>
       </div>
     </div>
   </div>
@@ -725,6 +875,7 @@
     // BUILTIN: always available even if pywebview offline
     const BUILTIN_COMMANDS = [
       { cmd: '/stats', desc: 'Display live state (HUD)', category: 'builtin' },
+      { cmd: '/banks', desc: 'Open Banks — join/manage, view fees', category: 'builtin' },
       { cmd: '/vehicleshop', desc: 'Open Vehicle Shop', category: 'builtin' },
       { cmd: '/realestate', desc: 'Open Real Estate — browse/buy/rent/garages', category: 'builtin' },
       { cmd: '/saves', desc: 'List saves/*.xml', category: 'builtin' },
@@ -973,7 +1124,41 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
       const elPlayers=document.getElementById('stat-players'); if(elPlayers) elPlayers.textContent = String(hud.player_count ?? '—');
       const elWallet=document.getElementById('stat-wallet'); if(elWallet) elWallet.textContent = fmtCur(hud.wallet_balance ?? 0) + ` • P${hud.wallet_pid||'1'}`;
       const elGarage=document.getElementById('stat-garage'); if(elGarage) elGarage.textContent = `${hud.owned_count||0} • ${fmtCur(hud.owned_value||0)}`;
-      const elBank=document.getElementById('stat-bank'); if(elBank) elBank.textContent = hud.bank_member ? hud.bank_member : '— none';
+      const elBank=document.getElementById('stat-bank');
+      if(elBank){
+        const memCount = hud.bank_member_count ?? (hud.bank_memberships ? hud.bank_memberships.length : 0);
+        const fee = hud.bank_total_fee ?? 0;
+        if(memCount===0) elBank.textContent = '— none (0 banks)';
+        else if(memCount===1) elBank.textContent = `${hud.bank_member} • $${fee}/mo`;
+        else elBank.textContent = `${memCount} banks • $${fee}/mo`;
+        elBank.title = (hud.bank_memberships||[]).map(m=> `${m.display} $${m.subscription_fee}/mo`).join(', ') || 'No memberships — join a bank via Banks button';
+      }
+      // banks badge in sidebar Economy section
+      const banksBadge=document.getElementById('banks-count-badge');
+      if(banksBadge){
+        const mc = hud.bank_member_count ?? 0;
+        const tf = hud.bank_total_fee ?? 0;
+        banksBadge.textContent = mc===0 ? '0 banks' : `${mc} • $${tf}/mo`;
+        banksBadge.style.background = mc===0 ? 'rgba(239,68,68,0.12)' : 'rgba(34,197,94,0.14)';
+        banksBadge.style.borderColor = mc===0 ? 'rgba(239,68,68,0.30)' : 'rgba(34,197,94,0.30)';
+        banksBadge.style.color = mc===0 ? '#fca5a5' : '#86efac';
+      }
+      // keep last hud for banks/econ overlay quick access
+      window._lastHud = hud;
+      window._lastEconHudForV2 = hud;
+      // homepage stats
+      try{
+        const hW=document.getElementById('homeStatWallet'); if(hW) hW.textContent=fmtCur(hud.wallet_balance??0);
+        const hWs=document.getElementById('homeStatWalletSub'); if(hWs) hWs.textContent=`P${hud.wallet_pid||'1'} • ${currentSave||'live'}`;
+        const hB=document.getElementById('homeStatBanks'); if(hB){ const mc=hud.bank_member_count??0; if(mc===0) hB.textContent='— none'; else if(mc===1) hB.textContent=hud.bank_member||'1 bank'; else hB.textContent=mc+' banks'; }
+        const hBs=document.getElementById('homeStatBanksSub'); if(hBs){ const mc=hud.bank_member_count??0; const tf=hud.bank_total_fee??0; hBs.textContent= mc===0 ? '0 banks • $0/mo — join one!' : `${mc} bank${mc!==1?'s':''} • $${tf}/mo`; }
+        const hG=document.getElementById('homeStatGarage'); if(hG) hG.textContent=`${hud.owned_count||0} vehicles`;
+        const hGs=document.getElementById('homeStatGarageSub'); if(hGs) hGs.textContent=fmtCur(hud.owned_value||0)+' value';
+        const hP=document.getElementById('homeStatProperty'); if(hP) hP.textContent=`${hud.realestate_count||0} owned`+(hud.realestate_rented? ` +${hud.realestate_rented} rent`:'' );
+        const hPs=document.getElementById('homeStatPropertySub'); if(hPs) hPs.textContent=`${hud.realestate_garage_used||0}/${hud.realestate_garage_cap||0} parking • ${fmtCur(hud.realestate_value||0)}`;
+        const hSave=document.getElementById('homeSaveBadge'); if(hSave) hSave.textContent=currentSave||'live';
+        const hShop=document.getElementById('homeShopCount'); if(hShop) hShop.textContent=`${hud.owned_count||0} owned`;
+      }catch(e){}
       const elRE=document.getElementById('stat-realestate'); if(elRE) elRE.textContent = `${hud.realestate_count||0} • ${fmtCur(hud.realestate_value||0)}${hud.realestate_rented? ' ('+hud.realestate_rented+' rent)':''}`;
       const elPark=document.getElementById('stat-parking'); if(elPark) elPark.textContent = `${hud.realestate_garage_used||0}/${hud.realestate_garage_cap||0} ${hud.realestate_garage_free!==undefined? '('+hud.realestate_garage_free+' free)':''}`;
       const badge=document.getElementById('owned-count-badge'); if(badge) badge.textContent = String(hud.owned_count||0);
@@ -1232,6 +1417,8 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
       }
       if(e.key==='Escape'){
         hideSuggestions(); hideParamAssist();
+        const banks=document.getElementById('banksOverlay');
+        if(banks && banks.classList.contains('active')){ closeBanks(); e.preventDefault(); return; }
         const rgm=document.getElementById('reGarageModal');
         if(rgm && rgm.classList.contains('active')){ closeGarageModal(); e.preventDefault(); return; }
         const rdm=document.getElementById('reDetailModal');
@@ -1749,8 +1936,14 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
       const grid = document.getElementById('payCardsGrid');
       grid.innerHTML='';
       if(!cards.length){
-        grid.innerHTML='<div style="grid-column:1/-1; text-align:center; padding:18px; color:var(--text-muted);"><i class="fas fa-credit-card" style="opacity:0.4"></i><div style="margin-top:6px;">No cards found — joining Westbank…</div></div>';
-        try{ await apiCall('call_command','bank.apply',{player_id:1, bank_name:'Westbank'}); const r2=await apiCall('call_command','bank.list_cards',{player_id:1}); if(r2 && r2.cards) cards=r2.cards; }catch(e){}
+        grid.innerHTML='<div style="grid-column:1/-1; text-align:center; padding:22px; border:1px dashed var(--panel-border); border-radius:10px; background:rgba(239,68,68,0.06);"><div style="font-size:1.4rem; opacity:0.4;"><i class="fas fa-building-columns"></i></div><div style="font-weight:700; margin-top:8px;">No bank cards — you need to join a bank first</div><div style="font-size:0.72rem; color:var(--text-muted); margin-top:4px;">New players start with <b>0 cards</b>. Join a bank to get debit + credit cards.</div><div style="margin-top:12px; display:flex; gap:8px; justify-content:center;"><button class="mini-btn primary" onclick="closePaymentMenu(); openBanks();"><i class="fas fa-building-columns"></i> Open Banks…</button><button class="mini-btn" onclick="closePaymentMenu()"><i class="fas fa-xmark"></i> Cancel</button></div><div style="margin-top:8px; font-size:0.65rem; opacity:0.6;">Tip: Westbank is free • Outback Trust $15/mo • Coastal $25/mo • data/banks.xml lists all 6 banks</div></div>';
+        document.getElementById('payStatus').textContent='No cards — join a bank';
+        document.getElementById('payStatus').style.color='#fca5a5'; document.getElementById('payStatus').style.borderColor='rgba(239,68,68,0.30)'; document.getElementById('payStatus').style.background='rgba(239,68,68,0.12)';
+        document.getElementById('paySummary').innerHTML='No cards available. Use <b>Banks</b> (sidebar → Banks or Economy → Open Banks) to join. Each bank gives you 2 cards instantly.';
+        document.getElementById('payConfirmBtn').disabled=true;
+        document.getElementById('payConfirmBtn').innerHTML='<i class="fas fa-building-columns"></i> Join a bank first';
+        document.getElementById('paymentOverlay').classList.add('active');
+        return;
       }
       let selected = null;
       function updatePayStatus(){
@@ -2662,6 +2855,134 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
       document.getElementById('econActivityList').innerHTML = (allOwned.slice(0,4).map(ov=> `<div style="display:flex; justify-content:space-between; padding:8px 10px; border-radius:8px; background:rgba(34,197,94,0.06); border:1px solid rgba(34,197,94,0.15); font-size:0.78rem;"><span><i class="fas fa-cart-shopping"></i> Bought ${ov.name}</span><span style="font-family:var(--font-mono); color:#fca5a5;">-${fmtCur2(ov.price_paid)}</span></div>`).join('') || '<div style="opacity:0.6; font-size:0.8rem; padding:8px;">No activity yet \u2014 buy a vehicle to see it here.</div>') + `<div style="display:flex; justify-content:space-between; padding:8px 10px; border-radius:8px; background:rgba(56,189,248,0.06); border:1px solid rgba(56,189,248,0.15); font-size:0.78rem; margin-top:6px;"><span><i class="fas fa-plus"></i> Top-up (demo)</span><span style="font-family:var(--font-mono); color:#86efac;">+${fmtCur2(5000)}</span></div>`;
       document.getElementById('econLoansBody').innerHTML = `<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"><div style="padding:10px; border-radius:10px; background:rgba(0,0,0,0.18); border:1px solid var(--panel-border);"><div style="font-size:0.65rem; color:var(--text-muted);">Outstanding debt</div><div style="font-weight:800; font-size:1.05rem; color:#fbbf24;">${fmtCur2(Math.floor((ownedValue*0.18)%14000))}</div><div style="font-size:0.6rem; opacity:0.6;">of ${fmtCur2(50000)} limit</div></div><div style="padding:10px; border-radius:10px; background:rgba(0,0,0,0.18); border:1px solid var(--panel-border);"><div style="font-size:0.65rem; color:var(--text-muted);">Next repayment</div><div style="font-weight:700;">${fmtCur2(420)}/mo</div><div style="font-size:0.6rem; opacity:0.6;">12 months \u2022 6.2% APR (mock)</div></div></div><div style="margin-top:10px; display:flex; gap:8px;"><button class="mini-btn primary" onclick="openV2Loan((window._lastEconHudForV2&&window._lastEconHudForV2.bank_member)||'Westbank')"><i class="fas fa-file-invoice-dollar"></i> Request loan\u2026</button><button class="mini-btn" onclick="switchEconMenuTab('wallet')"><i class="fas fa-wallet"></i> Wallet</button></div>`;
     }
+    // --- Banks Menu (friendly join/membership, no Build Args) ---
+    function openBanks(){ document.getElementById('banksOverlay').classList.add('active'); refreshBanks(); }
+    function closeBanks(){ document.getElementById('banksOverlay').classList.remove('active'); }
+    async function refreshBanks(){
+      const hud = window._lastHud || (await apiCall('get_state', currentSave||null))?.hud || {};
+      const pid = (hud.wallet_pid||1);
+      // try direct API first
+      let data = await apiCall('get_banks', Number(pid));
+      if(!data || data.status!=='success'){
+        const alt = await apiCall('call_command','bank.all',{player_id:Number(pid)});
+        if(alt && alt.status==='success'){
+          const r = alt.result || alt;
+          data = {status:'success', banks: r.banks||[], memberships: r.memberships||[]};
+        } else {
+          // fallback to HUD
+          data = {status:'success', banks: hud.banks_all||[], memberships: hud.bank_memberships||[]};
+        }
+      }
+      const banks = data.banks||[];
+      const memberships = data.memberships||[];
+      const totalFee = memberships.reduce((s,m)=> s+Number(m.subscription_fee||0),0);
+      const bal = Number(hud.wallet_balance||0);
+      document.getElementById('banksMemberBadge').textContent = memberships.length ? `${memberships.length} membership${memberships.length!==1?'s':''}` : '0 memberships';
+      document.getElementById('banksMemberBadge').style.background = memberships.length? 'rgba(34,197,94,0.14)' : 'rgba(239,68,68,0.12)';
+      document.getElementById('banksMemberBadge').style.borderColor = memberships.length? 'rgba(34,197,94,0.30)' : 'rgba(239,68,68,0.30)';
+      document.getElementById('banksMemberBadge').style.color = memberships.length? '#86efac' : '#fca5a5';
+      document.getElementById('banksFeeBadge').textContent = totalFee===0 ? 'Free' : `$${totalFee}/mo`;
+      document.getElementById('banksBalanceBadge').innerHTML = '<i class="fas fa-coins"></i> '+fmtCur2(bal);
+      document.getElementById('banksMembershipCount').textContent = String(memberships.length);
+      document.getElementById('banksTotalFee').textContent = totalFee===0 ? '$0/mo' : `$${totalFee}/mo`;
+      document.getElementById('banksAvailableCount').textContent = String(banks.length);
+      // membership grid
+      const mGrid=document.getElementById('banksMembershipGrid');
+      const mPane=document.getElementById('banksMembershipPane');
+      const mEmpty=document.getElementById('banksMembershipEmpty');
+      if(memberships.length===0){
+        mPane.style.display='block';
+        mGrid.style.display='none';
+        mEmpty.style.display='block';
+        mGrid.innerHTML='';
+      } else {
+        mPane.style.display='block';
+        mGrid.style.display='';
+        mEmpty.style.display='none';
+        mGrid.innerHTML = memberships.map(m=>{
+          const cardsHtml = (m.cards||[]).map(c=>{
+            const isCredit = c.type==='credit';
+            const lim = isCredit? c.credit_limit : c.debit_limit;
+            const label = isCredit? `CREDIT • debt ${fmtCur2(c.debt)}/${fmtCur2(lim)}` : `DEBIT • limit ${fmtCur2(lim)}/txn`;
+            return `<div class="bank-card-v2 ${isCredit?'gold':'debit'}" style="height:150px; padding:12px 14px;"><div class="shine"></div><div style="display:flex; justify-content:space-between; font-size:0.7rem; font-weight:700;"><span><i class="fas fa-credit-card"></i> ${m.display}</span><span style="font-size:0.58rem; padding:2px 6px; border-radius:999px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.15);">${c.type.toUpperCase()}</span></div><div style="font-family:var(--font-mono); font-size:0.8rem; margin:6px 0;">${c.number||'••••'}</div><div style="display:flex; justify-content:space-between; align-items:end;"><span style="font-size:0.65rem; opacity:0.7;">${c.card_id.slice(0,16)}… • ${c.expiry}</span><span style="font-weight:700; font-size:0.78rem;">${label}</span></div></div>`;
+          }).join('');
+          const debt = Number(m.debt||0);
+          return `<div style="grid-column:1/-1; display:grid; grid-template-columns: 300px 1fr; gap:12px; padding:10px; border-radius:12px; background:rgba(255,255,255,0.03); border:1px solid var(--panel-border);"><div style="display:flex; flex-direction:column; gap:6px;"><div style="display:flex; align-items:center; gap:8px;"><div style="width:36px; height:36px; border-radius:9px; background:${m.color}; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.15);"><i class="fas fa-${m.icon||'building-columns'}" style="color:#fff;"></i></div><div style="flex:1;"><div style="font-weight:800;">${m.display}</div><div style="font-size:0.62rem; opacity:0.6;"><span class="bank-tier ${m.tier}">${m.tier}</span> • ${m.subscription_fee? '$'+m.subscription_fee+'/mo' : 'Free'} • ${m.card_count} card${m.card_count!==1?'s':''}</div></div></div><div style="font-size:0.70rem; color:var(--text-muted); line-height:1.35;">${m.description||''}</div><div style="display:flex; gap:6px; flex-wrap:wrap; font-size:0.65rem; font-family:var(--font-mono);"><span style="padding:2px 6px; border-radius:999px; background:rgba(255,255,255,0.06); border:1px solid var(--panel-border);">Debit ${fmtCur2(m.debit_limit)}/txn</span><span style="padding:2px 6px; border-radius:999px; background:rgba(255,255,255,0.06); border:1px solid var(--panel-border);">Credit ${fmtCur2(m.credit_limit)}</span><span style="padding:2px 6px; border-radius:999px; background:rgba(255,255,255,0.06); border:1px solid var(--panel-border);">APR ${m.apr}%</span></div>${debt>0? `<div style="font-size:0.70rem; color:#fbbf24;"><i class="fas fa-triangle-exclamation"></i> Credit debt ${fmtCur2(debt)} — pay via Wallet or bank.pay_debt</div>`:''}<div style="display:flex; gap:6px; margin-top:4px;"><button class="mini-btn" style="background:rgba(239,68,68,0.10); border-color:rgba(239,68,68,0.30); color:#fca5a5;" onclick="leaveBank('${m.id}')"><i class="fas fa-right-from-bracket"></i> Leave</button><button class="mini-btn" onclick="openBanks();"><i class="fas fa-eye"></i> Cards →</button></div></div><div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:10px; align-content:start;">${cardsHtml}</div></div>`;
+        }).join('');
+      }
+      // available banks grid
+      const grid=document.getElementById('banksGrid');
+      grid.innerHTML = banks.map(b=>{
+        const isMember = !!b.is_member;
+        const feeBadge = b.subscription_fee===0 ? '<span class="bank-fee-free">Free</span>' : `<span class="bank-fee-paid">$${b.subscription_fee}/mo</span>`;
+        const tierClass = b.tier||'standard';
+        const action = isMember ? `<span class="pill" style="background:rgba(34,197,94,0.14); border-color:rgba(34,197,94,0.30); color:#86efac; font-size:0.62rem;"><i class="fas fa-check"></i> Member</span> <button class="mini-btn" style="font-size:0.65rem;" onclick="leaveBank('${b.id}')"><i class="fas fa-xmark"></i> Leave</button>` : `<button class="mini-btn primary" style="font-size:0.72rem; padding:6px 12px;" onclick="joinBank('${b.id}')"><i class="fas fa-plus"></i> Join — get 2 cards</button>`;
+        return `<div class="bank-join-card ${isMember?'is-member':''}"><div class="bank-join-head"><div class="bank-join-icon" style="background:${b.color}; color:#fff;"><i class="fas fa-${b.icon||'building-columns'}"></i></div><div style="flex:1; min-width:0;"><div style="font-weight:800; font-size:0.88rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${b.display}</div><div style="font-size:0.62rem; opacity:0.6; display:flex; gap:4px; align-items:center; flex-wrap:wrap;"><span class="bank-tier ${tierClass}">${tierClass}</span> ${feeBadge} <span style="opacity:0.7;">•</span> ${b.id}</div></div>${isMember? '<i class="fas fa-circle-check" style="color:#22c55e;" title="Member"></i>' : ''}</div><div style="padding:10px 12px; display:flex; flex-direction:column; gap:8px; flex:1;"><div style="font-size:0.72rem; color:var(--text-muted); line-height:1.4; min-height:36px;">${b.description||''}</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-family:var(--font-mono); font-size:0.68rem;"><div style="padding:6px 8px; border-radius:8px; background:rgba(0,0,0,0.18); border:1px solid var(--panel-border);"><div style="opacity:0.6; font-size:0.6rem;">DEBIT /txn</div><div style="font-weight:800; color:var(--accent);">${fmtCur2(b.debit_limit)}</div></div><div style="padding:6px 8px; border-radius:8px; background:rgba(0,0,0,0.18); border:1px solid var(--panel-border);"><div style="opacity:0.6; font-size:0.6rem;">CREDIT</div><div style="font-weight:800; color:#a78bfa;">${fmtCur2(b.credit_limit)}</div></div></div><div style="display:flex; justify-content:space-between; align-items:center; font-size:0.62rem; color:var(--text-muted);"><span>APR ${b.apr}%</span><span style="opacity:0.7;">Color <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${b.color}; border:1px solid rgba(255,255,255,0.2); vertical-align:middle;"></span></span></div><div style="margin-top:auto; display:flex; justify-content:space-between; align-items:center; gap:8px; padding-top:6px; border-top:1px solid rgba(255,255,255,0.06);">${action}</div></div></div>`;
+      }).join('');
+    }
+    async function joinBank(bankId){
+      const btn = event?.target; if(btn) btn.disabled=true;
+      let res = await apiCall('join_bank', bankId, 1);
+      if(!res || res.status!=='success'){
+        res = await apiCall('call_command','bank.join',{player_id:1, bank_name: bankId});
+        if(res && res.result) res = res.result;
+      }
+      if(!res) res = await apiCall('call_command','bank.apply',{player_id:1, bank_name: bankId});
+      if(res && res.status==='success'){
+        appendGameResponse(`**✔ Joined ${bankId}** — 2 cards issued • ${res.message||''}`);
+        try{ await refreshStateMonitor(); await refreshBanks(); await refreshEconMenu(); }catch(e){}
+        try{ const t=await apiCall('get_banks',1); }catch(e){}
+      } else {
+        const msg=(res&&res.message)||'unknown error';
+        appendGameResponse(`**✖ Join failed:** ${msg}`);
+      }
+      if(btn) btn.disabled=false;
+    }
+    async function leaveBank(bankId){
+      if(!confirm(`Leave ${bankId}? Cards will be removed. You must clear credit debt first.`)) return;
+      let res = await apiCall('leave_bank', bankId, 1);
+      if(!res || res.status!=='success'){
+        res = await apiCall('call_command','bank.leave',{player_id:1, bank_name: bankId});
+        if(res && res.result) res = res.result;
+      }
+      if(res && res.status==='success'){
+        appendGameResponse(`**✔ Left ${bankId}** — ${res.message||''}`);
+        try{ await refreshStateMonitor(); await refreshBanks(); await refreshEconMenu(); }catch(e){}
+      } else {
+        const msg=(res&&res.message)||'unknown';
+        appendGameResponse(`**✖ Leave failed:** ${msg}`);
+      }
+    }
+
+    // --- Homepage view switch ---
+    function switchMainView(view){
+      const home=document.getElementById('homeView');
+      const term=document.getElementById('terminalView');
+      const th=document.getElementById('tabHome');
+      const tt=document.getElementById('tabTerminal');
+      if(view==='terminal'){
+        if(home) home.classList.add('hidden');
+        if(term) term.classList.remove('hidden');
+        if(th){ th.classList.remove('active'); th.setAttribute('aria-selected','false'); }
+        if(tt){ tt.classList.add('active'); tt.setAttribute('aria-selected','true'); }
+        setTimeout(()=>{ const inp=document.getElementById('cmdInput'); if(inp) inp.focus(); }, 80);
+      } else {
+        if(home) home.classList.remove('hidden');
+        if(term) term.classList.add('hidden');
+        if(th){ th.classList.add('active'); th.setAttribute('aria-selected','true'); }
+        if(tt){ tt.classList.remove('active'); tt.setAttribute('aria-selected','false'); }
+      }
+      try{ localStorage.setItem('mtt_main_view', view); }catch(e){}
+    }
+    // restore last view
+    try{ const last=localStorage.getItem('mtt_main_view'); if(last==='terminal') switchMainView('terminal'); }catch(e){}
+    // H/T hotkeys (when not typing)
+    document.addEventListener('keydown', (e)=>{
+      if(e.target && (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA' || e.target.isContentEditable)) return;
+      if(e.key==='h' || e.key==='H') switchMainView('home');
+      if(e.key==='t' || e.key==='T') switchMainView('terminal');
+    });
+
     let _v2LoanMode='loan';
     function openV2Loan(bank){ _v2LoanMode='loan'; document.getElementById('v2LoanTitle').textContent='Get a Loan'; document.getElementById('v2LoanBadge').textContent=bank+' \u2022 credit'; fillV2LoanBanks(bank); document.getElementById('v2LoanTermRow').style.display=''; updateV2Loan(); document.getElementById('v2LoanModal').classList.add('active'); }
     function openV2Topup(bank){ _v2LoanMode='topup'; document.getElementById('v2LoanTitle').textContent='Top-up Wallet'; document.getElementById('v2LoanBadge').textContent=bank+' \u2022 debit'; fillV2LoanBanks(bank); document.getElementById('v2LoanTermRow').style.display='none'; updateV2Loan(); document.getElementById('v2LoanModal').classList.add('active'); }
@@ -2734,6 +3055,8 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
       e.preventDefault();
       const text=cmdInput.value.trim();
       if(!text) return;
+      // ensure terminal visible for command feedback
+      switchMainView('terminal');
       // Vehicle Shop overlay trigger (FS22) — must be before generic dispatch
       if(text.toLowerCase()==='/vehicleshop' || text.toLowerCase()==='/vehicleshop.open'){
         appendUserMessage(text);
@@ -2758,6 +3081,13 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
         appendUserMessage(text);
         appendGameResponse(`**🏠 Real Estate** — opening browser…`);
         await openRealEstate();
+        cmdInput.value=''; hideSuggestions(); hideParamAssist(); return;
+      }
+      // Banks overlay triggers — user-friendly, no Build Args needed
+      if(text.toLowerCase()==='/banks' || text.toLowerCase()==='/banks.open' || text.toLowerCase()==='/bank'){
+        appendUserMessage(text);
+        appendGameResponse(`**🏦 Banks** — opening Banks…\n*Join a bank → get 2 cards (debit+credit). View membership & fees. New players start with 0 cards — pick your bank!*`);
+        openBanks();
         cmdInput.value=''; hideSuggestions(); hideParamAssist(); return;
       }
       if(text==='/clear'){ chatHistory.innerHTML=''; cmdInput.value=''; hideSuggestions(); hideParamAssist(); return; }

@@ -308,6 +308,39 @@ class DashboardV2API:
     def get_game_status(self):
         return {"status": "success", "game_state": self.game_state}
 
+    # -- Banks API (friendly wrapper around bank.py, no Build Args needed) -------
+    def get_banks(self, player_id: int = 1):
+        try:
+            from core.systems.economy.bank import get_all_banks_for_player, get_memberships
+            pid = int(player_id)
+            return {"status": "success", "banks": get_all_banks_for_player(pid), "memberships": get_memberships(pid)}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    def get_bank_memberships(self, player_id: int = 1):
+        try:
+            from core.systems.economy.bank import get_memberships
+            pid = int(player_id)
+            mems = get_memberships(pid)
+            total = sum(int(m.get("subscription_fee", 0)) for m in mems)
+            return {"status": "success", "memberships": mems, "total_monthly_fee": total, "count": len(mems)}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    def join_bank(self, bank_id: str, player_id: int = 1):
+        try:
+            from core.systems.economy.bank import apply_bank_membership
+            return apply_bank_membership(int(player_id), str(bank_id))
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    def leave_bank(self, bank_id: str, player_id: int = 1):
+        try:
+            from core.systems.economy.bank import leave_bank
+            return leave_bank(int(player_id), str(bank_id))
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
     # Expose command for output demo (so /output can be typed even without args)
     # Actual output emission is via get_output/poll_output; no extra command needed.
 
@@ -532,15 +565,35 @@ class DashboardV2API:
             hud["bank_member"] = None
             hud["bank_names"] = []
         try:
-            from core.systems.economy.bank import get_cards as _get_cards, get_bank_names as _gbn, BANKS as _BANKS
+            from core.systems.economy.bank import get_cards as _get_cards, get_bank_names as _gbn, BANKS as _BANKS, get_memberships as _get_mems, get_all_banks_for_player as _get_all
             pid_for_cards = int(hud.get("wallet_pid", "1"))
             hud["bank_cards"] = _get_cards(pid_for_cards)
             hud["bank_configs"] = {k: dict(v) for k, v in _BANKS.items()} if _BANKS else {}
             if not hud["bank_names"]:
                 hud["bank_names"] = _gbn()
+            # new: memberships + banks UI data
+            try:
+                hud["bank_memberships"] = _get_mems(pid_for_cards)
+            except Exception:
+                hud["bank_memberships"] = []
+            try:
+                hud["banks_all"] = _get_all(pid_for_cards)
+            except Exception:
+                hud["banks_all"] = []
+            hud["bank_total_fee"] = sum(int(m.get("subscription_fee", 0)) for m in hud.get("bank_memberships", []))
+            hud["bank_member_count"] = len(hud.get("bank_memberships", []))
+            # current_bank_member should reflect first membership if exists, else None
+            if hud["bank_memberships"]:
+                hud["bank_member"] = hud["bank_memberships"][0].get("id") or hud["bank_member"]
+            elif not hud["bank_cards"]:
+                hud["bank_member"] = None
         except Exception:
             hud["bank_cards"] = []
             hud["bank_configs"] = {}
+            hud["bank_memberships"] = []
+            hud["banks_all"] = []
+            hud["bank_total_fee"] = 0
+            hud["bank_member_count"] = 0
 
         return hud
 

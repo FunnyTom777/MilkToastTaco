@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    banks.xml — MTT Bank Catalog
+    Loaded by core/systems/economy/bank.py (fallback to BANKS_FALLBACK if missing).
+
+    Each <bank> is a joinable bank. All numeric values are per-bank config.
+    - subscription_fee : monthly membership fee deducted from wallet (0 = free)
+    - debit_limit      : max per-transaction for debit cards
+    - credit_limit     : max credit line for credit cards
+    - apr              : annual percentage rate for credit debt
+    - color            : brand color for cards/UI
+    - icon             : FontAwesome icon name (without fa- prefix) for UI
+    - tier             : starter | standard | premium (informational)
+    Add new banks here; they auto-appear in Dashboard V2 + /bank.banks.
+-->
+<banks version="1">
+
+    <bank id="Westbank" display="Westbank">
+        <debit_limit>15000</debit_limit>
+        <credit_limit>35000</credit_limit>
+        <apr>6.2</apr>
+        <subscription_fee>0</subscription_fee>
+        <color>#1e3a8a</color>
+        <icon>building-columns</icon>
+        <tier>starter</tier>
+        <description>Your friendly neighborhood bank. No monthly fees, solid limits for everyday life. Great first bank.</description>
+    </bank>
+
+    <bank id="Coastal Credit" display="Coastal Credit">
+        <debit_limit>8000</debit_limit>
+        <credit_limit>50000</credit_limit>
+        <apr>9.5</apr>
+        <subscription_fee>25</subscription_fee>
+        <color>#0e7490</color>
+        <icon>water</icon>
+        <tier>standard</tier>
+        <description>Coastal specialists — high credit line, lower debit cap. $25/mo for premium credit access.</description>
+    </bank>
+
+    <bank id="Outback Trust" display="Outback Trust">
+        <debit_limit>25000</debit_limit>
+        <credit_limit>20000</credit_limit>
+        <apr>5.0</apr>
+        <subscription_fee>15</subscription_fee>
+        <color>#92400e</color>
+        <icon>tractor</icon>
+        <tier>standard</tier>
+        <description>Rural &amp; farm focused — biggest debit limits, competitive APR. $15/mo community fee.</description>
+    </bank>
+
+    <bank id="Luxe Private" display="Luxe Private">
+        <debit_limit>40000</debit_limit>
+        <credit_limit>100000</credit_limit>
+        <apr>4.2</apr>
+        <subscription_fee>75</subscription_fee>
+        <color>#6b21a8</color>
+        <icon>crown</icon>
+        <tier>premium</tier>
+        <description>Private banking for high rollers. Highest limits, lowest APR. $75/mo exclusive membership.</description>
+    </bank>
+
+    <bank id="Budget Direct" display="Budget Direct">
+        <debit_limit>5000</debit_limit>
+        <credit_limit>10000</credit_limit>
+        <apr>11.0</apr>
+        <subscription_fee>0</subscription_fee>
+        <color>#334155</color>
+        <icon>piggy-bank</icon>
+        <tier>starter</tier>
+        <description>No-frills, no fees. Low limits but zero cost — good for a second wallet or learning.</description>
+    </bank>
+
+    <bank id="City Central Bank" display="City Central Bank">
+        <debit_limit>20000</debit_limit>
+        <credit_limit>40000</credit_limit>
+        <apr>7.5</apr>
+        <subscription_fee>10</subscription_fee>
+        <color>#0f766e</color>
+        <icon>city</icon>
+        <tier>standard</tier>
+        <description>Downtown's go-to. Balanced debit/credit, modest $10/mo fee. Recommended for business owners.</description>
+    </bank>
+
+</banks>
