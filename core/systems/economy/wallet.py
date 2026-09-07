@@ -21,7 +21,7 @@ except ImportError:
     def _out_warn(*a, **k): pass
     def _info(*a, **k): pass
 
-DEFAULT_BALANCE = 75000  # starting cash for new players (enough for a few cars)
+DEFAULT_BALANCE = 0  # was 75000 — now debit cards start empty until you transfer, so wallet starts at 0
 
 _balances: Dict[int, float] = {}
 

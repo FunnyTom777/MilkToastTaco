@@ -372,13 +372,21 @@
     .bank-tier.premium{background:linear-gradient(135deg, rgba(139,92,246,0.18) 0%, rgba(249,115,22,0.12) 100%); border-color:rgba(139,92,246,0.35); color:#ddd6fe;}
     .bank-fee-free{font-size:0.62rem; padding:2px 6px; border-radius:999px; background:rgba(34,197,94,0.14); border:1px solid rgba(34,197,94,0.30); color:#86efac; font-weight:700;}
     .bank-fee-paid{font-size:0.62rem; padding:2px 6px; border-radius:999px; background:rgba(245,158,11,0.14); border:1px solid rgba(245,158,11,0.30); color:#fde68a; font-weight:700;}
+    .transfer-tile{padding:9px 10px; border-radius:10px; border:1px solid var(--panel-border); background:rgba(255,255,255,0.03); cursor:pointer; transition: all 0.14s var(--ease); display:flex; align-items:center; gap:10px; text-align:left;}
+    .transfer-tile:hover{border-color:var(--accent-border); background:var(--accent-subtle); transform:translateY(-1px);}
+    .transfer-tile.selected{border-color:var(--accent); background:var(--accent-subtle); box-shadow:0 0 0 1px var(--accent-subtle); }
+    .transfer-tile.loan{border-style:dashed; background:linear-gradient(135deg, rgba(139,92,246,0.08) 0%, rgba(34,197,94,0.06) 100%);}
+    .transfer-tile.loan.selected{border-color:#8b5cf6; background:rgba(139,92,246,0.12);}
     .save-menu-window { width:min(720px, 96vw); max-height:88vh; background: linear-gradient(180deg, var(--panel-bg) 0%, #0f1115 100%); border:1px solid var(--panel-border); border-radius:14px; box-shadow:0 24px 64px rgba(0,0,0,0.55); display:flex; flex-direction:column; overflow:hidden; }
     .save-menu-header { display:flex; align-items:center; justify-content:space-between; padding:0.85rem 1rem; border-bottom:1px solid var(--panel-border); background:rgba(0,0,0,0.18); }
     .save-menu-title { font-weight:800; letter-spacing:0.5px; text-transform:uppercase; display:flex; align-items:center; gap:8px; font-size:0.9rem; }
     .save-menu-body { padding:14px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:12px; }
     .save-slots-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:9px; }
     @media (max-width: 560px){ .save-slots-grid{ grid-template-columns: repeat(2, 1fr); } }
-    .save-slot { background: rgba(255,255,255,0.03); border:1px solid var(--panel-border); border-radius:10px; padding:9px 10px; cursor:pointer; transition: all 0.15s var(--ease); text-align:left; display:flex; flex-direction:column; gap:4px; min-height:72px; }
+    .save-slot { background: rgba(255,255,255,0.03); border:1px solid var(--panel-border); border-radius:10px; padding:9px 10px; cursor:pointer; transition: all 0.15s var(--ease); text-align:left; display:flex; flex-direction:column; gap:4px; min-height:72px; color: var(--text-main); }
+    .save-slot .save-slot-num, .save-slot .save-slot-meta, .save-slot .save-slot-time { color: inherit; }
+    .save-slot .save-slot-meta { color: var(--text-muted); }
+    .save-slot .save-slot-time { color: var(--text-muted); }
     .save-slot:hover { border-color: var(--accent-border); background: var(--accent-subtle); transform: translateY(-1px); }
     .save-slot.selected { border-color: var(--accent); background: var(--accent-subtle); box-shadow: 0 0 0 1px var(--accent-subtle), 0 4px 12px rgba(0,0,0,0.25); }
     .save-slot.empty { opacity:0.72; border-style:dashed; }
@@ -830,6 +838,67 @@
         <div style="display:flex; gap:8px; align-items:center;">
           <span id="bankConfirmFeeNote" style="font-size:0.68rem; color:var(--text-muted); font-family:var(--font-mono);"></span>
           <button id="bankConfirmBtn" class="mini-btn primary" onclick="confirmBankJoin()"><i class="fas fa-check"></i> Confirm — Sign me up</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Card Quick Options — click card → Transfer Money -->
+  <div id="cardQuickOverlay" class="modal-overlay" onclick="if(event.target===this) closeCardQuick()">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-label="Card options" style="width:min(420px,94vw);">
+      <div class="modal-head">
+        <h3><i class="fas fa-credit-card" style="color:var(--accent)"></i> Card Options <span id="cardQuickIdBadge" class="pill" style="font-size:0.60rem; font-family:var(--font-mono);">card_…</span></h3>
+        <button class="modal-close" onclick="closeCardQuick()">✕</button>
+      </div>
+      <div class="modal-body" id="cardQuickBody" style="gap:10px;"></div>
+      <div class="modal-foot">
+        <button class="mini-btn" onclick="closeCardQuick()">Close</button>
+        <button class="mini-btn primary" onclick="openTransferFromQuick()"><i class="fas fa-right-left"></i> Transfer Money</button>
+      </div>
+    </div>
+  </div>
+  <!-- Transfer Money — fancy left source / right dest -->
+  <div id="transferOverlay" class="shop-overlay" onclick="if(event.target===this) closeTransfer()">
+    <div class="shop-window" role="dialog" aria-modal="true" aria-label="Transfer Money" style="width:min(1100px,96vw); height:min(760px,92vh);">
+      <div class="shop-header">
+        <div class="shop-title"><i class="fas fa-right-left" style="color:#22c55e"></i> Transfer Money <span id="transferBalanceBadge" class="pill" style="font-size:0.62rem; font-family:var(--font-mono);">—</span> <span id="transferFeeBadge" class="pill" style="font-size:0.60rem; background:rgba(245,158,11,0.12); border-color:rgba(245,158,11,0.30); color:#fde68a;">fees</span></div>
+        <button class="shop-close" onclick="closeTransfer()" aria-label="Close">✕</button>
+      </div>
+      <div class="shop-body" style="display:flex; flex-direction:column; overflow:hidden;">
+        <div style="padding:10px 14px; border-bottom:1px solid rgba(255,255,255,0.06); background:rgba(0,0,0,0.14); display:flex; gap:8px; align-items:center; flex-wrap:wrap; font-size:0.72rem; color:var(--text-muted);">
+          <span><i class="fas fa-circle-info"></i> Left: where to <b>take from</b> (Credit borrow • Debit balance • Bank Loan auto)</span>
+          <span style="opacity:0.35;">→</span>
+          <span>Right: where to <b>put to</b> (Debit gets cash • Credit pays debt)</span>
+          <span style="margin-left:auto;"><button class="mini-btn" onclick="refreshTransfer()"><i class="fas fa-sync"></i> Refresh</button></span>
+        </div>
+        <div style="flex:1; overflow:hidden; display:grid; grid-template-columns:1fr 1fr; gap:0; min-height:0;">
+          <div style="overflow-y:auto; padding:12px; border-right:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column; gap:10px;">
+            <div style="font-weight:800; display:flex; align-items:center; gap:8px; font-size:0.85rem;"><span style="width:26px; height:26px; border-radius:999px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.30); display:flex; align-items:center; justify-content:center; color:#fca5a5;"><i class="fas fa-arrow-up"></i></span> FROM — Take from <span id="transferFromCount" class="pill" style="font-size:0.60rem;">—</span></div>
+            <div id="transferFromList" style="display:grid; gap:8px;"></div>
+          </div>
+          <div style="overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:10px;">
+            <div style="font-weight:800; display:flex; align-items:center; gap:8px; font-size:0.85rem;"><span style="width:26px; height:26px; border-radius:999px; background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.30); display:flex; align-items:center; justify-content:center; color:#86efac;"><i class="fas fa-arrow-down"></i></span> TO — Put to <span id="transferToCount" class="pill" style="font-size:0.60rem;">—</span></div>
+            <div id="transferToList" style="display:grid; gap:8px;"></div>
+          </div>
+        </div>
+        <div style="padding:12px 14px; border-top:1px solid var(--panel-border); background:rgba(0,0,0,0.18); display:flex; flex-direction:column; gap:10px;">
+          <div style="display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:end;">
+            <div class="form-row" style="margin:0;"><label>Amount <span id="transferAmtLbl" class="pill" style="font-size:0.62rem; font-family:var(--font-mono);">$0</span></label><input id="transferAmt" type="number" min="1" step="100" value="1000" placeholder="1000" oninput="updateTransferPreview()" style="background:var(--bg-dark); border:1px solid var(--panel-border); border-radius:8px; padding:8px; color:var(--text-main); font-family:var(--font-mono);"></div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center; padding-bottom:2px;">
+              <button class="mini-btn" onclick="setTransferAmt(500)"><i class="fas fa-coins"></i> 500</button>
+              <button class="mini-btn" onclick="setTransferAmt(1000)">1k</button>
+              <button class="mini-btn" onclick="setTransferAmt(5000)">5k</button>
+              <button class="mini-btn" onclick="setTransferAmt(10000)">10k</button>
+              <button class="mini-btn" onclick="setTransferAmtMax()">MAX</button>
+            </div>
+          </div>
+          <div id="transferPreview" style="padding:10px; border-radius:10px; background:rgba(255,255,255,0.03); border:1px solid var(--panel-border); font-size:0.72rem; font-family:var(--font-mono); min-height:38px;">Pick source & destination, then amount…</div>
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+            <span id="transferHint" style="font-size:0.65rem; color:var(--text-muted);">Debit → Debit moves cash • Credit → Debit borrows • Debit → Credit pays debt • Loan → any is auto-borrow</span>
+            <div style="display:flex; gap:8px;">
+              <button class="mini-btn" onclick="closeTransfer()">Cancel</button>
+              <button id="transferConfirmBtn" class="mini-btn primary" disabled onclick="confirmTransfer()"><i class="fas fa-right-left"></i> Transfer</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1478,6 +1547,10 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
       }
       if(e.key==='Escape'){
         hideSuggestions(); hideParamAssist();
+        const tr=document.getElementById('transferOverlay');
+        if(tr && tr.classList.contains('active')){ closeTransfer(); e.preventDefault(); return; }
+        const cq=document.getElementById('cardQuickOverlay');
+        if(cq && cq.classList.contains('active')){ closeCardQuick(); e.preventDefault(); return; }
         const bc=document.getElementById('bankConfirmOverlay');
         if(bc && bc.classList.contains('active')){ closeBankConfirm(); e.preventDefault(); return; }
         const banks=document.getElementById('banksOverlay');
@@ -2891,8 +2964,9 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
             variant: isCredit ? 'gold' : 'debit',
             type: isCredit ? 'CREDIT \u2022 Gold' : 'DEBIT \u2022 Classic',
             card_id: rc.card_id,
-            val: isCredit ? fmtCur2(rc.debt||0)+' <span style="font-size:0.65rem; opacity:0.8;">debt</span>' : fmtCur2(bal),
-            sub: isCredit ? 'LIMIT '+fmtCur2(rc.credit_limit)+' \u2022 '+rc.expiry+' \u2022 '+ Math.round((rc.debt||0)/rc.credit_limit*100)+'% used' : 'BALANCE \u2022 '+rc.expiry+' \u2022 limit '+fmtCur2(rc.debit_limit),
+            balance: rc.balance||0,
+            val: isCredit ? fmtCur2(rc.debt||0)+' <span style="font-size:0.65rem; opacity:0.8;">debt</span>' : fmtCur2(rc.balance||0),
+            sub: isCredit ? 'LIMIT '+fmtCur2(rc.credit_limit)+' \u2022 '+rc.expiry+' \u2022 '+ Math.round((rc.debt||0)/rc.credit_limit*100)+'% used' : fmtCur2(rc.balance||0)+' bal \u2022 '+rc.expiry+' \u2022 limit '+fmtCur2(rc.debit_limit)+'/txn',
             number: rc.number,
             holder: 'PLAYER '+(hud.wallet_pid||'1'),
             debit_limit: rc.debit_limit,
@@ -2909,7 +2983,10 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
       if(cards.length===0){
         econGrid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:22px; background:rgba(255,255,255,0.03); border:1px dashed var(--panel-border); border-radius:12px; color:var(--text-muted);"><div style="font-size:1.4rem; opacity:0.4;"><i class="fas fa-credit-card"></i></div><div style="font-weight:700; margin-top:8px; color:var(--text-main);">No bank cards yet</div><div style="font-size:0.72rem; margin-top:4px;">You have <b>0 memberships</b> — join a bank to get your debit + credit cards.</div><div style="margin-top:12px; display:flex; gap:8px; justify-content:center;"><button class="mini-btn primary" onclick="openBanks()"><i class="fas fa-building-columns"></i> Open Banks…</button><button class="mini-btn" onclick="closeEconMenu(); setTimeout(()=>openBanks(),120)"><i class="fas fa-arrow-right"></i> Browse 6 banks</button></div><div style="margin-top:8px; font-size:0.65rem; opacity:0.6;">Data: <code>data/banks.xml</code> — Westbank free, Coastal $25/mo, Outback $15/mo, Luxe $75/mo…</div></div>`;
       } else {
-        econGrid.innerHTML = cards.map(c=> `<div class="bank-card-v2 ${c.variant}" tabindex="0" onclick="${c.variant==='gold' ? `openV2Loan(c.bank)` : `openV2Topup(c.bank)` }"><div class="shine"></div><div style="display:flex; justify-content:space-between; align-items:flex-start;"><span style="font-weight:700; font-size:0.8rem; display:flex; gap:6px; align-items:center;"><i class="fas fa-building-columns"></i> ${c.bank}</span><span style="font-size:0.6rem; padding:2px 7px; border-radius:999px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.15);">${c.type}</span></div><div style="display:flex; align-items:center; gap:10px; margin-top:8px;"><div class="chip"></div><div style="flex:1;"><div class="card-number">${c.number}</div></div><i class="fab fa-cc-visa" style="font-size:1.4rem; opacity:0.85;"></i></div><div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:6px;"><div><div style="font-size:0.6rem; opacity:0.7; letter-spacing:0.5px;">${c.holder}</div><div style="font-size:0.65rem; font-weight:600; opacity:0.9; letter-spacing:0.8px;">${c.bank.toUpperCase()}</div></div><div style="text-align:right;"><div class="card-balance">${c.val}</div><div class="card-expiry">${c.sub}</div></div></div></div>`).join('');
+        econGrid.innerHTML = cards.map(c=> `<div class="bank-card-v2 ${c.variant}" tabindex="0" role="button" onclick="openCardQuickMenu('${c.card_id}')" title="Click for quick options → Transfer Money"><div class="shine"></div><div style="display:flex; justify-content:space-between; align-items:flex-start;"><span style="font-weight:700; font-size:0.8rem; display:flex; gap:6px; align-items:center;"><i class="fas fa-building-columns"></i> ${c.bank}</span><span style="font-size:0.6rem; padding:2px 7px; border-radius:999px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.15);">${c.type}</span></div><div style="display:flex; align-items:center; gap:10px; margin-top:8px;"><div class="chip"></div><div style="flex:1;"><div class="card-number">${c.number}</div></div><i class="fas fa-cc-visa" style="font-size:1.4rem; opacity:0.85;"></i></div><div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:6px;"><div><div style="font-size:0.6rem; opacity:0.7; letter-spacing:0.5px;">${c.holder}</div><div style="font-size:0.65rem; font-weight:600; opacity:0.9; letter-spacing:0.8px;">${c.bank.toUpperCase()}</div></div><div style="text-align:right;"><div class="card-balance">${c.val}</div><div class="card-expiry">${c.sub}</div></div></div><div style="margin-top:6px; display:flex; gap:4px;"><span class="pill" style="font-size:0.55rem; padding:2px 6px;"><i class="fas fa-bolt"></i> Click for options</span><span class="pill" style="font-size:0.55rem; opacity:0.6;">Transfer →</span></div></div>`).join('');
+        // cache for transfer & quick menu
+        window._lastEconCards = cards;
+        window._lastRealCards = real;
       }
       document.getElementById('econWalletStats').innerHTML = `<div style="font-weight:600;"><i class="fas fa-wallet" style="color:var(--accent)"></i> Wallet P${hud.wallet_pid||'1'} \u2014 ${fmtCur2(bal)}</div><div style="font-size:0.65rem; opacity:0.6; margin-top:4px;">All players: ${Object.entries(hud.wallet_all||{}).map(([k,v])=> 'P'+k+': '+fmtCur2(v)).join(' \u2022 ')||'—'}</div><div style="margin-top:6px; font-size:0.65rem;"><i class="fas fa-warehouse" style="color:#a78bfa"></i> Garage: ${ownedCount} vehicles \u2022 ${fmtCur2(ownedValue)} &nbsp; <span class="pill" style="font-size:0.6rem;">Net ${fmtCur2(net)}</span></div>`;
       // activity
@@ -2917,6 +2994,184 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
       if(vmap && typeof vmap==='object') for(const [pid,lst] of Object.entries(vmap)) if(Array.isArray(lst)) lst.forEach(ov=> allOwned.push({...ov,_pid:pid}));
       document.getElementById('econActivityList').innerHTML = (allOwned.slice(0,4).map(ov=> `<div style="display:flex; justify-content:space-between; padding:8px 10px; border-radius:8px; background:rgba(34,197,94,0.06); border:1px solid rgba(34,197,94,0.15); font-size:0.78rem;"><span><i class="fas fa-cart-shopping"></i> Bought ${ov.name}</span><span style="font-family:var(--font-mono); color:#fca5a5;">-${fmtCur2(ov.price_paid)}</span></div>`).join('') || '<div style="opacity:0.6; font-size:0.8rem; padding:8px;">No activity yet \u2014 buy a vehicle to see it here.</div>') + `<div style="display:flex; justify-content:space-between; padding:8px 10px; border-radius:8px; background:rgba(56,189,248,0.06); border:1px solid rgba(56,189,248,0.15); font-size:0.78rem; margin-top:6px;"><span><i class="fas fa-plus"></i> Top-up (demo)</span><span style="font-family:var(--font-mono); color:#86efac;">+${fmtCur2(5000)}</span></div>`;
       document.getElementById('econLoansBody').innerHTML = `<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"><div style="padding:10px; border-radius:10px; background:rgba(0,0,0,0.18); border:1px solid var(--panel-border);"><div style="font-size:0.65rem; color:var(--text-muted);">Outstanding debt</div><div style="font-weight:800; font-size:1.05rem; color:#fbbf24;">${fmtCur2(Math.floor((ownedValue*0.18)%14000))}</div><div style="font-size:0.6rem; opacity:0.6;">of ${fmtCur2(50000)} limit</div></div><div style="padding:10px; border-radius:10px; background:rgba(0,0,0,0.18); border:1px solid var(--panel-border);"><div style="font-size:0.65rem; color:var(--text-muted);">Next repayment</div><div style="font-weight:700;">${fmtCur2(420)}/mo</div><div style="font-size:0.6rem; opacity:0.6;">12 months \u2022 6.2% APR (mock)</div></div></div><div style="margin-top:10px; display:flex; gap:8px;"><button class="mini-btn primary" onclick="openV2Loan((window._lastEconHudForV2&&window._lastEconHudForV2.bank_member)||'Westbank')"><i class="fas fa-file-invoice-dollar"></i> Request loan\u2026</button><button class="mini-btn" onclick="switchEconMenuTab('wallet')"><i class="fas fa-wallet"></i> Wallet</button></div>`;
+    }
+    // --- Card Quick Options (click card → Transfer) ---
+    let _quickCardId=null;
+    function openCardQuickMenu(cardId){
+      const real = window._lastRealCards||[];
+      const c = real.find(x=> x.card_id===cardId);
+      _quickCardId=cardId;
+      const badge=document.getElementById('cardQuickIdBadge');
+      if(badge) badge.textContent=cardId.slice(0,16)+'…';
+      const body=document.getElementById('cardQuickBody');
+      if(!c){
+        body.innerHTML=`<div style="color:var(--text-muted); font-size:0.78rem;">Card not found.</div>`;
+      } else {
+        const isCredit=c.type==='credit';
+        const balText = isCredit ? `Debt ${fmtCur2(c.debt||0)} / ${fmtCur2(c.credit_limit)}` : `Balance ${fmtCur2(c.balance||0)} • limit ${fmtCur2(c.debit_limit)}/txn`;
+        const sub = isCredit ? `${fmtCur2(c.available||0)} available • APR ${c.apr}%` : `${c.display} • ${c.expiry}`;
+        body.innerHTML=`
+          <div style="padding:10px; border-radius:12px; background: linear-gradient(135deg, ${c.color}14 0%, rgba(0,0,0,0.18) 100%); border:1px solid ${c.color}33; display:flex; align-items:center; gap:10px;">
+            <div style="width:42px; height:42px; border-radius:10px; background:${c.color}; display:flex; align-items:center; justify-content:center; color:#fff; border:1px solid rgba(255,255,255,0.14);"><i class="fas ${isCredit?'fa-gem':'fa-credit-card'}"></i></div>
+            <div style="flex:1;">
+              <div style="font-weight:800;">${c.display} — ${c.type.toUpperCase()}</div>
+              <div style="font-size:0.70rem; color:var(--text-muted); font-family:var(--font-mono);">${c.card_id}</div>
+              <div style="font-size:0.70rem; color:var(--text-muted);">${c.number} • ${c.expiry}</div>
+            </div>
+            <span class="pill" style="font-size:0.60rem; background:${c.color}22; border-color:${c.color}44; color:${c.color};">${c.type}</span>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-family:var(--font-mono); font-size:0.72rem;">
+            <div style="padding:8px; border-radius:8px; background:rgba(0,0,0,0.18); border:1px solid var(--panel-border);"><div style="opacity:0.6; font-size:0.62rem;">${isCredit?'Debt':'Balance'}</div><b style="color:${isCredit?'#fde68a':'var(--accent)'};">${isCredit?fmtCur2(c.debt||0):fmtCur2(c.balance||0)}</b> <span style="opacity:0.6;">${isCredit?'/ '+fmtCur2(c.credit_limit):'/ limit '+fmtCur2(c.debit_limit)}</span></div>
+            <div style="padding:8px; border-radius:8px; background:rgba(0,0,0,0.18); border:1px solid var(--panel-border);"><div style="opacity:0.6; font-size:0.62rem;">Info</div><span style="font-size:0.68rem;">${balText}<br>${sub}</span></div>
+          </div>
+          <div style="display:grid; gap:6px;">
+            <button class="mini-btn primary" style="justify-content:center; padding:10px;" onclick="openTransferFromQuick()"><i class="fas fa-right-left"></i> Transfer Money — fancy menu</button>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+              <button class="mini-btn" onclick="navigator.clipboard&&navigator.clipboard.writeText('${c.card_id}'); appendGameResponse('**Copied** `+c.card_id+`');"><i class="fas fa-copy"></i> Copy ID</button>
+              <button class="mini-btn" onclick="closeCardQuick(); openBanks();"><i class="fas fa-building-columns"></i> View Banks</button>
+            </div>
+            <div style="font-size:0.65rem; color:var(--text-muted); text-align:center;">Tip: Left side = Credit/Debit/Loan → Right side = Debit cash or Credit debt payoff</div>
+          </div>`;
+      }
+      document.getElementById('cardQuickOverlay').classList.add('active');
+    }
+    function closeCardQuick(){ document.getElementById('cardQuickOverlay').classList.remove('active'); }
+    function openTransferFromQuick(){
+      const id=_quickCardId;
+      closeCardQuick();
+      closeEconMenu();
+      openTransfer(id);
+    }
+    // --- Transfer Money fancy ---
+    let transferFrom=null, transferTo=null;
+    function openTransfer(prefillCardId){
+      transferFrom=null; transferTo=null;
+      document.getElementById('transferAmt').value=1000;
+      document.getElementById('transferAmtLbl').textContent='$1,000';
+      // prefill destination with clicked card if provided
+      if(prefillCardId){
+        const real=window._lastRealCards||[];
+        const c=real.find(x=> x.card_id===prefillCardId);
+        if(c){
+          // suggest as destination (add to debit or pay debt)
+          transferTo=prefillCardId;
+        }
+      }
+      document.getElementById('transferOverlay').classList.add('active');
+      refreshTransfer();
+    }
+    function closeTransfer(){ document.getElementById('transferOverlay').classList.remove('active'); }
+    function setTransferAmt(v){ document.getElementById('transferAmt').value=v; updateTransferPreview(); }
+    function setTransferAmtMax(){
+      const amtEl=document.getElementById('transferAmt');
+      let max=0;
+      if(transferFrom==='loan') max=10000;
+      else if(transferFrom){
+        const real=window._lastRealCards||[];
+        const c=real.find(x=> x.card_id===transferFrom);
+        if(c){
+          if(c.type==='debit') max=Math.floor(c.balance||0);
+          else max=Math.floor((c.credit_limit||0)-(c.debt||0));
+        }
+      } else {
+        // if no source picked, use destiny max debt or 5000
+        const real=window._lastRealCards||[];
+        const c=real.find(x=> x.card_id===transferTo);
+        if(c && c.type==='credit') max=Math.floor(c.debt||0);
+        else max=5000;
+      }
+      if(max<=0) max=1000;
+      amtEl.value=max; updateTransferPreview();
+    }
+    async function refreshTransfer(){
+      const hud=window._lastHud|| (await apiCall('get_state', currentSave||null))?.hud || {};
+      const real= hud.bank_cards || window._lastRealCards || [];
+      // keep real cached
+      window._lastRealCards = real;
+      const balHud=Number(hud.wallet_balance||0);
+      document.getElementById('transferBalanceBadge').textContent = `Wallet ${fmtCur2(balHud)} • ${real.length} cards`;
+      document.getElementById('transferFeeBadge').textContent = `${(hud.bank_memberships||[]).length} banks • $${hud.bank_total_fee||0}/mo`;
+      // FROM list: loan + all cards
+      const fromList=document.getElementById('transferFromList');
+      const toList=document.getElementById('transferToList');
+      const fromItems=[];
+      fromItems.push(`<div class="transfer-tile loan ${transferFrom==='loan'?'selected':''}" onclick="selectTransferFrom('loan')"><div style="width:36px; height:36px; border-radius:9px; background:linear-gradient(135deg,#8b5cf6 0%,#06b6d4 100%); display:flex; align-items:center; justify-content:center; color:#fff;"><i class="fas fa-hand-holding-dollar"></i></div><div style="flex:1;"><div style="font-weight:800; font-size:0.85rem;">Bank Loan <span class="pill" style="font-size:0.55rem; background:rgba(139,92,246,0.15); border-color:rgba(139,92,246,0.30); color:#ddd6fe;">AUTO</span></div><div style="font-size:0.68rem; color:var(--text-muted);">Auto-borrow — creates debt on best credit, or free if none</div><div style="font-size:0.62rem; color:var(--text-muted); font-family:var(--font-mono);">Unlimited • APR per bank</div></div><i class="fas ${transferFrom==='loan'?'fa-circle-check':'fa-circle'}" style="color:${transferFrom==='loan'?'var(--accent)':'var(--text-muted)'};"></i></div>`);
+      real.forEach(c=>{
+        const isCredit=c.type==='credit';
+        const avail=isCredit ? Math.max(0, Number(c.credit_limit)-Number(c.debt||0)) : Number(c.balance||0);
+        const sub=isCredit ? `Avail ${fmtCur2(avail)} • Debt ${fmtCur2(c.debt||0)}/${fmtCur2(c.credit_limit)}` : `Bal ${fmtCur2(c.balance||0)} • Limit ${fmtCur2(c.debit_limit)}/txn`;
+        const icon=isCredit?'fa-gem':'fa-credit-card';
+        const sel=transferFrom===c.card_id?'selected':'';
+        fromItems.push(`<div class="transfer-tile ${sel}" onclick="selectTransferFrom('${c.card_id}')"><div style="width:32px; height:32px; border-radius:8px; background:${c.color}; display:flex; align-items:center; justify-content:center; color:#fff; border:1px solid rgba(255,255,255,0.12);"><i class="fas ${icon}" style="font-size:0.75rem;"></i></div><div style="flex:1; min-width:0;"><div style="font-weight:700; font-size:0.78rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${c.display} <span style="opacity:0.6; font-weight:400; font-size:0.65rem;">${c.type}</span></div><div style="font-size:0.62rem; color:var(--text-muted); font-family:var(--font-mono); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${c.card_id.slice(0,18)}…</div><div style="font-size:0.68rem; color:var(--text-muted);">${sub}</div></div><i class="fas ${sel?'fa-circle-check':'fa-circle'}" style="color:${sel?'var(--accent)':'var(--text-muted)'};"></i></div>`);
+      });
+      fromList.innerHTML=fromItems.join('')||'<div style="color:var(--text-muted); font-size:0.72rem; padding:8px;">No cards — join a bank first.</div>';
+      document.getElementById('transferFromCount').textContent=`${fromItems.length} options`;
+      // TO list: all debits + credits with debt>0 (but show all credits disabled if 0 debt)
+      const toItems=[];
+      real.forEach(c=>{
+        const isCredit=c.type==='credit';
+        const debt=Number(c.debt||0);
+        const sel=transferTo===c.card_id?'selected':'';
+        const disabled=isCredit && debt<=0.01;
+        const sub=isCredit ? (disabled? 'No debt to pay • '+fmtCur2(c.credit_limit)+' limit' : `Pay debt ${fmtCur2(debt)} • ${fmtCur2(c.credit_limit)} limit • APR ${c.apr}%`) : `Add to balance • ${fmtCur2(c.balance||0)} now • limit ${fmtCur2(c.debit_limit)}/txn`;
+        const icon=isCredit?'fa-hand-holding-dollar':'fa-piggy-bank';
+        const desclabel=isCredit?'CREDIT — Pay debt':'DEBIT — Add cash';
+        toItems.push(`<div class="transfer-tile ${sel} ${disabled?'':''}" style="${disabled?'opacity:0.45; cursor:not-allowed;':''}" onclick="${disabled?'':`selectTransferTo('${c.card_id}')`}"><div style="width:32px; height:32px; border-radius:8px; background:${c.color}; display:flex; align-items:center; justify-content:center; color:#fff; border:1px solid rgba(255,255,255,0.12);"><i class="fas ${icon}" style="font-size:0.75rem;"></i></div><div style="flex:1; min-width:0;"><div style="font-weight:700; font-size:0.78rem;">${c.display} <span style="opacity:0.6; font-weight:400; font-size:0.60rem;">${desclabel}</span></div><div style="font-size:0.62rem; color:var(--text-muted); font-family:var(--font-mono);">${c.card_id.slice(0,18)}…</div><div style="font-size:0.68rem; color:var(--text-muted);">${sub}</div></div><i class="fas ${sel?'fa-circle-check':'fa-circle'}" style="color:${sel?'#22c55e':'var(--text-muted)'};"></i></div>`);
+      });
+      toList.innerHTML=toItems.join('')||'<div style="color:var(--text-muted); font-size:0.72rem; padding:8px;">No cards — join a bank.</div>';
+      document.getElementById('transferToCount').textContent=`${toItems.length} cards`;
+      updateTransferPreview();
+    }
+    function selectTransferFrom(id){ transferFrom=id; refreshTransfer(); }
+    function selectTransferTo(id){ transferTo=id; refreshTransfer(); }
+    function updateTransferPreview(){
+      const amt=Number(document.getElementById('transferAmt').value||0);
+      document.getElementById('transferAmtLbl').textContent=fmtCur2(amt);
+      const preview=document.getElementById('transferPreview');
+      const btn=document.getElementById('transferConfirmBtn');
+      if(!transferFrom){ preview.innerHTML='<span style="color:#f59e0b;"><i class="fas fa-arrow-left"></i> Pick a source on the left (Credit/Debit/Loan)</span>'; btn.disabled=true; return; }
+      if(!transferTo){ preview.innerHTML='<span style="color:#f59e0b;"><i class="fas fa-arrow-right"></i> Pick a destination on the right (Debit cash or Credit debt)</span>'; btn.disabled=true; return; }
+      if(transferFrom===transferTo){ preview.innerHTML='<span style="color:#ef4444;"><i class="fas fa-ban"></i> Source and destination cannot be the same card.</span>'; btn.disabled=true; return; }
+      if(amt<=0){ preview.innerHTML='<span style="color:#ef4444;">Amount must be > 0</span>'; btn.disabled=true; return; }
+      const real=window._lastRealCards||[];
+      const fromC= transferFrom==='loan' ? null : real.find(x=> x.card_id===transferFrom);
+      const toC= real.find(x=> x.card_id===transferTo);
+      let err=null;
+      if(fromC){
+        if(fromC.type==='debit' && Number(fromC.balance||0)+1e-9 < amt) err=`Insufficient debit balance ${fmtCur2(fromC.balance||0)} < ${fmtCur2(amt)}`;
+        if(fromC.type==='credit'){
+          const avail=Math.max(0, Number(fromC.credit_limit)-Number(fromC.debt||0));
+          if(avail+1e-9 < amt) err=`Insufficient credit available ${fmtCur2(avail)} < ${fmtCur2(amt)}`;
+        }
+      }
+      if(toC && toC.type==='credit' && Number(toC.debt||0)<=0.01) err='Destination credit has no debt to pay';
+      if(err){ preview.innerHTML=`<span style="color:#ef4444;"><i class="fas fa-triangle-exclamation"></i> ${err}</span>`; btn.disabled=true; return; }
+      const fromLabel= fromC ? `${fromC.display} ${fromC.type}` : 'Bank Loan (auto)';
+      const toLabel= toC ? `${toC.display} ${toC.type}` : '—';
+      const act = toC && toC.type==='credit' ? `Pay ${fmtCur2(toC.debt||0)} debt → ${fmtCur2(Math.max(0, Number(toC.debt||0)-amt))}` : `Add to ${toC?toC.display:'debit'} balance`;
+      preview.innerHTML=`<span style="color:#86efac;"><i class="fas fa-check"></i> Ready:</span> <b>${fmtCur2(amt)}</b> from <b>${fromLabel}</b> → <b>${toLabel}</b> — ${act} <span style="opacity:0.6;">• ${toC && toC.type==='credit' ? 'debt payoff' : 'cash load'}</span>`;
+      btn.disabled=false;
+      btn.innerHTML=`<i class="fas fa-right-left"></i> Transfer ${fmtCur2(amt)}`;
+    }
+    async function confirmTransfer(){
+      const amt=Number(document.getElementById('transferAmt').value||0);
+      if(!transferFrom || !transferTo || amt<=0){ updateTransferPreview(); return; }
+      const btn=document.getElementById('transferConfirmBtn');
+      if(btn) btn.disabled=true;
+      let res=await apiCall('transfer_money', transferFrom, transferTo, amt, 1);
+      if(!res || res.status!=='success'){
+        res=await apiCall('call_command','bank.transfer',{player_id:1, from_card:transferFrom, to_card:transferTo, amount:amt});
+        if(res && res.result) res=res.result;
+      }
+      if(res && res.status==='success'){
+        appendGameResponse(`**✔ Transfer ${fmtCur2(res.amount||amt)}** ${res.message||''}`);
+        closeTransfer();
+        try{ await refreshStateMonitor(); await refreshBanks(); await refreshEconMenu(); await refreshTransfer(); }catch(e){}
+      } else {
+        const msg=(res&&res.message)||'unknown error';
+        document.getElementById('transferPreview').innerHTML=`<span style="color:#ef4444;"><i class="fas fa-times"></i> ${msg}</span>`;
+      }
+      if(btn) btn.disabled=false;
     }
     // --- Banks Menu (friendly join/membership, no Build Args) ---
     function openBanks(){ document.getElementById('banksOverlay').classList.add('active'); refreshBanks(); }

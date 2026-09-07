@@ -130,6 +130,8 @@ class BankCard:
     credit_limit: int
     # for credit: debt outstanding; for debit: no debt
     debt: float = 0.0
+    # for debit: cash loaded onto card (starts empty until you transfer)
+    balance: float = 0.0
     active: bool = True
     created_at: float = field(default_factory=lambda: time.time())
 
@@ -139,7 +141,8 @@ class BankCard:
         if self.type == "credit":
             d["available"] = max(0.0, float(self.credit_limit) - float(self.debt))
         else:
-            d["available"] = float(self.debit_limit)  # per-txn cap
+            d["available"] = float(self.balance)  # actual cash on debit card
+            d["debit_available"] = float(self.debit_limit)  # per-txn cap reference
         # also include config display/color
         cfg = _BANKS.get(self.bank) or {}
         d["display"] = cfg.get("display", self.bank)
@@ -162,6 +165,7 @@ class BankCard:
             debit_limit=int(data.get("debit_limit",0)),
             credit_limit=int(data.get("credit_limit",0)),
             debt=float(data.get("debt",0.0)),
+            balance=float(data.get("balance", 0.0)),
             active=bool(data.get("active", True)),
             created_at=float(data.get("created_at", time.time())),
         )
@@ -213,6 +217,7 @@ def _create_cards_for_bank(player_id: int, bank_id: str) -> List[BankCard]:
             card_id=f"card_{pid}_{bid.lower().replace(' ','_')}_debit_{uuid.uuid4().hex[:6]}",
             bank=bid, type="debit", number=_gen_number(), expiry=_gen_expiry(),
             debit_limit=int(cfg["debit_limit"]), credit_limit=int(cfg["credit_limit"]),
+            balance=0.0,
         )
         lst.append(c); created.append(c)
     if not any(c.bank==bid and c.type=="credit" for c in lst):
@@ -220,6 +225,7 @@ def _create_cards_for_bank(player_id: int, bank_id: str) -> List[BankCard]:
             card_id=f"card_{pid}_{bid.lower().replace(' ','_')}_credit_{uuid.uuid4().hex[:6]}",
             bank=bid, type="credit", number=_gen_number(), expiry=_gen_expiry(),
             debit_limit=int(cfg["debit_limit"]), credit_limit=int(cfg["credit_limit"]),
+            balance=0.0,
         )
         lst.append(c); created.append(c)
     return created
@@ -353,13 +359,12 @@ def can_pay(player_id: int, card_id: str, amount: float) -> tuple[bool, str]:
         return False, "Card is inactive"
     amt = float(amount)
     if card.type == "debit":
-        # per-transaction limit
+        # per-transaction limit + card balance (starts empty until you transfer)
         if amt - 1e-9 > float(card.debit_limit):
             return False, f"Transaction Failed — {card.bank} debit limit is ${card.debit_limit:,} per transaction (tried ${amt:,.0f})"
-        # also need wallet funds
-        bal = _wallet_balance(pid)
+        bal = float(getattr(card, "balance", 0.0))
         if bal + 1e-9 < amt:
-            return False, f"Transaction Failed — insufficient cash ${bal:,.0f} < ${amt:,.0f}"
+            return False, f"Transaction Failed — insufficient card balance ${bal:,.0f} < ${amt:,.0f} on {card.bank} debit — transfer money to this card first"
         return True, "ok"
     else:  # credit
         avail = float(card.credit_limit) - float(card.debt)
@@ -392,17 +397,17 @@ def pay_with_card(player_id: int, card_id: str, amount: float, description: str 
     # perform deduction
     try:
         if card.type == "debit":
-            from core.systems.economy.wallet import deduct_funds, get_balance
-            if not deduct_funds(pid, amt):
-                return {"status": "error", "message": f"Transaction Failed — could not deduct ${amt:,.0f}"}
-            bal = get_balance(pid)
+            # empty until you transfer — deduct from card balance
+            if float(card.balance) + 1e-9 < amt:
+                return {"status": "error", "message": f"Transaction Failed — insufficient card balance ${float(card.balance):,.0f} < ${amt:,.0f}"}
+            card.balance = float(card.balance) - amt
             card_info = card.to_dict()
             try:
                 from core.output import success as _suc
-                _suc(f"Paid ${amt:,.0f} with {card.bank} debit • {card.number} — {description}" if description else f"Paid ${amt:,.0f} with {card.bank} debit", source="bank")
+                _suc(f"Paid ${amt:,.0f} with {card.bank} debit • {card.number} — remaining ${card.balance:,.0f}" + (f" — {description}" if description else ""), source="bank")
             except Exception:
                 pass
-            return {"status": "success", "message": f"Paid ${amt:,.0f} with {card.bank} debit", "card": card_info, "balance": bal, "amount": amt, "type": "debit"}
+            return {"status": "success", "message": f"Paid ${amt:,.0f} with {card.bank} debit", "card": card_info, "balance": float(card.balance), "amount": amt, "type": "debit"}
         else:
             card.debt = float(card.debt) + amt
             try:
@@ -415,7 +420,7 @@ def pay_with_card(player_id: int, card_id: str, amount: float, description: str 
         return {"status": "error", "message": str(e)}
 
 def pay_debt(player_id: int, card_id: str, amount: float) -> dict:
-    """Pay down credit debt (from wallet)."""
+    """Pay down credit debt (from wallet — legacy, prefer transfer)."""
     pid = int(player_id)
     card = find_card(pid, card_id)
     if not card:
@@ -436,6 +441,115 @@ def pay_debt(player_id: int, card_id: str, amount: float) -> dict:
             return {"status": "error", "message": "Deduct failed"}
         card.debt = max(0.0, float(card.debt) - float(amount))
         return {"status": "success", "message": f"Paid ${amount:,.0f} toward {card.bank} credit", "card": card.to_dict()}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+def transfer_funds(player_id: int, from_card_id: str, to_card_id: str, amount: float) -> dict:
+    """Transfer money between cards or via bank loan.
+
+    Sources (left):
+      - Credit card card_id — borrows from credit line (increases debt)
+      - Debit card card_id — moves cash from its balance
+      - "loan" / "bank_loan" — auto loan (no source deduction, just creates funds)
+
+    Destinations (right):
+      - Debit card — adds to its balance (fund the card)
+      - Credit card — pays off debt (debt -= amount, capped at 0)
+    """
+    _load_banks()
+    pid = int(player_id)
+    amt = float(amount)
+    if amt <= 0:
+        return {"status": "error", "message": "Amount must be > 0"}
+    if not to_card_id:
+        return {"status": "error", "message": "Destination card required"}
+    # normalize loan keyword
+    is_loan = str(from_card_id or "").strip().lower() in ("loan", "bank_loan", "bank loan", "auto_loan", "bankloan")
+    from_card = None if is_loan else find_card(pid, str(from_card_id))
+    to_card = find_card(pid, str(to_card_id))
+    if not is_loan and not from_card:
+        return {"status": "error", "message": f"Source card '{from_card_id}' not found"}
+    if not to_card:
+        return {"status": "error", "message": f"Destination card '{to_card_id}' not found"}
+    if not is_loan and from_card.card_id == to_card.card_id:
+        return {"status": "error", "message": "Cannot transfer to the same card"}
+    # Validate source can provide amount
+    if is_loan:
+        pass  # unlimited loan source for now
+    elif from_card.type == "debit":
+        if float(from_card.balance) + 1e-9 < amt:
+            return {"status": "error", "message": f"Insufficient debit balance ${float(from_card.balance):,.0f} < ${amt:,.0f} on {from_card.bank}"}
+        if amt - 1e-9 > float(from_card.debit_limit):
+            return {"status": "error", "message": f"Amount ${amt:,.0f} exceeds {from_card.bank} debit per-txn limit ${from_card.debit_limit:,}"}
+    else:  # credit source = borrow
+        avail = float(from_card.credit_limit) - float(from_card.debt)
+        if amt - 1e-9 > avail:
+            return {"status": "error", "message": f"Insufficient credit available ${avail:,.0f} < ${amt:,.0f} on {from_card.bank} (limit ${from_card.credit_limit:,}, debt ${from_card.debt:,.0f})"}
+
+    # Validate destination capacity
+    if to_card.type == "credit":
+        # paying debt - if amount > debt, cap to debt (no overpay)
+        if to_card.debt <= 1e-9:
+            return {"status": "error", "message": f"{to_card.bank} credit has no debt to pay (${to_card.debt:,.0f})"}
+        if amt - 1e-9 > float(to_card.debt):
+            amt = float(to_card.debt)  # cap
+    else:
+        # debit destination - no cap beyond maybe debit_limit? we allow any, but per-txn limit not relevant for loading
+        pass
+
+    # Perform atomic transfer
+    try:
+        # deduct source
+        if is_loan:
+            # create a loan: pick first credit to track debt if possible, else free money
+            # For UX, we treat loan as borrowing from best credit line if exists
+            loan_track = None
+            for c in _cards.get(pid, []):
+                if c.type == "credit" and c.active:
+                    avail = float(c.credit_limit) - float(c.debt)
+                    if avail + 1e-9 >= amt:
+                        loan_track = c
+                        break
+            if loan_track:
+                loan_track.debt = float(loan_track.debt) + amt
+                try:
+                    from core.output import warning as _warn
+                    _warn(f"Bank Loan ${amt:,.0f} → charged to {loan_track.bank} credit (debt ${loan_track.debt:,.0f}/{loan_track.credit_limit:,})", channel="toast", source="bank")
+                except Exception:
+                    pass
+            else:
+                try:
+                    from core.output import info as _info
+                    _info(f"Bank Loan ${amt:,.0f} approved (no credit card to track — treat as free funds)", channel="toast", source="bank")
+                except Exception:
+                    pass
+        elif from_card.type == "debit":
+            from_card.balance = float(from_card.balance) - amt
+        else:  # credit
+            from_card.debt = float(from_card.debt) + amt
+
+        # credit destination
+        if to_card.type == "debit":
+            to_card.balance = float(to_card.balance) + amt
+        else:
+            to_card.debt = max(0.0, float(to_card.debt) - amt)
+
+        try:
+            from core.output import success as _suc
+            src_label = "Bank Loan" if is_loan else f"{from_card.bank} {from_card.type}"
+            dst_label = f"{to_card.bank} {to_card.type}"
+            _suc(f"Transferred ${amt:,.0f} from {src_label} → {dst_label}", source="bank")
+        except Exception:
+            pass
+
+        return {
+            "status": "success",
+            "message": f"Transferred ${amt:,.0f} from {('Bank Loan' if is_loan else from_card.bank+' '+from_card.type)} to {to_card.bank} {to_card.type}",
+            "amount": amt,
+            "from_card": None if is_loan else from_card.to_dict(),
+            "to_card": to_card.to_dict(),
+            "is_loan": is_loan,
+        }
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
@@ -577,6 +691,32 @@ def bank_leave(player_id: int = 1, bank_name: str = ""):
         player_id = 1
     pid = int(player_id) if str(player_id).strip().lstrip("-").isdigit() else 1
     return leave_bank(pid, str(bank_name))
+
+@_command("bank.transfer", "Transfer money between cards or via bank loan — source left, destination right (debit gets cash, credit pays debt)", category="player")
+def bank_transfer(player_id: int = 1, from_card: str = "", to_card: str = "", amount: float = 0):
+    # flexible positional handling: bank.transfer from to amount  OR  bank.transfer amount from to
+    # We support named kwargs as above; also handle string-first calls
+    # e.g. bank.transfer loan card_1_westbank_debit_xxx 5000
+    # e.g. bank.transfer card_1_westbank_credit_xxx card_1_westbank_debit_xxx 2000
+    pid = int(player_id) if str(player_id).strip().lstrip("-").isdigit() else 1
+    # if player_id was actually a card id (string call style)
+    if isinstance(player_id, str) and not str(player_id).strip().lstrip("-").isdigit():
+        # shift: player_id is from_card, from_card is to_card, to_card is amount?
+        # try to detect: first arg looks like card/loan, second like card, third numeric amount
+        maybe_amt = to_card
+        try:
+            # if amount is 0 and to_card looks numeric, treat as amount
+            if amount == 0 and str(maybe_amt).replace('.','',1).lstrip('-').isdigit():
+                amount = float(maybe_amt)
+                to_card = from_card
+                from_card = player_id
+                pid = 1
+        except Exception:
+            pass
+        if isinstance(player_id, str) and str(player_id).lower() in ("loan","bank_loan","bank loan"):
+            # from is loan
+            pass
+    return transfer_funds(pid, str(from_card), str(to_card), float(amount))
 
 current_bank_supports_loans = True  # kept for compat
 

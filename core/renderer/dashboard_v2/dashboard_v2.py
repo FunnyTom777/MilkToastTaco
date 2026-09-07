@@ -341,6 +341,13 @@ class DashboardV2API:
         except Exception as e:
             return {"status": "error", "message": str(e)}
 
+    def transfer_money(self, from_card: str, to_card: str, amount: float, player_id: int = 1):
+        try:
+            from core.systems.economy.bank import transfer_funds
+            return transfer_funds(int(player_id), str(from_card), str(to_card), float(amount))
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
     # Expose command for output demo (so /output can be typed even without args)
     # Actual output emission is via get_output/poll_output; no extra command needed.
 
