@@ -8,11 +8,20 @@ simple API for any future system that needs time to pass:
         get_datetime, get_date, get_time,
         advance_minutes, advance_hours, advance_days,
         set_datetime, set_date, set_time,
+        sleep, sleep_until,
         get_formatted, subscribe, get_weekday_name,
+        ALLOWED_SCALES, set_time_scale,
     )
 
     # advance 3 hours (e.g. after sleeping, working, travelling)
     advance_hours(3)
+
+    # sleep until tomorrow 07:00 (always passes a day)
+    sleep(7)                # or sleep("07:30"), sleep(7,30), sleep("7:30 pm")
+    sleep_until(7)          # next occurrence (0-24h window)
+
+    # timescale presets: 1x realtime, 3x, 5x, 7x, 15x, 25x
+    set_time_scale(7)       # or via command: time.scale 7x
 
     # react to time passing (weather, spoilage, interest, ...)
     def on_time_change(event):
@@ -28,6 +37,10 @@ and other systems can drive time without importing this module:
     execute("time.get")
     execute("time.advance", minutes=60, hours=2)
     execute("time.set", year=2015, month=6, day=14, hour=9, minute=30)
+    execute("time.sleep", wake_hour=7)          # sleep -> tomorrow 07:00
+    execute("time.sleep", wake_hour="07:30")
+    execute("time.scale", scale=15)             # 15x
+    execute("time.scales")                      # list presets
 """
 
 from __future__ import annotations
@@ -61,7 +74,22 @@ MONTH_NAMES = [
 # How many game minutes pass per real-world minute when the simulation
 # is running (informational — not auto-ticking yet). Systems can read/
 # write this to control pacing.
-DEFAULT_TIME_SCALE = 60.0  # 60 game minutes per real minute = 1 game hour per real minute
+# 1x = realtime (1 game minute per real minute), 3x = 3x realtime, etc.
+DEFAULT_TIME_SCALE = 1.0  # 1x realtime
+LEGACY_DEFAULT_SCALE = 60.0  # previous default before timescale presets (kept for migration)
+
+# Preset timescale multipliers vs realtime. 1x = realtime, 25x = 25 game mins per real min.
+ALLOWED_SCALES: List[float] = [1, 3, 5, 7, 15, 25]
+ALLOWED_SCALE_SET = set(float(s) for s in ALLOWED_SCALES)
+
+def _is_valid_scale(scale: float) -> bool:
+    """Check if scale is one of the allowed presets (tolerance for float)."""
+    try:
+        sf = float(scale)
+    except Exception:
+        return False
+    # exact match against allowed set
+    return any(abs(sf - float(a)) < 1e-9 for a in ALLOWED_SCALES)
 
 # ---------------------------------------------------------------------------
 # Module-level state (singleton)
@@ -284,6 +312,8 @@ def get_state() -> Dict[str, Any]:
         "time_str_seconds": dt.strftime("%H:%M:%S"),
         "days_elapsed": (dt.date() - START_DATETIME.date()).days,
         "time_scale": scale,
+        "time_scale_label": get_scale_label(scale),
+        "allowed_scales": list(ALLOWED_SCALES),
         "paused": paused,
         "tick": tick,
     }
@@ -448,15 +478,52 @@ def tick(minutes: float = 1) -> Dict[str, Any]:
     return advance_minutes(float(minutes))
 
 
+def get_allowed_scales() -> List[float]:
+    """Return list of allowed timescale presets (game minutes per real minute)."""
+    return list(ALLOWED_SCALES)
+
+def get_scale_label(scale: float) -> str:
+    """Human label for a scale, e.g. 1 -> '1x (realtime)'."""
+    try:
+        sf = float(scale)
+    except Exception:
+        return str(scale)
+    if abs(sf - 1) < 1e-9:
+        return "1x (realtime)"
+    return f"{sf:g}x"
+
+
 def set_time_scale(scale: float) -> Dict[str, Any]:
-    """Set game time scale (game minutes per real minute). Must be >= 0."""
-    scale_f = float(scale)
+    """
+    Set game time scale (game minutes per real minute).
+
+    Must be one of ALLOWED_SCALES: 1, 3, 5, 7, 15, 25.
+    1x = realtime, 25x = 25 game minutes per real minute.
+    """
+    try:
+        scale_f = float(scale)
+    except Exception:
+        raise ValueError(f"time_scale must be a number, got {scale!r}. Allowed: {ALLOWED_SCALES}")
     if scale_f < 0:
         raise ValueError("time_scale must be >= 0")
+    if not _is_valid_scale(scale_f):
+        raise ValueError(f"Invalid timescale {scale_f:g}. Allowed scales: {ALLOWED_SCALES} (1x realtime, 3x, 5x, 7x, 15x, 25x)")
     global _time_scale
     with _lock:
         _time_scale = scale_f
+    try:
+        from core.output import info as _info
+        _info(f"Timescale set to {get_scale_label(scale_f)}", source="gametime")
+    except Exception:
+        pass
     return get_state()
+
+
+def _set_time_scale_unchecked(scale: float) -> None:
+    """Internal: set scale without preset validation (for loading legacy saves)."""
+    global _time_scale
+    with _lock:
+        _time_scale = float(scale)
 
 
 def set_paused(paused: bool) -> Dict[str, Any]:
@@ -474,6 +541,137 @@ def reset_to_start() -> Dict[str, Any]:
     delta = (START_DATETIME - cur).total_seconds() / 60.0
     _set_current(START_DATETIME, delta_minutes=delta)
     return get_state()
+
+
+def _parse_wake_time(wake_hour: Any, wake_minute: Any = 0, wake_second: Any = 0) -> tuple[int, int, int]:
+    """
+    Parse wake time from flexible inputs.
+
+    Supports:
+      - sleep(7) -> 07:00
+      - sleep(7, 30) -> 07:30
+      - sleep("07:30") -> 07:30
+      - sleep("7:30 pm") -> 19:30 (simple am/pm)
+      - sleep("07:30:15") -> 07:30:15
+    Returns (hour, minute, second) validated 0..23, 0..59.
+    """
+    # If first arg is a string containing ":" or am/pm, parse it
+    if isinstance(wake_hour, str):
+        s = wake_hour.strip().lower()
+        # Handle am/pm
+        is_pm = s.endswith("pm")
+        is_am = s.endswith("am")
+        if is_pm or is_am:
+            s = s[:-2].strip()
+        # Extract parts
+        parts = s.replace(" ", "").split(":")
+        try:
+            h = int(parts[0]) if parts[0] else 0
+            m = int(parts[1]) if len(parts) > 1 and parts[1] else 0
+            sec = int(parts[2]) if len(parts) > 2 and parts[2] else 0
+        except Exception:
+            raise ValueError(f"Invalid wake time string {wake_hour!r}, expected 'HH:MM' or 'HH:MM:SS'")
+        if is_pm and h < 12:
+            h += 12
+        if is_am and h == 12:
+            h = 0
+        # wake_minute/wake_second args are ignored when string form is used
+        wake_hour, wake_minute, wake_second = h, m, sec
+
+    h = _coerce_int(wake_hour, "wake_hour")
+    m = _coerce_int(wake_minute, "wake_minute")
+    sec = _coerce_int(wake_second, "wake_second")
+    if not (0 <= h <= 23):
+        raise ValueError("wake_hour must be 0..23")
+    if not (0 <= m <= 59):
+        raise ValueError("wake_minute must be 0..59")
+    if not (0 <= sec <= 59):
+        raise ValueError("wake_second must be 0..59")
+    return h, m, sec
+
+
+def sleep(wake_hour: Any = 7, wake_minute: Any = 0, wake_second: Any = 0) -> Dict[str, Any]:
+    """
+    Sleep — passes time forward to the next day at the requested wake-up time.
+
+    Always advances to *tomorrow* at wake_hour:wake_minute, even if that
+    time today is still in the future. This matches the idea of “sleeping
+    through the night and waking up the next day”.
+
+    Example:
+        # It's 2015-01-01 22:00, sleep till 07:00 -> 2015-01-02 07:00 (9h)
+        # It's 2015-01-01 06:00, sleep till 07:00 -> 2015-01-02 07:00 (25h)
+
+        sleep(7)           # wake tomorrow 07:00
+        sleep(7, 30)       # wake tomorrow 07:30
+        sleep("08:00")     # wake tomorrow 08:00
+        sleep("7:30 pm")   # wake tomorrow 19:30
+
+    For “sleep until next occurrence” (0-24h window) use ``sleep_until``.
+    Returns the new state dict.
+    """
+    h, m, sec = _parse_wake_time(wake_hour, wake_minute, wake_second)
+    with _lock:
+        cur = _current
+    # Always tomorrow at wake time (passes a day)
+    try:
+        target = datetime.datetime(cur.year, cur.month, cur.day, h, m, sec) + datetime.timedelta(days=1)
+    except ValueError as e:
+        raise ValueError(f"Invalid wake time {h:02d}:{m:02d}:{sec:02d}: {e}")
+    delta = (target - cur).total_seconds() / 60.0
+    # Sleep should be at least 1 minute; should never be <=0 since we add a day
+    if delta <= 0:
+        # failsafe: add another day
+        target += datetime.timedelta(days=1)
+        delta = (target - cur).total_seconds() / 60.0
+    _set_current(target, delta_minutes=delta)
+    try:
+        from core.output import info as _info
+        hours_slept = delta / 60.0
+        _info(f"Slept {hours_slept:.1f}h -> woke up {target.strftime('%Y-%m-%d %H:%M')}", source="gametime")
+    except Exception:
+        pass
+    state = get_state()
+    # Include sleep meta for UI
+    state = dict(state)
+    state["slept_hours"] = round(delta / 60.0, 2)
+    state["slept_minutes"] = round(delta, 2)
+    return state
+
+
+def sleep_until(wake_hour: Any = 7, wake_minute: Any = 0, wake_second: Any = 0) -> Dict[str, Any]:
+    """
+    Sleep until next occurrence of the given time (0-24h window).
+
+    Unlike ``sleep`` which always goes to *tomorrow*, this goes to the
+    next time the clock hits wake_hour:wake_minute — if that time today
+    is still ahead, you'll wake today; otherwise tomorrow.
+
+    Example:
+        # It's 06:00, sleep_until 07:00 -> today 07:00 (1h)
+        # It's 08:00, sleep_until 07:00 -> tomorrow 07:00 (23h)
+    """
+    h, m, sec = _parse_wake_time(wake_hour, wake_minute, wake_second)
+    with _lock:
+        cur = _current
+    try:
+        candidate = datetime.datetime(cur.year, cur.month, cur.day, h, m, sec)
+    except ValueError as e:
+        raise ValueError(f"Invalid wake time {h:02d}:{m:02d}:{sec:02d}: {e}")
+    if candidate <= cur:
+        candidate += datetime.timedelta(days=1)
+    delta = (candidate - cur).total_seconds() / 60.0
+    _set_current(candidate, delta_minutes=delta)
+    try:
+        from core.output import info as _info
+        _info(f"Slept until {candidate.strftime('%Y-%m-%d %H:%M')} ({delta/60:.1f}h)", source="gametime")
+    except Exception:
+        pass
+    state = get_state()
+    state = dict(state)
+    state["slept_hours"] = round(delta / 60.0, 2)
+    state["slept_minutes"] = round(delta, 2)
+    return state
 
 
 # ---------------------------------------------------------------------------
@@ -726,13 +924,36 @@ def time_tick(minutes: float = 1) -> dict:
     return {"status": "success", "message": f"Tick {float(minutes):g} min -> {state['formatted']}", **state}
 
 
-@_command("time.scale", "Get or set time scale (game minutes per real minute)", category="dev")
+@_command("time.scale", "Get or set time scale (1,3,5,7,15,25 — 1x realtime)", category="player")
 def time_scale(scale: Optional[float] = None) -> dict:
-    """If scale is None, just returns current; otherwise sets it."""
+    """
+    Get or set timescale. Allowed: 1, 3, 5, 7, 15, 25 (1x = realtime).
+    Example: time.scale 7  -> 7x speed
+    Accepts "7", 7, "7x", "7.0".
+    """
     if scale is None:
         return {"status": "success", **get_state()}
-    state = set_time_scale(float(scale))
-    return {"status": "success", "message": f"Time scale set to {state['time_scale']}", **state}
+    try:
+        if isinstance(scale, str):
+            s = scale.strip().lower().replace("x", "").strip()
+            scale_f = float(s)
+        else:
+            scale_f = float(scale)
+    except Exception:
+        return {"status": "error", "message": f"Invalid scale {scale!r}. Allowed: {ALLOWED_SCALES}", "allowed_scales": ALLOWED_SCALES}
+    try:
+        state = set_time_scale(scale_f)
+    except ValueError as e:
+        return {"status": "error", "message": str(e), "allowed_scales": ALLOWED_SCALES}
+    return {"status": "success", "message": f"Time scale set to {state['time_scale_label']} ({state['time_scale']}x)", **state}
+
+
+@_command("time.scales", "List allowed timescale presets (1x realtime, 3x, 5x, 7x, 15x, 25x)", category="player")
+def time_scales() -> dict:
+    """Return allowed scales with labels and current."""
+    st = get_state()
+    scales_info = [{"scale": s, "label": get_scale_label(s), "is_current": abs(float(s) - float(st["time_scale"])) < 1e-9} for s in ALLOWED_SCALES]
+    return {"status": "success", "allowed_scales": ALLOWED_SCALES, "scales": scales_info, **st}
 
 
 @_command("time.pause", "Pause or unpause game time (paused=true/false)", category="dev")
@@ -750,14 +971,57 @@ def time_reset() -> dict:
     return {"status": "success", "message": f"Reset to {state['formatted']}", **state}
 
 
+@_command("time.sleep", "Sleep until tomorrow at wake time (passes a day)", category="player")
+def time_sleep(wake_hour: Any = 7, wake_minute: Any = 0, wake_second: Any = 0) -> dict:
+    """
+    Sleep: passes time to tomorrow at wake time.
+
+    Args:
+        wake_hour: 0-23 or string like "07:30" / "7:30 pm"
+        wake_minute: 0-59 (ignored if wake_hour is string)
+        wake_second: 0-59
+
+    Example:
+        time.sleep 7          -> wake tomorrow 07:00
+        time.sleep 7 30        -> wake tomorrow 07:30
+        time.sleep "08:00"    -> wake tomorrow 08:00
+        time.sleep "7:30 pm"  -> wake tomorrow 19:30
+
+    Always goes to *next calendar day* at that time (passes a day).
+    """
+    try:
+        state = sleep(wake_hour, wake_minute, wake_second)
+    except ValueError as e:
+        return {"status": "error", "message": str(e)}
+    return {"status": "success", "message": f"Slept {state.get('slept_hours', '?')}h -> {state['formatted']}", **state}
+
+
+@_command("time.sleep_until", "Sleep until next occurrence of wake time (0-24h)", category="player")
+def time_sleep_until(wake_hour: Any = 7, wake_minute: Any = 0, wake_second: Any = 0) -> dict:
+    """
+    Sleep until next occurrence of wake time (0-24h window).
+
+    Unlike time.sleep which always goes to tomorrow, this goes to the
+    next time the clock hits that hour — today if still ahead, else tomorrow.
+    """
+    try:
+        state = sleep_until(wake_hour, wake_minute, wake_second)
+    except ValueError as e:
+        return {"status": "error", "message": str(e)}
+    return {"status": "success", "message": f"Slept {state.get('slept_hours', '?')}h -> {state['formatted']}", **state}
+
+
 __all__ = [
     "START_DATETIME", "START_YEAR", "START_MONTH", "START_DAY", "START_HOUR", "START_MINUTE",
-    "WEEKDAY_NAMES", "MONTH_NAMES", "DEFAULT_TIME_SCALE",
+    "WEEKDAY_NAMES", "MONTH_NAMES", "DEFAULT_TIME_SCALE", "LEGACY_DEFAULT_SCALE",
+    "ALLOWED_SCALES", "ALLOWED_SCALE_SET",
     "get_datetime", "get_date", "get_time", "get_iso", "get_formatted",
     "get_weekday", "get_weekday_name", "get_month_name", "get_day_of_year",
     "is_weekend", "get_year", "get_month", "get_day", "get_hour", "get_minute", "get_second",
     "days_elapsed", "get_time_scale", "is_paused", "get_state",
+    "get_allowed_scales", "get_scale_label", "_is_valid_scale",
     "set_datetime", "set_date", "set_time", "advance", "advance_minutes", "advance_hours", "advance_days",
-    "tick", "set_time_scale", "set_paused", "reset_to_start",
+    "tick", "set_time_scale", "_set_time_scale_unchecked", "set_paused", "reset_to_start",
+    "sleep", "sleep_until", "_parse_wake_time",
     "subscribe", "unsubscribe", "_reset_for_tests",
 ]
