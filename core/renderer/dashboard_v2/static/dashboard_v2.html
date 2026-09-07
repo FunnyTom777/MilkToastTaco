@@ -526,6 +526,25 @@
           </div>
         </div>
 
+        <!-- Gametime — Current Time/Date + timescale + sleep -->
+        <div class="intro-card" id="gametimeCard" style="display:flex; flex-direction:column; gap:12px; border-left: 3px solid var(--accent);">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+            <div>
+              <div class="intro-kicker"><i class="fas fa-clock"></i> Game Time • Live</div>
+              <div id="gtTime" style="font-size:1.65rem; font-weight:800; letter-spacing:0.5px; font-family:var(--font-mono);">—</div>
+              <div id="gtDate" style="font-size:0.82rem; color:var(--text-muted);">—</div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+              <span id="gtScalePill" class="pill" style="font-size:0.70rem; font-family:var(--font-mono); background:var(--accent-subtle); border-color:var(--accent-border); color:var(--accent);">1x</span>
+              <button class="mini-btn primary" onclick="openSleepPicker()"><i class="fas fa-bed"></i> Sleep…</button>
+            </div>
+          </div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;" id="gtScaleChips">
+            <!-- timescale chips injected by JS -->
+          </div>
+          <div style="font-size:0.68rem; color:var(--text-muted);">Timescale = game minutes per real minute • 1x realtime • Sleep jumps to tomorrow 07:00 at a owned house</div>
+        </div>
+
         <div>
           <div class="section-label" style="margin-bottom:0.7rem;"><i class="fas fa-bolt"></i> Quick Options — big tiles</div>
           <div class="quick-grid">
@@ -909,6 +928,40 @@
               <button id="transferConfirmBtn" class="mini-btn primary" disabled onclick="confirmTransfer()"><i class="fas fa-right-left"></i> Transfer</button>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Sleep Picker — pick a house to sleep in (requires owned house) -->
+  <div id="sleepOverlay" class="shop-overlay" onclick="if(event.target===this) closeSleepPicker()">
+    <div class="shop-window" role="dialog" aria-modal="true" aria-label="Sleep" style="width:min(640px,96vw); height:auto; max-height:88vh;">
+      <div class="shop-header">
+        <div class="shop-title"><i class="fas fa-bed" style="color:var(--accent)"></i> Sleep <span id="sleepNowPill" class="pill" style="font-size:0.62rem; font-family:var(--font-mono);">—</span></div>
+        <button class="shop-close" onclick="closeSleepPicker()">✕</button>
+      </div>
+      <div style="padding:14px; overflow:auto; display:flex; flex-direction:column; gap:12px;">
+        <div style="font-size:0.76rem; color:var(--text-muted);"><i class="fas fa-house"></i> Pick a house you own to sleep in. You can't sleep without a house — buy one via <a onclick="closeSleepPicker(); openRealEstate();" style="color:var(--accent); cursor:pointer; font-weight:700;">Real Estate</a>.</div>
+        <div id="sleepHousesGrid" class="shop-grid" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr));"></div>
+        <div id="sleepNoHouse" style="display:none; text-align:center; padding:18px; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.18); border-radius:10px; color:#fca5a5;">
+          <div style="font-size:1.4rem;"><i class="fas fa-house-circle-xmark"></i></div>
+          <div style="font-weight:700; margin-top:6px;">No houses owned</div>
+          <div style="font-size:0.74rem; margin-top:4px;">You need to own a house to sleep. Visit Real Estate to buy one.</div>
+          <button class="mini-btn primary" style="margin-top:10px;" onclick="closeSleepPicker(); openRealEstate();"><i class="fas fa-house"></i> Browse Houses</button>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; background:rgba(255,255,255,0.03); border:1px solid var(--panel-border); border-radius:8px; padding:8px 10px;">
+          <span style="font-size:0.72rem; font-weight:700;">Wake at</span>
+          <select id="sleepWakeHour" style="background:var(--bg-dark); border:1px solid var(--panel-border); border-radius:6px; padding:5px 7px; color:var(--text-main); font-family:var(--font-mono); font-size:0.78rem;">
+            <option value="6">06:00</option><option value="7" selected>07:00</option><option value="8">08:00</option><option value="9">09:00</option><option value="10">10:00</option><option value="12">12:00</option><option value="19">19:00</option>
+          </select>
+          <span style="font-size:0.68rem; color:var(--text-muted);">Sleep always jumps to tomorrow at that time</span>
+          <span id="sleepPreview" class="pill" style="margin-left:auto; font-size:0.68rem;">—</span>
+        </div>
+      </div>
+      <div class="shop-stats-bar" style="justify-content:space-between;">
+        <span id="sleepHint" style="opacity:0.7; font-size:0.68rem;">Pick a house • sleep advances game clock</span>
+        <div style="display:flex; gap:8px;">
+          <button class="mini-btn" onclick="closeSleepPicker()">Cancel</button>
+          <button id="sleepConfirmBtn" class="mini-btn primary" disabled onclick="confirmSleep()"><i class="fas fa-moon"></i> Sleep</button>
         </div>
       </div>
     </div>
@@ -1312,6 +1365,162 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
       if(savesList.length){
         document.getElementById('sys-ready').textContent = `SYS_READY // ${savesList.length} saves`;
       }
+      // refresh gametime panel in background
+      try{ renderGametime(); }catch(e){}
+    }
+
+    // --- Gametime helpers (Homepage time/date + timescale + sleep) ---
+    let _gtPoll = null;
+    let _selectedSleepHouse = null;
+    function escapeHtmlGt(s){ try{ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }catch(e){return String(s);} }
+    async function renderGametime(){
+      let gt = null;
+      try{
+        const res = await apiCall('get_gametime');
+        if(res && res.status==='success') gt = res;
+        else if(window._lastHud && window._lastHud.gametime) gt = window._lastHud.gametime;
+      }catch(e){ gt = window._lastHud ? window._lastHud.gametime : null; }
+      if(!gt || !gt.formatted){
+        try{ gt = (window._lastHud && window._lastHud.gametime) || null; }catch(e){}
+      }
+      const timeEl=document.getElementById('gtTime');
+      const dateEl=document.getElementById('gtDate');
+      const pill=document.getElementById('gtScalePill');
+      const chips=document.getElementById('gtScaleChips');
+      const nowPill=document.getElementById('sleepNowPill');
+      if(!gt) {
+        if(timeEl) timeEl.textContent='—';
+        if(dateEl) dateEl.textContent='—';
+        if(pill) pill.textContent='—';
+        return;
+      }
+      const tStr = gt.time_str || (gt.iso? gt.iso.slice(11,16): '—');
+      const dStr = gt.date_str ? `${gt.weekday_name||''} • ${gt.date_str}` : (gt.formatted||'—');
+      if(timeEl) timeEl.textContent = tStr;
+      if(dateEl) dateEl.textContent = dStr + (gt.formatted && gt.formatted!==dStr ? ` — ${gt.formatted}` : '');
+      const scale = gt.time_scale ?? 1;
+      const label = gt.time_scale_label || `${scale}x`;
+      if(pill) pill.textContent = label;
+      if(nowPill) nowPill.textContent = `${gt.date_str||''} ${gt.time_str||''}`.trim() || '—';
+      if(chips){
+        const allowed = gt.allowed_scales || [1,3,5,7,15,25];
+        chips.innerHTML = allowed.map(s=>{
+          const isCur = Math.abs(Number(s)-Number(scale))<1e-9;
+          const lbl = s==1 ? '1x realtime' : `${s}x`;
+          return `<button class="${isCur?'mini-btn primary':'mini-btn'}" onclick="setTimescale(${s})" style="${isCur?'':'opacity:0.85'}">${lbl}</button>`;
+        }).join('') + ` <span style="font-size:0.65rem; color:var(--text-muted); margin-left:4px;">Current: ${escapeHtmlGt(label)}</span>`;
+      }
+      const wakeSel=document.getElementById('sleepWakeHour');
+      const preview=document.getElementById('sleepPreview');
+      if(wakeSel && preview && gt.date_str){
+        const wh = wakeSel.value || '7';
+        preview.textContent = `Tomorrow ${String(wh).padStart(2,'0')}:00`;
+      }
+    }
+    async function setTimescale(scale){
+      let res = await apiCall('set_timescale', scale);
+      if(!res || res.status!=='success'){
+        const r2 = await apiCall('call_command','time.scale', {scale});
+        if(r2 && r2.status==='success'){
+          appendGameResponse(`**✔ Timescale → ${r2.time_scale_label||scale+'x'}**`, 'success');
+          await refreshStateMonitor(); await renderGametime();
+          return;
+        }
+        appendGameResponse(`**✖ Timescale failed:** ${res?res.message: r2?r2.message:'unknown'}`, 'error');
+        return;
+      }
+      appendGameResponse(`**✔ Timescale → ${res.time_scale_label||scale+'x'}**`, 'success');
+      await refreshStateMonitor(); await renderGametime();
+    }
+    async function openSleepPicker(){
+      const overlay=document.getElementById('sleepOverlay');
+      if(!overlay) return;
+      overlay.classList.add('active');
+      _selectedSleepHouse=null;
+      const grid=document.getElementById('sleepHousesGrid');
+      const empty=document.getElementById('sleepNoHouse');
+      const btn=document.getElementById('sleepConfirmBtn');
+      if(btn) btn.disabled=true;
+      if(grid) grid.innerHTML='<div class="shop-empty" style="grid-column:1/-1;"><i class="fas fa-spinner fa-spin"></i> Loading houses…</div>';
+      if(empty) empty.style.display='none';
+      let res = await apiCall('get_sleep_houses', 1);
+      if(!res || res.status!=='success'){
+        try{
+          const r2=await apiCall('call_command','realestate.owned',{player_id:1});
+          if(r2 && r2.status==='success'){
+            const lst=(r2.properties||r2.result||[]);
+            const houses = lst.filter(p=>{
+              const stats=p.stats||{};
+              const beds=Number(stats.beds||0);
+              const vacant=stats.vacant===true || String(stats.vacant).toLowerCase()==='true';
+              const t=String(p.type||'').toLowerCase();
+              return beds>0 && !vacant && ['house','apartment','farm'].includes(t);
+            });
+            res={status:'success', houses, count:houses.length};
+          }
+        }catch(e){}
+      }
+      const houses=(res && res.houses)||[];
+      if(!houses.length){
+        if(grid) grid.innerHTML='';
+        if(empty) empty.style.display='block';
+        const hint=document.getElementById('sleepHint'); if(hint) hint.textContent='No houses — buy one first';
+        return;
+      }
+      if(empty) empty.style.display='none';
+      grid.innerHTML='';
+      houses.forEach(h=>{
+        const id=h.property_id||h.id||'';
+        const name=h.name||id;
+        const type=h.type||h.property_type||'house';
+        const beds=(h.stats&&h.stats.beds)||'?';
+        const loc=h.location||'';
+        const card=document.createElement('div');
+        card.className='shop-card';
+        card.dataset.houseId=id;
+        card.onclick=()=>{
+          document.querySelectorAll('#sleepHousesGrid .shop-card').forEach(c=>c.classList.remove('selected'));
+          card.classList.add('selected');
+          _selectedSleepHouse=id;
+          if(btn) btn.disabled=false;
+          const hint=document.getElementById('sleepHint'); if(hint) hint.textContent=`Selected: ${name} — wake ${document.getElementById('sleepWakeHour').value}:00`;
+          const preview=document.getElementById('sleepPreview');
+          if(preview) preview.textContent=`Sleep at ${escapeHtmlGt(name)} → tomorrow ${String(document.getElementById('sleepWakeHour').value).padStart(2,'0')}:00`;
+        };
+        card.innerHTML=`<div class="shop-card-img" style="background:rgba(245,158,11,0.08);"><i class="fas fa-house" style="color:#f59e0b;"></i><span class="cat-badge">${escapeHtmlGt(type)}</span></div><div class="shop-card-body"><div class="shop-card-name">${escapeHtmlGt(name)}</div><div class="shop-card-sub">${escapeHtmlGt(String(beds))} beds • ${escapeHtmlGt(loc)}</div><div class="shop-card-foot"><span class="pill" style="font-size:0.60rem; font-family:var(--font-mono);">${escapeHtmlGt(id)}</span><span style="font-size:0.62rem; color:var(--accent); font-weight:700;">Select</span></div></div>`;
+        grid.appendChild(card);
+      });
+      await renderGametime();
+    }
+    function closeSleepPicker(){
+      const o=document.getElementById('sleepOverlay');
+      if(o) o.classList.remove('active');
+      _selectedSleepHouse=null;
+    }
+    async function confirmSleep(){
+      if(!_selectedSleepHouse){
+        appendGameResponse(`**✖ Pick a house first** — you must own a house to sleep.`, 'warning');
+        return;
+      }
+      const wh = parseInt(document.getElementById('sleepWakeHour').value||'7',10);
+      const btn=document.getElementById('sleepConfirmBtn');
+      if(btn){ btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Sleeping…'; }
+      let res = await apiCall('sleep', _selectedSleepHouse, 1, wh, 0);
+      if(!res || res.status!=='success'){
+        const r2=await apiCall('call_command','time.sleep',{wake_hour: wh});
+        if(r2 && r2.status==='success'){
+          res = {...r2, house: {property_id:_selectedSleepHouse}};
+        }
+      }
+      if(btn){ btn.disabled=false; btn.innerHTML='<i class="fas fa-moon"></i> Sleep'; }
+      if(!res || res.status!=='success'){
+        appendGameResponse(`**✖ Sleep failed:** ${res?res.message:'unknown'}`, 'error');
+        return;
+      }
+      closeSleepPicker();
+      const houseName=(res.house&&res.house.name)||_selectedSleepHouse;
+      appendGameResponse(`**✔ Slept at ${escapeHtmlGt(houseName)} — woke ${escapeHtmlGt(res.formatted||res.iso||'')} (+${res.slept_hours||'?'}h)**`, 'success');
+      await refreshStateMonitor(); await renderGametime();
     }
 
     const chatHistory = document.getElementById('chatHistory');
@@ -1557,6 +1766,8 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
       }
       if(e.key==='Escape'){
         hideSuggestions(); hideParamAssist();
+        const sl=document.getElementById('sleepOverlay');
+        if(sl && sl.classList.contains('active')){ closeSleepPicker(); e.preventDefault(); return; }
         const tr=document.getElementById('transferOverlay');
         if(tr && tr.classList.contains('active')){ closeTransfer(); e.preventDefault(); return; }
         const cq=document.getElementById('cardQuickOverlay');
@@ -3760,19 +3971,32 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
       await loadSettings();
       await refreshCommands();
       await refreshStateMonitor();
+      try{ await renderGametime(); }catch(e){}
+      // wake hour selector preview
+      try{
+        const wh=document.getElementById('sleepWakeHour');
+        if(wh) wh.addEventListener('change', ()=>{
+          const preview=document.getElementById('sleepPreview');
+          if(preview) preview.textContent=`Tomorrow ${String(wh.value).padStart(2,'0')}:00`;
+          const hint=document.getElementById('sleepHint');
+          if(hint && _selectedSleepHouse) hint.textContent=`Selected: ${_selectedSleepHouse} — wake ${wh.value}:00`;
+        });
+      }catch(e){}
+      // gametime live refresh every 2s
+      try{ if(_gtPoll) clearInterval(_gtPoll); _gtPoll=setInterval(()=>{ refreshStateMonitor(); renderGametime(); }, 2000); }catch(e){}
       startOutputPolling();
       startGamepad();
       // clock
       const tick=()=>{ const el=document.getElementById('clock'); if(el) el.textContent=new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); };
       tick(); setInterval(tick, 10000);
-      document.getElementById('btn-refresh').onclick=refreshStateMonitor;
+      document.getElementById('btn-refresh').onclick=async()=>{ await refreshStateMonitor(); await renderGametime(); };
       document.getElementById('btn-quit').onclick=async()=>{ await apiCall('quit_dashboard'); setTimeout(()=>window.close(),250); };
       // pywebview ready reload (fixes theme race + refresh commands)
       whenPywebviewReady().then(async (ready)=>{
         if(!ready) return;
         try{ await loadSettings(); }catch(e){}
         try{ await refreshCommands(); }catch(e){}
-        try{ await refreshStateMonitor(); }catch(e){}
+        try{ await refreshStateMonitor(); await renderGametime(); }catch(e){}
         try{ startOutputPolling(); }catch(e){}
       });
       // allow Tab cycling between quick actions and input

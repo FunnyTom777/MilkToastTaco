@@ -602,7 +602,168 @@ class DashboardV2API:
             hud["bank_total_fee"] = 0
             hud["bank_member_count"] = 0
 
+        # --- Gametime HUD (current time/date, timescale, sleep) ---------------
+        try:
+            from core.systems.gametime.manager import get_state as _gt_state
+            gt = _gt_state()
+            hud["gametime"] = gt
+            hud["gametime_formatted"] = gt.get("formatted", "")
+            hud["gametime_iso"] = gt.get("iso", "")
+            hud["gametime_date"] = gt.get("date_str", "")
+            hud["gametime_time"] = gt.get("time_str", "")
+            hud["gametime_weekday"] = gt.get("weekday_name", "")
+            hud["gametime_scale"] = gt.get("time_scale", 1)
+            hud["gametime_scale_label"] = gt.get("time_scale_label", "1x")
+            hud["gametime_allowed_scales"] = gt.get("allowed_scales", [1, 3, 5, 7, 15, 25])
+            hud["gametime_paused"] = gt.get("paused", False)
+        except Exception:
+            hud["gametime"] = None
+            hud["gametime_formatted"] = "—"
+            hud["gametime_iso"] = ""
+            hud["gametime_date"] = "—"
+            hud["gametime_time"] = "—"
+            hud["gametime_weekday"] = "—"
+            hud["gametime_scale"] = 1
+            hud["gametime_scale_label"] = "1x"
+            hud["gametime_allowed_scales"] = [1, 3, 5, 7, 15, 25]
+            hud["gametime_paused"] = False
+
         return hud
+
+    # -- gametime (Game Time system) -------------------------------------
+    def get_gametime(self):
+        """Return current game time state (for HUD / homepage)."""
+        try:
+            from core.systems.gametime.manager import get_state as _gt_state
+            return {"status": "success", **_gt_state()}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    def set_timescale(self, scale):
+        """Set timescale preset (1,3,5,7,15,25). Accepts number or '7x' string."""
+        try:
+            from core.systems.gametime.manager import set_time_scale, get_scale_label
+            # normalize string like "7x"
+            if isinstance(scale, str):
+                s = scale.strip().lower().replace("x", "").strip()
+                scale_f = float(s)
+            else:
+                scale_f = float(scale)
+            st = set_time_scale(scale_f)
+            return {"status": "success", "message": f"Timescale set to {st.get('time_scale_label','')}", **st}
+        except ValueError as e:
+            return {"status": "error", "message": str(e)}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    def get_sleep_houses(self, player_id: int = 1):
+        """
+        List owned properties suitable for sleeping (houses/apartments/farms with beds).
+        Returns houses the player can sleep in. Used by sleep picker.
+        """
+        try:
+            pid = int(player_id)
+        except Exception:
+            pid = 1
+        try:
+            from core.systems.realestate.realestate import get_owned_properties, list_owned_properties
+            # try live objects first for richer stats
+            try:
+                from core.systems.realestate.realestate import _owned as _re_owned
+                owned_objs = _re_owned.get(pid, [])
+                houses = []
+                for op in owned_objs:
+                    # filter: beds >0 and not vacant land
+                    try:
+                        beds = int(op.stats.get("beds", 0) or 0)
+                    except Exception:
+                        beds = 0
+                    vac = op.stats.get("vacant", False)
+                    is_vacant = vac is True or (isinstance(vac, str) and vac.lower() in ("true","1","yes"))
+                    if beds > 0 and not is_vacant and op.type.lower() in ("house", "apartment", "farm", "houseboat", "cabin"):
+                        houses.append(op.to_dict())
+                    elif beds > 0 and not is_vacant:
+                        # allow any property with beds (future types)
+                        houses.append(op.to_dict())
+                if houses:
+                    return {"status": "success", "houses": houses, "count": len(houses), "player_id": pid}
+            except Exception:
+                pass
+            # fallback to dict API
+            props = get_owned_properties(pid)
+            houses = []
+            for p in props:
+                stats = p.get("stats", {}) if isinstance(p.get("stats"), dict) else {}
+                try:
+                    beds = int(stats.get("beds", 0) or 0)
+                except Exception:
+                    beds = 0
+                vac = stats.get("vacant", False)
+                is_vacant = vac is True or (isinstance(vac, str) and str(vac).lower() in ("true","1","yes"))
+                t = str(p.get("type","")).lower()
+                if beds > 0 and not is_vacant and t in ("house","apartment","farm"):
+                    houses.append(p)
+                elif beds > 0 and not is_vacant:
+                    houses.append(p)
+            return {"status": "success", "houses": houses, "count": len(houses), "player_id": pid}
+        except Exception as e:
+            return {"status": "error", "message": str(e), "houses": [], "count": 0}
+
+    def sleep(self, property_id: str = "", player_id: int = 1, wake_hour: int = 7, wake_minute: int = 0):
+        """
+        Sleep at a owned house — advances time to tomorrow at wake time.
+        Requires player to own the house. Returns new gametime state.
+        """
+        try:
+            pid = int(player_id)
+        except Exception:
+            pid = 1
+        prop = (property_id or "").strip()
+        if not prop:
+            return {"status": "error", "message": "Pick a house to sleep in — property_id required. You must own a house to sleep."}
+        # verify ownership and house eligibility
+        houses_res = self.get_sleep_houses(pid)
+        if houses_res.get("status") != "success":
+            return {"status": "error", "message": houses_res.get("message","Failed to check houses")}
+        houses = houses_res.get("houses", [])
+        if not houses:
+            return {"status": "error", "message": "You don't own any houses — buy a house (Real Estate) before you can sleep."}
+        # find requested house
+        low = prop.lower()
+        matched = None
+        for h in houses:
+            hid = str(h.get("property_id","")).lower()
+            if hid == low:
+                matched = h
+                break
+        if matched is None:
+            avail = ", ".join(h.get("property_id","") for h in houses[:5])
+            return {"status": "error", "message": f"You don't own '{property_id}'. Owned sleepable houses: {avail or 'none'}.", "houses": houses}
+        # house found — advance time via gametime sleep
+        try:
+            from core.systems.gametime.manager import sleep as _sleep
+            try:
+                wh = int(wake_hour)
+            except Exception:
+                wh = 7
+            try:
+                wm = int(wake_minute)
+            except Exception:
+                wm = 0
+            if not (0 <= wh <= 23):
+                wh = 7
+            if not (0 <= wm <= 59):
+                wm = 0
+            state = _sleep(wh, wm)
+            # optionally emit sleep narrative
+            try:
+                from core.output import success as _succ
+                _succ(f"Player {pid} slept at {matched.get('name', prop)} until {wh:02d}:{wm:02d} -> {state.get('formatted','')}", source="gametime")
+            except Exception:
+                pass
+            return {"status": "success", "message": f"Slept at {matched.get('name', prop)} — woke up {state.get('formatted','')} (+{state.get('slept_hours', '?')}h)", "house": matched, **state}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
 
     # -- universal output bus (core/output.py) -----------------------------
     def get_output(self, since_id: int = 0, limit: int = 100, level: str | None = None, channel: str | None = None):
