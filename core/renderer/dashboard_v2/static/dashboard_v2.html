@@ -325,6 +325,16 @@
     .shop-stats-bar .stat { display:inline-flex; align-items:center; gap:6px; padding:3px 8px; border-radius:999px; background:rgba(255,255,255,0.05); border:1px solid var(--panel-border); }
     .shop-stats-bar .stat b { color:var(--accent); }
     @media (max-width: 700px){ .shop-grid{ grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); } .shop-window{ height:96vh; } }
+    /* Real Estate Browse — 15% bigger + 1 fewer per row */
+    #reBrowseGrid.shop-grid, #reOwnedGrid.shop-grid, #reAgentsGrid.shop-grid { grid-template-columns: repeat(auto-fill, minmax(193px, 1fr)); gap:14px; }
+    #realEstateOverlay .shop-card { min-height: 193px; }
+    #realEstateOverlay .shop-card-img { height: 106px; }
+    #realEstateOverlay .shop-card-img i { font-size: 41px; }
+    #realEstateOverlay .shop-card-body { padding: 10px 11px 9px; }
+    #realEstateOverlay .shop-card-name { font-size: 0.97rem; }
+    #realEstateOverlay .shop-card-sub { font-size: 0.78rem; }
+    #realEstateOverlay .shop-price { font-size: 0.94rem; }
+    @media (max-width: 700px){ #reBrowseGrid.shop-grid, #reOwnedGrid.shop-grid, #reAgentsGrid.shop-grid { grid-template-columns: repeat(auto-fill, minmax(161px, 1fr)); } }
     /* Save area (top-right) + save-menu */
     .save-area { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; border:1px solid var(--panel-border); background:rgba(255,255,255,0.06); font-family:var(--font-mono); font-size:0.72rem; cursor:pointer; user-select:none; transition: all 0.18s var(--ease); }
     .save-area:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
