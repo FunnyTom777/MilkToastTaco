@@ -597,8 +597,8 @@ def _parse_args():
     return p.parse_args()
 
 
-def run(dev_mode: bool = False, debug: bool = True):
-    """Start the Dashboard pywebview window."""
+def run(dev_mode: bool = False, debug: bool | None = None):
+    """Start the Dashboard pywebview window (DevTools hidden unless --debug)."""
     try:
         import webview
     except ImportError:
@@ -608,6 +608,14 @@ def run(dev_mode: bool = False, debug: bool = True):
             file=sys.stderr,
         )
         sys.exit(1)
+
+    # Debug opt-in (was previously True by default)
+    if debug is None:
+        import os
+
+        debug = "--debug" in sys.argv or os.environ.get("MTT_DEBUG") == "1"
+    else:
+        debug = bool(debug)
 
     html_path = get_dashboard_html_path()
     if not Path(html_path).exists():

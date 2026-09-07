@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<!-- MTT Dashboard V3 — Console Hub -->
+<!-- Location: core/renderer/dashboard_v3/static/dashboard_v3.html -->
+<!-- Served via: core/renderer/dashboard_v3/dashboard_v3.py:get_dashboard_v3_html_path() -->
+<!-- Reuses controller.js for ALL pad/keyboard nav (future UIs can import controller.js alone) -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Milk Toast Taco — Dashboard V3</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root{
+    --bg:#050914; --bg-to:#0a1128; --wave1:rgba(30,80,150,0.14); --wave2:rgba(80,30,150,0.10);
+    --panel:rgba(20,20,35,0.72); --panel-solid:#181927; --border:rgba(255,255,255,0.08); --border-strong:rgba(255,255,255,0.14);
+    --text:#f1f5f9; --muted:#94a3b8; --accent:#6366f1; --accent2:#8b5cf6; --accent-glow:rgba(99,102,241,0.22);
+    --radius:18px; --radius-lg:22px; --ease:cubic-bezier(0.25,0.1,0.25,1);
+    --focus:#ffffff; --focus-ring:0 0 0 2px #fff, 0 0 22px var(--accent-glow), 0 8px 28px rgba(0,0,0,0.35);
+  }
+  *{box-sizing:border-box}
+  html{font-size:16px}
+  button{color:var(--text)}
+  .tile b, .card-title, .slot-num, .theme-opt, .settings-card h3, .stat b{color:var(--text)}
+  body{
+    margin:0; overflow:hidden; height:100vh; display:flex; flex-direction:column;
+    font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    background: linear-gradient(135deg, var(--bg) 0%, var(--bg-to) 100%);
+    color:var(--text); user-select:none;
+  }
+  .mono{font-family:'JetBrains Mono',monospace}
+  .bg{position:fixed; inset:0; z-index:-1; overflow:hidden; background:linear-gradient(135deg,var(--bg) 0%,var(--bg-to) 100%); transition:background 0.6s var(--ease)}
+  .wave{position:absolute; width:200%; height:200%; top:-50%; left:-50%; background:radial-gradient(ellipse at center,var(--wave1) 0%,transparent 60%); animation:rotate 30s linear infinite; transform-origin:center}
+  .wave:nth-child(2){background:radial-gradient(ellipse at center,var(--wave2) 0%,transparent 50%); animation:rotate 45s linear infinite reverse}
+  @keyframes rotate{0%{transform:rotate(0) scale(1)}50%{transform:rotate(180deg) scale(1.2)}100%{transform:rotate(360deg) scale(1)}}
+
+  header{
+    height:64px; display:flex; align-items:center; justify-content:space-between; padding:0 20px; gap:12px;
+    background:rgba(0,0,0,0.30); backdrop-filter:blur(14px); border-bottom:1px solid var(--border);
+  }
+  .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:1.2px; font-size:1.05rem}
+  .brand small{font-weight:300; opacity:0.7; letter-spacing:0.6px; font-size:0.78rem; margin-left:4px}
+  .brand-icon{width:14px; height:14px; border-radius:4px; background:linear-gradient(135deg,var(--accent),var(--accent2)); box-shadow:0 0 12px var(--accent-glow)}
+  .hdr-right{display:flex; align-items:center; gap:10px}
+  .pill{font-size:0.72rem; padding:6px 10px; border-radius:999px; background:rgba(255,255,255,0.06); border:1px solid var(--border); display:inline-flex; align-items:center; gap:6px}
+  .pill.strong{background:rgba(99,102,241,0.16); border-color:rgba(99,102,241,0.30); color:#c7d2fe}
+  .save-badge{cursor:pointer; transition:all 0.18s var(--ease)}
+  .save-badge:hover{transform:translateY(-1px); border-color:var(--border-strong)}
+  .save-badge.is-focused{box-shadow:var(--focus-ring); transform:translateY(-1px) scale(1.02)}
+  #clock{font-weight:200; letter-spacing:1.5px; opacity:0.9; font-size:0.95rem}
+
+  /* Tab strip — horizontal console tabs */
+  .tab-strip-wrap{padding:14px 20px 0; background:transparent}
+  .tab-strip{
+    display:flex; gap:10px; overflow-x:auto; overflow-y:hidden; padding:6px 2px 10px;
+    scrollbar-width:none; -ms-overflow-style:none;
+  }
+  .tab-strip::-webkit-scrollbar{display:none}
+  .tab{
+    flex:0 0 auto; display:inline-flex; align-items:center; gap:9px; padding:14px 20px; border-radius:999px;
+    background:rgba(255,255,255,0.06); border:1px solid var(--border); color:var(--muted);
+    font-weight:700; font-size:0.92rem; letter-spacing:0.2px; cursor:pointer; transition:all 0.18s var(--ease);
+    min-height:46px; outline:none;
+  }
+  .tab:hover{background:rgba(255,255,255,0.10); color:#fff; transform:translateY(-1px)}
+  .tab.active{background:linear-gradient(135deg,rgba(99,102,241,0.22),rgba(139,92,246,0.22)); color:#fff; border-color:rgba(99,102,241,0.35); box-shadow:0 6px 20px rgba(99,102,241,0.18)}
+  .tab.is-focused{box-shadow:var(--focus-ring); transform:translateY(-1px) scale(1.03); border-color:var(--focus); color:#fff; background:rgba(255,255,255,0.12)}
+  .tab.active.is-focused{box-shadow:var(--focus-ring);}
+
+  main{
+    flex:1; overflow:auto; padding:18px 20px 16px; scroll-behavior:smooth;
+  }
+  main:focus{outline:none}
+  .view{display:none; animation:fadeIn 0.22s var(--ease)}
+  .view.active{display:block}
+  @keyframes fadeIn{from{opacity:0; transform:translateY(6px)}to{opacity:1; transform:none}}
+
+  /* Card grids — big, couch-friendly */
+  .hero-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:16px}
+  @media(max-width:900px){.hero-grid{grid-template-columns:1fr}}
+  @media(min-width:1400px){.hero-grid{grid-template-columns:repeat(4,1fr)}}
+  .card{
+    position:relative; border-radius:var(--radius-lg); padding:18px; min-height:148px;
+    background:linear-gradient(135deg, rgba(20,20,35,0.82) 0%, rgba(10,10,25,0.92) 100%);
+    border:1px solid var(--border); backdrop-filter:blur(10px); overflow:hidden; cursor:pointer;
+    transition:all 0.18s var(--ease); text-align:left; display:flex; flex-direction:column; gap:10px;
+    outline:none; color:var(--text);
+  }
+  .card:hover{transform:translateY(-2px); border-color:var(--border-strong); background:linear-gradient(135deg, rgba(26,26,45,0.88) 0%, rgba(14,14,32,0.96) 100%)}
+  .card.is-focused{transform:translateY(-2px) scale(1.015); border-color:var(--focus); box-shadow:var(--focus-ring)}
+  .card-top{display:flex; align-items:center; gap:10px}
+  .card-icon{width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.25rem; border:1px solid rgba(255,255,255,0.08); flex-shrink:0}
+  .card-title{font-weight:800; font-size:1.05rem; letter-spacing:0.2px}
+  .card-subtitle{font-size:0.82rem; color:var(--muted); line-height:1.35}
+  .card-value{margin-top:auto; display:flex; align-items:baseline; gap:8px; flex-wrap:wrap}
+  .card-value b{font-size:1.35rem; letter-spacing:0.3px}
+  .card-meta{font-size:0.7rem; padding:4px 8px; border-radius:999px; background:rgba(255,255,255,0.06); border:1px solid var(--border)}
+  .card-accent{position:absolute; inset:auto -20% -40% auto; width:60%; height:70%; background:radial-gradient(ellipse at center, var(--accent-glow) 0%, transparent 70%); pointer-events:none; opacity:0.6}
+  .card.wallet .card-icon{background:linear-gradient(135deg,rgba(34,197,94,0.18),rgba(34,197,94,0.06)); color:#86efac; border-color:rgba(34,197,94,0.20)}
+  .card.garage .card-icon{background:linear-gradient(135deg,rgba(139,92,246,0.18),rgba(139,92,246,0.06)); color:#c4b5fd; border-color:rgba(139,92,246,0.20)}
+  .card.estates .card-icon{background:linear-gradient(135deg,rgba(245,158,11,0.18),rgba(245,158,11,0.06)); color:#fde68a; border-color:rgba(245,158,11,0.20)}
+  .card.player .card-icon{background:linear-gradient(135deg,rgba(56,189,248,0.18),rgba(56,189,248,0.06)); color:#7dd3fc; border-color:rgba(56,189,248,0.20)}
+
+  .section{margin-top:18px}
+  .section-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px}
+  .section-head h3{margin:0; font-size:0.95rem; letter-spacing:0.4px; display:flex; align-items:center; gap:8px}
+  .grid{ display:grid; gap:12px }
+  .grid.cols-3{grid-template-columns:repeat(3,1fr)}
+  .grid.cols-2{grid-template-columns:repeat(2,1fr)}
+  .grid.auto{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+  @media(max-width:800px){.grid.cols-3,.grid.cols-2{grid-template-columns:1fr} .grid.auto{grid-template-columns:1fr}}
+  .tile{
+    border-radius:var(--radius); padding:14px; background:rgba(255,255,255,0.04); border:1px solid var(--border);
+    display:flex; flex-direction:column; gap:8px; cursor:pointer; outline:none; transition:all 0.18s var(--ease); text-align:left; min-height:96px;
+    color:var(--text);
+  }
+  .tile:hover{background:rgba(255,255,255,0.06); border-color:var(--border-strong); transform:translateY(-1px)}
+  .tile.is-focused{border-color:var(--focus); box-shadow:var(--focus-ring); transform:translateY(-1px) scale(1.015); background:rgba(255,255,255,0.08)}
+  .kicker{font-size:0.68rem; letter-spacing:1px; text-transform:uppercase; color:var(--muted); font-weight:700}
+  .tile b{font-size:0.95rem}
+  /* Wallet cards — controller enlarges on focus */
+  .bank-card{position:relative; height:162px; border-radius:16px; padding:14px 16px; overflow:hidden; cursor:pointer; transition:all 0.22s var(--ease); border:1px solid rgba(255,255,255,0.10); display:flex; flex-direction:column; justify-content:space-between; color:#fff}
+  .bank-card.debit{background:linear-gradient(135deg,#0f172a 0%,#1e293b 45%,#334155 100%)}
+  .bank-card.credit{background:linear-gradient(135deg,#1a0a2e 0%,#312e81 45%,#4f46e5 100%)}
+  .bank-card.gold{background:linear-gradient(135deg,#422006 0%,#92400e 35%,#f59e0b 100%)}
+  .bank-card.is-focused{transform:scale(1.03) translateY(-2px); box-shadow:var(--focus-ring); border-color:var(--focus)}
+  .bank-card .chip{width:32px; height:22px; border-radius:3px; background:linear-gradient(135deg,#fde68a 0%,#f59e0b 100%); border:1px solid rgba(0,0,0,0.12)}
+  .bank-card .card-number{font-family:'JetBrains Mono',monospace; letter-spacing:1.4px; font-size:0.92rem; margin:6px 0 2px}
+  .bank-card .card-balance{font-weight:800; font-size:1.05rem}
+
+  /* Saves */
+  .save-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:12px}
+  @media(max-width:1100px){.save-grid{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:700px){.save-grid{grid-template-columns:repeat(2,1fr)}}
+  .save-slot{
+    border-radius:16px; padding:14px; min-height:120px; background:rgba(255,255,255,0.03); border:1px solid var(--border);
+    cursor:pointer; display:flex; flex-direction:column; gap:6px; transition:all 0.18s var(--ease); outline:none; text-align:left;
+    color:var(--text);
+  }
+  .save-slot:hover{background:rgba(255,255,255,0.06); border-color:var(--border-strong); transform:translateY(-1px)}
+  .save-slot.is-focused{border-color:var(--focus); box-shadow:var(--focus-ring); transform:translateY(-1px) scale(1.02)}
+  .save-slot.selected{border-color:rgba(99,102,241,0.45); background:rgba(99,102,241,0.10); box-shadow:0 0 0 1px rgba(99,102,241,0.14)}
+  .save-slot.empty{border-style:dashed; opacity:0.7}
+  .slot-num{font-weight:800; font-size:0.9rem; display:flex; align-items:center; gap:8px}
+  .slot-meta{font-size:0.68rem; color:var(--muted); font-family:'JetBrains Mono',monospace; line-height:1.35; word-break:break-all}
+  .slot-actions{display:flex; gap:8px; margin-top:auto}
+
+  /* Buttons */
+  .btn{padding:12px 16px; border-radius:12px; border:1px solid var(--border); background:rgba(255,255,255,0.06); color:#fff; font-weight:700; cursor:pointer; transition:all 0.18s var(--ease); min-height:44px; display:inline-flex; align-items:center; gap:8px; outline:none}
+  .btn:hover{background:rgba(255,255,255,0.10); transform:translateY(-1px)}
+  .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2)); border:none; box-shadow:0 8px 22px rgba(99,102,241,0.28)}
+  .btn.primary:hover{transform:translateY(-1px) scale(1.01)}
+  .btn.is-focused{box-shadow:var(--focus-ring); transform:translateY(-1px) scale(1.02); border-color:var(--focus)}
+  .btn.small{padding:8px 12px; min-height:36px; font-size:0.82rem; border-radius:10px}
+  .toggle{position:relative; width:56px; height:32px; border-radius:999px; background:rgba(255,255,255,0.14); border:1px solid var(--border); cursor:pointer; transition:all 0.22s var(--ease); flex-shrink:0}
+  .toggle.on{background:linear-gradient(135deg,var(--accent),var(--accent2)); border-color:rgba(99,102,241,0.45); box-shadow:0 0 12px var(--accent-glow)}
+  .toggle.is-focused{box-shadow:var(--focus-ring)}
+  .toggle-knob{position:absolute; top:3px; left:3px; width:24px; height:24px; background:#fff; border-radius:50%; transition:transform 0.25s var(--ease); box-shadow:0 2px 8px rgba(0,0,0,0.25)}
+  .toggle.on .toggle-knob{transform:translateX(24px)}
+
+  /* Settings */
+  .settings-card{border-radius:var(--radius-lg); padding:16px; background:linear-gradient(135deg,rgba(20,20,35,0.78),rgba(10,10,25,0.92)); border:1px solid var(--border); backdrop-filter:blur(10px)}
+  .theme-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:10px}
+  @media(max-width:700px){.theme-grid{grid-template-columns:repeat(2,1fr)}}
+  .theme-opt{border-radius:14px; padding:10px; background:rgba(255,255,255,0.04); border:1.5px solid var(--border); cursor:pointer; text-align:center; transition:all 0.18s var(--ease); outline:none}
+  .theme-opt:hover{background:rgba(255,255,255,0.07); transform:translateY(-1px)}
+  .theme-opt.active{background:linear-gradient(135deg,rgba(99,102,241,0.16),rgba(139,92,246,0.16)); border-color:rgba(99,102,241,0.45); box-shadow:0 0 16px rgba(99,102,241,0.12)}
+  .theme-opt.is-focused{border-color:var(--focus); box-shadow:var(--focus-ring); transform:translateY(-1px) scale(1.02)}
+  .theme-swatch{width:100%; height:34px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); margin-bottom:8px}
+
+  footer{
+    height:40px; display:flex; align-items:center; justify-content:space-between; padding:0 16px; gap:10px;
+    background:rgba(0,0,0,0.28); border-top:1px solid var(--border); backdrop-filter:blur(10px);
+    font-size:0.72rem; color:rgba(255,255,255,0.55); letter-spacing:0.25px
+  }
+  .kbd{font-size:0.65rem; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-bottom-width:2px; padding:2px 6px; border-radius:6px; font-family:'JetBrains Mono',monospace}
+  .kbd.primary{background:rgba(99,102,241,0.18); border-color:rgba(99,102,241,0.35); color:#c7d2fe}
+
+  /* Overlay */
+  .overlay{display:none; position:fixed; inset:0; z-index:40; background:rgba(5,9,20,0.72); backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:16px}
+  .overlay.active{display:flex}
+  .modal{width:min(640px,96vw); max-height:88vh; overflow:auto; border-radius:18px; background:linear-gradient(135deg,rgba(20,20,35,0.96),rgba(10,10,25,0.98)); border:1px solid var(--border); box-shadow:0 24px 64px rgba(0,0,0,0.5); color:var(--text)}
+  .modal-head{display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid var(--border); position:sticky; top:0; background:inherit; z-index:1}
+  .modal-body{padding:16px; display:flex; flex-direction:column; gap:12px}
+  .detail-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:10px}
+  @media(max-width:600px){.detail-grid{grid-template-columns:1fr}}
+  .stat{padding:10px; border-radius:12px; background:rgba(255,255,255,0.04); border:1px solid var(--border); font-family:'JetBrains Mono',monospace; font-size:0.78rem}
+  .stat b{color:#fff}
+</style>
+</head>
+<body>
+<div class="bg"><div class="wave"></div><div class="wave"></div></div>
+
+<header>
+  <div class="brand"><div class="brand-icon"></div> MTT <small>DASHBOARD V3</small> <span id="themeBadge" class="pill" style="margin-left:6px"><i class="fas fa-palette"></i> <span id="themeName">default</span></span></div>
+  <div class="hdr-right">
+    <button id="saveBadge" class="pill save-badge" data-focusable tabindex="-1" onclick="openSaveOverlay()" title="Saves"><i class="fas fa-save"></i> <span id="saveLabel">live</span> <span id="saveDot" style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;box-shadow:0 0 8px #22c55e"></span></button>
+    <span id="savesCount" class="pill"><i class="fas fa-database"></i> <span id="savesNum">0 saves</span></span>
+    <span id="clock">00:00 AM</span>
+  </div>
+</header>
+
+<div class="tab-strip-wrap">
+  <div id="tabStrip" class="tab-strip" role="tablist" aria-label="Dashboard sections">
+    <button class="tab active" data-tab="home" data-focusable tabindex="0" role="tab" aria-selected="true" onclick="switchTab('home')"><i class="fas fa-house"></i> Home</button>
+    <button class="tab" data-tab="wallet" data-focusable tabindex="-1" role="tab" onclick="switchTab('wallet')"><i class="fas fa-wallet"></i> Wallet</button>
+    <button class="tab" data-tab="inventory" data-focusable tabindex="-1" role="tab" onclick="switchTab('inventory')"><i class="fas fa-box"></i> Inventory</button>
+    <button class="tab" data-tab="garage" data-focusable tabindex="-1" role="tab" onclick="switchTab('garage')"><i class="fas fa-truck-pickup"></i> Garage</button>
+    <button class="tab" data-tab="estates" data-focusable tabindex="-1" role="tab" onclick="switchTab('estates')"><i class="fas fa-house-chimney"></i> Estates</button>
+    <button class="tab" data-tab="players" data-focusable tabindex="-1" role="tab" onclick="switchTab('players')"><i class="fas fa-user-astronaut"></i> Players</button>
+    <button class="tab" data-tab="phone" data-focusable tabindex="-1" role="tab" onclick="switchTab('phone')"><i class="fas fa-mobile-screen"></i> Phone</button>
+    <button class="tab" data-tab="saves" data-focusable tabindex="-1" role="tab" onclick="switchTab('saves')"><i class="fas fa-hard-drive"></i> Saves</button>
+    <button class="tab" data-tab="settings" data-focusable tabindex="-1" role="tab" onclick="switchTab('settings')"><i class="fas fa-sliders"></i> Settings</button>
+  </div>
+</div>
+
+<main id="main" tabindex="-1">
+  <!-- HOME -->
+  <section id="view-home" class="view active" aria-labelledby="tab-home">
+    <div class="hero-grid" id="heroGrid">
+      <button class="card wallet" data-focusable tabindex="-1" onclick="switchTab('garage')" aria-label="Wallet — open Garage">
+        <div class="card-accent"></div>
+        <div class="card-top"><div class="card-icon"><i class="fas fa-wallet"></i></div><div class="card-title">Wallet</div><span class="card-meta mono" id="heroWalletPid">P1</span></div>
+        <div class="card-subtitle">Cash on hand — live from your save</div>
+        <div class="card-value"><b id="heroWallet">$—</b> <span class="card-meta" id="heroNet">net —</span></div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap"><span class="card-meta" id="heroBank">No bank</span> <span class="card-meta"><i class="fas fa-coins"></i> Tap to manage</span></div>
+      </button>
+      <button class="card garage" data-focusable tabindex="-1" onclick="switchTab('garage')">
+        <div class="card-accent"></div>
+        <div class="card-top"><div class="card-icon"><i class="fas fa-truck-pickup"></i></div><div class="card-title">Garage</div><span class="card-meta" id="heroGarageCount">0 cars</span></div>
+        <div class="card-subtitle">Vehicles you own — tap to browse</div>
+        <div class="card-value"><b id="heroGarageValue">$0</b> <span class="card-meta">garage value</span></div>
+        <div style="font-size:0.72rem; color:var(--muted)" id="heroGarageSub">No vehicles yet — explore the world</div>
+      </button>
+      <button class="card estates" data-focusable tabindex="-1" onclick="switchTab('estates')">
+        <div class="card-accent"></div>
+        <div class="card-top"><div class="card-icon"><i class="fas fa-house"></i></div><div class="card-title">Estates</div><span class="card-meta" id="heroEstateCount">0 props</span></div>
+        <div class="card-subtitle">Homes, land, businesses — your empire</div>
+        <div class="card-value"><b id="heroEstateValue">$0</b> <span class="card-meta" id="heroEstateRent">0 rented</span></div>
+        <div style="font-size:0.72rem; color:var(--muted)" id="heroEstateSub">Parking <span id="heroParking">0/0</span> • tap to browse</div>
+      </button>
+      <button class="card player" data-focusable tabindex="-1" onclick="switchTab('saves')">
+        <div class="card-accent"></div>
+        <div class="card-top"><div class="card-icon"><i class="fas fa-user-astronaut"></i></div><div class="card-title">Player</div><span class="card-meta mono" id="heroPlayerPos">0, 0, 0</span></div>
+        <div class="card-subtitle">Where you are — jump to Saves</div>
+        <div class="card-value"><b id="heroPlayers">1 player</b> <span class="card-meta"><i class="fas fa-box"></i> <span id="heroStacks">0 stacks</span></span></div>
+        <div style="font-size:0.72rem; color:var(--muted)">Inventory <span id="heroItems">0 items</span> • <span id="heroWorld">world —</span></div>
+      </button>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><h3><i class="fas fa-sparkles" style="color:#fbbf24"></i> Quick Access</h3><span class="pill mono" style="font-size:0.65rem">Controller: D-Pad + A • Keyboard: Arrows + Enter</span></div>
+      <div class="grid auto" id="quickGrid">
+        <button class="tile" data-focusable tabindex="-1" onclick="switchTab('garage')"><span class="kicker"><i class="fas fa-car"></i> Drive</span><b>My Garage</b><span style="font-size:0.78rem; color:var(--muted)">See owned vehicles • value • parking</span></button>
+        <button class="tile" data-focusable tabindex="-1" onclick="switchTab('estates')"><span class="kicker"><i class="fas fa-key"></i> Live</span><b>My Properties</b><span style="font-size:0.78rem; color:var(--muted)">Homes & garages you control</span></button>
+        <button class="tile" data-focusable tabindex="-1" onclick="switchTab('saves')"><span class="kicker"><i class="fas fa-floppy-disk"></i> Continue</span><b>Pick a Save</b><span style="font-size:0.78rem; color:var(--muted)"><span id="quickSaves">0 saves</span> on disk</span></button>
+        <button class="tile" data-focusable tabindex="-1" onclick="switchTab('settings')"><span class="kicker"><i class="fas fa-palette"></i> Vibe</span><b>Settings</b><span style="font-size:0.78rem; color:var(--muted)">Theme & fullscreen — XMB-synced</span></button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><h3><i class="fas fa-circle-info" style="color:#38bdf8"></i> System</h3><span id="sysInfo" class="pill mono" style="font-size:0.65rem">live HUD</span></div>
+      <div class="grid cols-3" id="sysGrid"></div>
+    </div>
+  </section>
+
+  <!-- GARAGE (subtabs: Owned / Catalog) -->
+  <section id="view-garage" class="view" aria-labelledby="tab-garage">
+    <div class="section-head"><h3><i class="fas fa-warehouse" style="color:#a78bfa"></i> Garage <span id="garageCountPill" class="pill mono" style="margin-left:8px">0</span></h3><button class="btn small" data-focusable tabindex="-1" onclick="doRefresh()"><i class="fas fa-rotate"></i> Refresh</button></div>
+    <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap" role="tablist" aria-label="Garage subtabs">
+      <button class="btn small primary" data-focusable tabindex="-1" data-garage-tab="owned" onclick="switchGarageSubtab('owned')"><i class="fas fa-warehouse"></i> Owned</button>
+      <button class="btn small" data-focusable tabindex="-1" data-garage-tab="catalog" onclick="switchGarageSubtab('catalog')"><i class="fas fa-shop"></i> Catalog</button>
+      <button class="btn small" data-focusable tabindex="-1" data-garage-tab="categories" onclick="switchGarageSubtab('categories')"><i class="fas fa-layer-group"></i> Categories</button>
+    </div>
+    <div id="garageOwnedWrap">
+      <div id="garageGrid" class="grid auto"></div>
+      <div id="garageEmpty" style="display:none; text-align:center; padding:32px; color:var(--muted)"><div style="font-size:2rem; margin-bottom:8px"><i class="fas fa-truck-pickup"></i></div><b>Garage empty</b><div style="font-size:0.85rem; margin-top:6px">Head in-game to acquire vehicles — they'll appear here.</div></div>
+    </div>
+    <div id="garageCatalogWrap" style="display:none">
+      <div id="garageCatChips" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px"></div>
+      <div id="garageCatalogGrid" class="grid auto"></div>
+    </div>
+    <div id="garageCategoriesWrap" style="display:none">
+      <div id="garageCategoriesGrid" class="grid auto"></div>
+    </div>
+  </section>
+
+  <!-- ESTATES (subtabs: Browse / Owned / Agents / Garages) -->
+  <section id="view-estates" class="view" aria-labelledby="tab-estates">
+    <div class="section-head"><h3><i class="fas fa-building-columns" style="color:#f59e0b"></i> Estates <span id="estatesCountPill" class="pill mono" style="margin-left:8px">0</span></h3><button class="btn small" data-focusable tabindex="-1" onclick="doRefresh()"><i class="fas fa-rotate"></i> Refresh</button></div>
+    <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap" role="tablist" aria-label="Estates subtabs">
+      <button class="btn small primary" data-focusable tabindex="-1" data-estate-tab="owned" onclick="switchEstatesSubtab('owned')"><i class="fas fa-key"></i> Owned</button>
+      <button class="btn small" data-focusable tabindex="-1" data-estate-tab="browse" onclick="switchEstatesSubtab('browse')"><i class="fas fa-search"></i> Browse</button>
+      <button class="btn small" data-focusable tabindex="-1" data-estate-tab="agents" onclick="switchEstatesSubtab('agents')"><i class="fas fa-user-tie"></i> Agents</button>
+      <button class="btn small" data-focusable tabindex="-1" data-estate-tab="garages" onclick="switchEstatesSubtab('garages')"><i class="fas fa-square-parking"></i> Garages</button>
+    </div>
+    <div id="estatesOwnedWrap">
+      <div id="estatesGrid" class="grid auto"></div>
+      <div id="estatesEmpty" style="display:none; text-align:center; padding:32px; color:var(--muted)"><div style="font-size:2rem"><i class="fas fa-house"></i></div><b>No properties yet</b><div style="font-size:0.85rem; margin-top:6px">Purchase or rent in-game — estates sync from your save.</div></div>
+    </div>
+    <div id="estatesBrowseWrap" style="display:none">
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px" id="estateTypeChips"></div>
+      <div id="estatesBrowseGrid" class="grid auto"></div>
+    </div>
+    <div id="estatesAgentsWrap" style="display:none">
+      <div id="estatesAgentsGrid" class="grid auto"></div>
+    </div>
+    <div id="estatesGaragesWrap" style="display:none">
+      <div id="estatesGaragesList" class="grid auto"></div>
+    </div>
+    <div class="settings-card" style="margin-top:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+      <span class="pill"><i class="fas fa-square-parking" style="color:#22c55e"></i> Parking <b id="estateParking">0/0</b> • <span id="estateFree">0 free</span></span>
+      <span class="pill"><i class="fas fa-coins"></i> Estate value <b id="estateValue">$0</b></span>
+      <span class="pill"><i class="fas fa-key"></i> <span id="estateOwned">0</span> owned • <span id="estateRented">0</span> rented</span>
+    </div>
+  </section>
+
+  <!-- WALLET (Economy: bank cards, wallet) -->
+  <section id="view-wallet" class="view" aria-labelledby="tab-wallet">
+    <div class="section-head"><h3><i class="fas fa-wallet" style="color:#22c55e"></i> Wallet & Banks <span id="walletBalPill" class="pill mono" style="margin-left:8px">$—</span></h3><div style="display:flex; gap:8px"><button class="btn small" data-focusable tabindex="-1" onclick="doRefresh()"><i class="fas fa-rotate"></i> Refresh</button><button class="btn small primary" data-focusable tabindex="-1" onclick="openBankApply()"><i class="fas fa-plus"></i> Join Bank</button></div></div>
+    <div id="walletCardsGrid" class="grid auto"></div>
+    <div class="settings-card" style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center">
+      <span class="pill"><i class="fas fa-coins"></i> Cash <b id="walletCash">$0</b></span>
+      <span class="pill"><i class="fas fa-building-columns"></i> Banks <span id="walletBanks">—</span></span>
+      <span class="pill"><i class="fas fa-credit-card"></i> <span id="walletCardsCount">0 cards</span></span>
+    </div>
+    <div class="section" style="margin-top:14px">
+      <div class="section-head"><h3><i class="fas fa-hand-holding-dollar" style="color:#fbbf24"></i> Quick Pay</h3><span class="pill mono" style="font-size:0.65rem">A selects card • limits enforced</span></div>
+      <div class="grid auto" id="walletBankList"></div>
+    </div>
+  </section>
+
+  <!-- INVENTORY -->
+  <section id="view-inventory" class="view" aria-labelledby="tab-inventory">
+    <div class="section-head"><h3><i class="fas fa-box" style="color:#a78bfa"></i> Inventory <span id="invWeightPill" class="pill mono" style="margin-left:8px">0 / 35 kg</span></h3><div style="display:flex; gap:8px"><button class="btn small" data-focusable tabindex="-1" onclick="doRefresh()"><i class="fas fa-rotate"></i> Refresh</button><button class="btn small primary" data-focusable tabindex="-1" onclick="openInvAdd()"><i class="fas fa-plus"></i> Add Item</button></div></div>
+    <div style="background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:999px; height:14px; overflow:hidden; margin-bottom:12px"><div id="invWeightBar" style="height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width 0.3s"></div></div>
+    <div id="invGrid" class="grid auto"></div>
+    <div id="invEmpty" style="display:none; text-align:center; padding:28px; color:var(--muted)"><div style="font-size:1.8rem"><i class="fas fa-box-open"></i></div><b>Empty pack</b><div style="font-size:0.82rem; margin-top:6px">Add items from the catalog — weight limited to 35kg.</div></div>
+  </section>
+
+  <!-- PLAYERS -->
+  <section id="view-players" class="view" aria-labelledby="tab-players">
+    <div class="section-head"><h3><i class="fas fa-users" style="color:#38bdf8"></i> Players <span id="playersCountPill" class="pill mono" style="margin-left:8px">0</span></h3><div style="display:flex; gap:8px"><button class="btn small" data-focusable tabindex="-1" onclick="doRefresh()"><i class="fas fa-rotate"></i> Refresh</button><button class="btn small primary" data-focusable tabindex="-1" onclick="openPlayerAdd()"><i class="fas fa-user-plus"></i> Add Player</button></div></div>
+    <div id="playersGrid" class="grid auto"></div>
+    <div id="playersEmpty" style="display:none; text-align:center; padding:28px; color:var(--muted)"><div style="font-size:1.8rem"><i class="fas fa-user-astronaut"></i></div><b>No players</b></div>
+  </section>
+
+  <!-- PHONE -->
+  <section id="view-phone" class="view" aria-labelledby="tab-phone">
+    <div class="section-head"><h3><i class="fas fa-mobile-screen" style="color:#f472b6"></i> Phone — Contacts <span id="phoneCountPill" class="pill mono" style="margin-left:8px">0</span></h3><div style="display:flex; gap:8px"><button class="btn small" data-focusable tabindex="-1" onclick="doRefresh()"><i class="fas fa-rotate"></i> Refresh</button><button class="btn small primary" data-focusable tabindex="-1" onclick="openContactAdd()"><i class="fas fa-address-book"></i> New Contact</button></div></div>
+    <div id="phoneGrid" class="grid auto"></div>
+    <div id="phoneEmpty" style="display:none; text-align:center; padding:28px; color:var(--muted)"><div style="font-size:1.8rem"><i class="fas fa-address-book"></i></div><b>No contacts</b><div style="font-size:0.82rem; margin-top:6px">Add a contact — phone system is save-persistent.</div></div>
+  </section>
+
+  <!-- SAVES -->
+  <section id="view-saves" class="view" aria-labelledby="tab-saves">
+    <div class="section-head"><h3><i class="fas fa-hard-drive"></i> Saves <span id="savesPill" class="pill mono" style="margin-left:8px">0 saves</span></h3><div style="display:flex; gap:8px"><button class="btn small" data-focusable tabindex="-1" onclick="doRefresh()"><i class="fas fa-rotate"></i> Refresh</button><button class="btn small primary" data-focusable tabindex="-1" onclick="openNewSave()"><i class="fas fa-plus"></i> New save</button></div></div>
+    <div id="savesGrid" class="save-grid"></div>
+    <div class="settings-card" style="margin-top:12px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap">
+      <span class="mono" style="font-size:0.75rem; color:var(--muted)"><span id="saveDetailName">live</span> • <span id="saveDetailTime">—</span></span>
+      <div style="display:flex; gap:8px">
+        <button id="btnSaveLoad" class="btn small primary" data-focusable tabindex="-1" disabled onclick="doLoadSelected()"><i class="fas fa-folder-open"></i> Load</button>
+        <button id="btnSaveMake" class="btn small" data-focusable tabindex="-1" onclick="doSaveSelected()"><i class="fas fa-floppy-disk"></i> Save here</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="view-settings" class="view" aria-labelledby="tab-settings">
+    <div class="grid cols-2">
+      <div class="settings-card">
+        <h3 style="margin:0 0 8px; display:flex; gap:8px; align-items:center"><i class="fas fa-expand" style="color:#38bdf8"></i> Display</h3>
+        <p style="margin:0 0 12px; color:var(--muted); font-size:0.85rem">Fullscreen follows XMB — saved to <code class="mono" style="background:rgba(255,255,255,0.06); padding:2px 6px; border-radius:6px">xmbsettings.xml</code></p>
+        <button id="rowFullscreen" class="tile" data-focusable tabindex="-1" style="width:100%; flex-direction:row; align-items:center; justify-content:space-between; min-height:64px" onclick="toggleFullscreen()">
+          <div><div style="font-weight:700"><i class="fas fa-maximize"></i> Open in Fullscreen</div><div style="font-size:0.78rem; color:var(--muted)">Launch next time at full size</div></div>
+          <div id="fsToggle" class="toggle" role="switch" aria-checked="false"><div class="toggle-knob"></div></div>
+        </button>
+        <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap">
+          <button class="btn small" data-focusable tabindex="-1" onclick="doRefresh()"><i class="fas fa-rotate"></i> Refresh HUD</button>
+          <button class="btn small" data-focusable tabindex="-1" onclick="quitApp()"><i class="fas fa-power-off"></i> Quit</button>
+        </div>
+      </div>
+      <div class="settings-card">
+        <h3 style="margin:0 0 4px; display:flex; gap:8px; align-items:center"><i class="fas fa-palette" style="color:#a78bfa"></i> Theme</h3>
+        <p style="margin:0; color:var(--muted); font-size:0.82rem">Pick your vibe — synced with XMB</p>
+        <div id="themeGrid" class="theme-grid"></div>
+        <div style="margin-top:10px; font-size:0.68rem; color:var(--muted); text-align:center"><span class="kbd">D-Pad</span> move • <span class="kbd">A</span> select • <span class="kbd">B</span> back to tabs</div>
+      </div>
+    </div>
+    <div class="settings-card" style="margin-top:12px">
+      <h3 style="margin:0 0 6px"><i class="fas fa-gamepad" style="color:#a78bfa"></i> Controller</h3>
+      <p style="margin:0; color:var(--muted); font-size:0.82rem">This dashboard is built on <code class="mono">controller.js</code> — reusable for any future MTT UI. Supports gamepad (D-Pad + A/B/X/Y) and keyboard.</p>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px">
+        <span id="gpDot" class="pill"><span style="width:8px;height:8px;border-radius:50%;background:#6b7280;display:inline-block"></span> <span id="gpText">No controller — keyboard ready</span></span>
+        <span class="pill"><span class="kbd">Arrows</span> nav • <span class="kbd">Enter</span>/<span class="kbd">A</span> select • <span class="kbd">Esc</span>/<span class="kbd">B</span> back</span>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span><i class="fas fa-circle" style="color:#22c55e; font-size:0.5rem"></i> Dashboard V3 • Console Hub • big-screen ready</span>
+  <span id="footerHint"><span class="kbd">↑</span><span class="kbd">↓</span><span class="kbd">←</span><span class="kbd">→</span> move • <span class="kbd primary">A</span> select • <span class="kbd">B</span> back</span>
+</footer>
+
+<!-- Overlays -->
+<div id="saveOverlay" class="overlay" onclick="if(event.target===this) closeSaveOverlay()">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head"><h3 style="margin:0"><i class="fas fa-hard-drive"></i> Saves</h3><button class="btn small" data-focusable tabindex="-1" onclick="closeSaveOverlay()">✕</button></div>
+    <div class="modal-body"><div id="overlaySavesGrid" class="save-grid"></div><div style="display:flex; gap:8px; justify-content:space-between; flex-wrap:wrap; margin-top:4px"><span class="mono" style="font-size:0.75rem; color:var(--muted)">Tap a slot • <span id="overlaySel">none</span></span><div style="display:flex; gap:8px"><button class="btn small" data-focusable tabindex="-1" onclick="closeSaveOverlay()">Close</button><button class="btn small primary" data-focusable tabindex="-1" id="overlayLoadBtn" disabled onclick="doLoadSelected(true)"><i class="fas fa-folder-open"></i> Load</button><button class="btn small" data-focusable tabindex="-1" id="overlaySaveBtn" onclick="doSaveSelected(true)"><i class="fas fa-floppy-disk"></i> Save</button></div></div></div>
+  </div>
+</div>
+
+<div id="detailOverlay" class="overlay" onclick="if(event.target===this) closeDetail()">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head"><h3 style="margin:0" id="detailTitle"><i class="fas fa-cube"></i> Details</h3><button class="btn small" data-focusable tabindex="-1" onclick="closeDetail()">✕</button></div>
+    <div class="modal-body" id="detailBody"></div>
+    <div style="padding:0 16px 16px; display:flex; justify-content:flex-end"><button class="btn small primary" data-focusable tabindex="-1" onclick="closeDetail()"><i class="fas fa-check"></i> Done</button></div>
+  </div>
+</div>
+
+<div id="newSaveOverlay" class="overlay" onclick="if(event.target===this) closeNewSave()">
+  <div class="modal" role="dialog" aria-modal="true" style="width:min(420px,96vw)">
+    <div class="modal-head"><h3 style="margin:0"><i class="fas fa-plus"></i> New Save</h3><button class="btn small" data-focusable tabindex="-1" onclick="closeNewSave()">✕</button></div>
+    <div class="modal-body">
+      <label class="mono" style="font-size:0.78rem; font-weight:700">Save name</label>
+      <input id="newSaveInput" type="text" placeholder="e.g. mysave" style="width:100%; background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:10px; padding:12px; color:#fff; outline:none" data-focusable tabindex="-1">
+      <div style="display:flex; gap:8px; justify-content:flex-end"><button class="btn small" data-focusable tabindex="-1" onclick="closeNewSave()">Cancel</button><button class="btn small primary" data-focusable tabindex="-1" onclick="confirmNewSave()"><i class="fas fa-floppy-disk"></i> Save</button></div>
+    </div>
+  </div>
+</div>
+
+<script src="controller.js"></script>
+<script>
+// --- theme defs (mirrors xmb_settings.THEMES) ---
+const THEMES={
+  default:{name:"Default",bg:"#050914",to:"#0a1128",accent:"#6366f1",accent2:"#8b5cf6", wave1:"rgba(30,80,150,0.14)", wave2:"rgba(80,30,150,0.10)"},
+  dark_purple:{name:"Dark Purple",bg:"#0d0514",to:"#1a0a2e",accent:"#8b5cf6",accent2:"#7c3aed", wave1:"rgba(120,40,180,0.16)", wave2:"rgba(60,20,120,0.10)"},
+  crimson_red:{name:"Crimson Red",bg:"#140505",to:"#2e0a0a",accent:"#ef4444",accent2:"#dc2626", wave1:"rgba(180,30,30,0.15)", wave2:"rgba(120,20,60,0.10)"},
+  midnight_green:{name:"Midnight Green",bg:"#05140a",to:"#0a2814",accent:"#22c55e",accent2:"#16a34a", wave1:"rgba(30,150,80,0.13)", wave2:"rgba(20,100,60,0.09)"},
+  ocean_blue:{name:"Ocean Blue",bg:"#05141a",to:"#0a2830",accent:"#06b6d4",accent2:"#0891b2", wave1:"rgba(20,140,160,0.14)", wave2:"rgba(30,80,150,0.09)"},
+  sunset_orange:{name:"Sunset Orange",bg:"#140a05",to:"#2e1a0a",accent:"#f97316",accent2:"#ea580c", wave1:"rgba(200,90,20,0.14)", wave2:"rgba(160,40,80,0.09)"},
+};
+const THEME_IDS=Object.keys(THEMES);
+let currentTheme="default";
+let fullscreenEnabled=false;
+let activeTab="home";
+let appState=null;
+let savesList=[];
+let detailedSaves=[];
+let selectedSave=null;
+
+// utils
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c])); }
+function fmtCur(n){ try{return '$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});}catch(e){return '$'+String(n);} }
+function fmtTime(iso){ if(!iso) return '—'; try{ const d=new Date(iso); if(isNaN(d)) return iso; return d.toLocaleString(); }catch(e){return iso;} }
+
+function applyTheme(id){
+  const t=THEMES[id]||THEMES.default; currentTheme=id;
+  const r=document.documentElement;
+  r.style.setProperty('--bg',t.bg); r.style.setProperty('--bg-to',t.to);
+  r.style.setProperty('--accent',t.accent); r.style.setProperty('--accent2',t.accent2);
+  r.style.setProperty('--wave1',t.wave1); r.style.setProperty('--wave2',t.wave2);
+  r.style.setProperty('--accent-glow',t.accent+'33');
+  document.body.style.background=`linear-gradient(135deg, ${t.bg} 0%, ${t.to} 100%)`;
+  const lbl=document.getElementById('themeName'); if(lbl) lbl.textContent=t.name;
+  document.querySelectorAll('.theme-opt').forEach(el=> el.classList.toggle('active', el.dataset.theme===id));
+}
+function buildThemeGrid(){
+  const g=document.getElementById('themeGrid'); if(!g) return;
+  g.innerHTML='';
+  THEME_IDS.forEach(id=>{
+    const t=THEMES[id];
+    const d=document.createElement('button');
+    d.className='theme-opt'+(id===currentTheme?' active':''); d.dataset.theme=id; d.setAttribute('data-focusable',''); d.setAttribute('tabindex','-1');
+    d.innerHTML=`<div class="theme-swatch" style="background:linear-gradient(135deg, ${t.bg} 0%, ${t.to} 100%)"></div><div style="font-weight:700; font-size:0.85rem">${t.name}</div><div style="font-size:0.68rem; color:var(--muted)">${t.accent}</div>`;
+    d.onclick=()=> selectTheme(id);
+    g.appendChild(d);
+  });
+}
+async function selectTheme(id){
+  applyTheme(id);
+  try{ localStorage.setItem('xmb_theme',id);}catch(e){}
+  await apiCall('set_theme', id);
+}
+
+function whenPyviewReady(){
+  return new Promise(res=>{
+    if(window.pywebview&&window.pywebview.api){res(true);return;}
+    let done=false; const go=()=>{if(done) return; done=true; res(true);};
+    window.addEventListener('pywebviewready',go,{once:true});
+    let tries=0; const iv=setInterval(()=>{
+      if(window.pywebview&&window.pywebview.api){clearInterval(iv);go();}
+      else if(++tries>50){clearInterval(iv); if(!done){done=true;res(false);}}
+    },100);
+  });
+}
+async function apiCall(name,...args){
+  try{ if(window.pywebview&&window.pywebview.api&&window.pywebview.api[name]) return await window.pywebview.api[name](...args); }catch(e){console.error(name,e)}
+  return null;
+}
+async function loadSettings(){
+  let res=await apiCall('get_xmb_settings');
+  if(res&&res.settings){
+    fullscreenEnabled=!!res.settings.fullscreen;
+    let t=(res.settings.theme||'default').trim(); if(THEMES[t]) currentTheme=t;
+  } else {
+    try{ const fs=localStorage.getItem('xmb_fullscreen'); if(fs!==null) fullscreenEnabled=fs==='true'; const th=localStorage.getItem('xmb_theme'); if(th&&THEMES[th]) currentTheme=th; }catch(e){}
+  }
+  applyTheme(currentTheme); buildThemeGrid(); updateFSToggle();
+}
+function updateFSToggle(){
+  const el=document.getElementById('fsToggle'); if(!el) return;
+  el.classList.toggle('on', fullscreenEnabled); el.setAttribute('aria-checked', String(fullscreenEnabled));
+}
+async function toggleFullscreen(){
+  fullscreenEnabled=!fullscreenEnabled; updateFSToggle();
+  try{ localStorage.setItem('xmb_fullscreen',String(fullscreenEnabled)); }catch(e){}
+  await apiCall('set_fullscreen', fullscreenEnabled);
+}
+
+async function fetchState(saveName){
+  let res=await apiCall('get_state', saveName||null);
+  if(!res){
+    res={status:'success', saves: selectedSave?[selectedSave]:[], current_save: selectedSave||null, meta:{}, systems:{players:{"1":[0,0,0]}, inventory:{"1":{max_weight:35, stacks:[]}}}, hud:{player_count:1, player_pos:[0,0,0], wallet_balance:75000, wallet_pid:'1', owned_count:0, owned_value:0, realestate_count:0, realestate_value:0, inventory_stacks:0, inventory_items:0}, xmb_settings:{theme:currentTheme, fullscreen:fullscreenEnabled}};
+  }
+  if(res.status==='success'){ appState=res; savesList=res.saves||[]; if(res.current_save) selectedSave=res.current_save; }
+  else appState=res;
+  return res;
+}
+async function fetchSavesDetailed(){
+  let res=await apiCall('list_saves_detailed');
+  if(res&&res.saves) detailedSaves=res.saves;
+  else detailedSaves=(savesList||[]).map(n=>({name:n, saved_at:null}));
+}
+
+// --- focus preservation across re-renders (prevents teleport to top) ---
+function _snapFocus(){
+  const cur = window._mttFocus && window._mttFocus.current;
+  if(!cur || !document.contains(cur)) return null;
+  const r = cur.getBoundingClientRect();
+  return { key: cur.getAttribute('data-save') || cur.getAttribute('data-theme') || cur.getAttribute('data-focus-key') || cur.textContent.trim().slice(0,60), cx: r.left + r.width/2, cy: r.top + r.height/2, el: cur };
+}
+function _restoreFocus(snap){
+  if(!snap || !window._mttFocus) return;
+  const list = window._mttFocus.focusable;
+  if(!list.length) return;
+  // exact key match first
+  if(snap.key){
+    const byKey = list.find(e => (e.getAttribute('data-save')||e.getAttribute('data-theme')||e.getAttribute('data-focus-key')||e.textContent.trim().slice(0,60)) === snap.key);
+    if(byKey){ window._mttFocus.focus(byKey); return; }
+  }
+  // closest to previous center
+  let best=null, bestD=Infinity;
+  for(const el of list){
+    const r=el.getBoundingClientRect(); if(!r.width && !r.height) continue;
+    const cx=r.left+r.width/2, cy=r.top+r.height/2;
+    const dx=cx-snap.cx, dy=cy-snap.cy;
+    const d=dx*dx+dy*dy;
+    if(d<bestD){bestD=d; best=el;}
+  }
+  if(best && bestD < 800*800) window._mttFocus.focus(best);
+}
+
+function renderHUD(){
+  if(!appState||appState.status!=='success') return;
+  const hud=appState.hud||{}; const sys=appState.systems||{};
+  document.getElementById('savesNum').textContent=(savesList.length||0)+' saves';
+  document.getElementById('saveLabel').textContent=selectedSave||appState.current_save||'live';
+  document.getElementById('quickSaves').textContent=(savesList.length||0)+' saves';
+  document.getElementById('savesPill').textContent=(savesList.length||0)+' saves';
+  document.getElementById('saveDetailName').textContent=selectedSave||appState.current_save||'live';
+  const meta=appState.meta||{}; document.getElementById('saveDetailTime').textContent=fmtTime(meta.saved_at);
+  // hero
+  const bal=Number(hud.wallet_balance||0); const pid=hud.wallet_pid||'1';
+  document.getElementById('heroWallet').textContent=fmtCur(bal);
+  document.getElementById('heroWalletPid').textContent='P'+pid;
+  const net=(bal + (hud.owned_value||0) + (hud.realestate_value||0));
+  document.getElementById('heroNet').textContent='net '+fmtCur(net);
+  document.getElementById('heroBank').textContent=hud.bank_member? hud.bank_member : 'No bank';
+  document.getElementById('heroGarageCount').textContent=(hud.owned_count||0)+' cars';
+  document.getElementById('heroGarageValue').textContent=fmtCur(hud.owned_value||0);
+  document.getElementById('heroGarageSub').textContent=(hud.owned_count||0)? `${hud.owned_count} owned • ${fmtCur(hud.owned_value||0)} value` : 'No vehicles yet — explore the world';
+  document.getElementById('heroEstateCount').textContent=(hud.realestate_count||0)+' props';
+  document.getElementById('heroEstateValue').textContent=fmtCur(hud.realestate_value||0);
+  document.getElementById('heroEstateRent').textContent=(hud.realestate_rented||0)+' rented';
+  document.getElementById('heroParking').textContent=`${hud.realestate_garage_used||0}/${hud.realestate_garage_cap||0}`;
+  document.getElementById('heroPlayers').textContent=(hud.player_count||0)+' player'+((hud.player_count||0)===1?'':'s');
+  document.getElementById('heroStacks').textContent=(hud.inventory_stacks||0)+' stacks';
+  document.getElementById('heroItems').textContent=(hud.inventory_items||0)+' items';
+  const pos=hud.player_pos||[0,0,0]; document.getElementById('heroPlayerPos').textContent=pos.map(n=>Number(n).toFixed(1)).join(', ');
+  document.getElementById('heroWorld').textContent=(hud.world_keys? hud.world_keys.join(', ') : 'world —') || 'world —';
+  // pills
+  document.getElementById('garageCountPill').textContent=String(hud.owned_count||0);
+  document.getElementById('estatesCountPill').textContent=String(hud.realestate_count||0);
+  // sub bars
+  document.getElementById('estateParking').textContent=`${hud.realestate_garage_used||0}/${hud.realestate_garage_cap||0}`;
+  document.getElementById('estateFree').textContent=(hud.realestate_garage_free||0)+' free';
+  document.getElementById('estateValue').textContent=fmtCur(hud.realestate_value||0);
+  document.getElementById('estateOwned').textContent=String(hud.realestate_owned||0);
+  document.getElementById('estateRented').textContent=String(hud.realestate_rented||0);
+  // sys grid — preserve focus if inside this grid (prevents bottom-row teleport)
+  const sg=document.getElementById('sysGrid'); if(sg){
+    const snap = _snapFocus();
+    const snapInGrid = snap && snap.el && sg.contains(snap.el);
+    // avoid thrash: only rebuild if keys changed
+    const keys=Object.keys(sys);
+    const keySig = keys.slice().sort().join('|');
+    if(sg._lastKeySig !== keySig){
+      sg._lastKeySig = keySig;
+      sg.innerHTML = keys.length? keys.map(k=>{
+        const v=sys[k]; let sub='';
+        if(v && typeof v==='object' && !Array.isArray(v)) sub=Object.keys(v).slice(0,3).join(', ')||'—';
+        else if(Array.isArray(v)) sub=v.length+' entries';
+        else sub=String(v).slice(0,40);
+        return `<div class="tile" data-focusable tabindex="-1" data-focus-key="sys:${escapeHtml(k)}" onclick="openSys('${escapeHtml(k)}')"><span class="kicker"><i class="fas fa-cube"></i> ${escapeHtml(k)}</span><b>${escapeHtml(k)}</b><span class="mono" style="font-size:0.68rem; color:var(--muted); word-break:break-all">${escapeHtml(sub||'—')}</span></div>`;
+      }).join('') : `<div class="tile" style="grid-column:1/-1; text-align:center"><b>No systems yet</b><span style="color:var(--muted); font-size:0.82rem">Create a save in-game to see data</span></div>`;
+      if(snapInGrid) _restoreFocus(snap);
+    }
+  }
+  renderGarage(hud, sys);
+  renderEstates(hud, sys);
+}
+
+function renderGarage(hud, sys){
+  const grid=document.getElementById('garageGrid'); const empty=document.getElementById('garageEmpty');
+  if(!grid) return;
+  const owned = (sys.ownership && sys.ownership.vehicles) || {};
+  let items=[];
+  for(const [pid,lst] of Object.entries(owned)){
+    if(Array.isArray(lst)) lst.forEach(o=> items.push({...o, _pid:pid}));
+  }
+  if(!items.length){ grid.innerHTML=''; grid._items=[]; empty.style.display='block'; return; }
+  empty.style.display='none';
+  const sig = items.map(o=> `${o._pid}:${o.vehicle_id||o.id||o.name}:${o.price_paid}`).join('|');
+  if(grid._lastSig === sig) { grid._items=items; return; }
+  const snap = _snapFocus(); const snapInGrid = snap && snap.el && grid.contains(snap.el);
+  grid._lastSig = sig;
+  grid.innerHTML = items.map((ov,i)=>{
+    const name=ov.vehicle_id||ov.id||ov.name||('Vehicle '+(i+1));
+    const price=ov.price_paid!=null? fmtCur(ov.price_paid) : '—';
+    const cat=ov.category||ov.type||'vehicle';
+    const key = `${ov._pid}:${name}`;
+    return `<button class="tile" data-focusable tabindex="-1" data-focus-key="garage:${escapeHtml(key)}" onclick="openGarageDetail(${i})"><span class="kicker"><i class="fas fa-car"></i> ${escapeHtml(cat)} • P${escapeHtml(ov._pid)}</span><b>${escapeHtml(name)}</b><span style="font-size:0.78rem; color:var(--muted)">Paid ${escapeHtml(price)} • ${escapeHtml(ov.tenure||'owned')}</span></button>`;
+  }).join('');
+  grid._items=items;
+  if(snapInGrid) _restoreFocus(snap);
+}
+function renderEstates(hud, sys){
+  const grid=document.getElementById('estatesGrid'); const empty=document.getElementById('estatesEmpty');
+  if(!grid) return;
+  const re = (sys.realestate && sys.realestate.owned) || {};
+  let items=[];
+  for(const [pid,lst] of Object.entries(re)){
+    if(Array.isArray(lst)) lst.forEach(o=> items.push({...o, _pid:pid}));
+  }
+  if(!items.length){ grid.innerHTML=''; grid._items=[]; empty.style.display='block'; return; }
+  empty.style.display='none';
+  const sig = items.map(o=> `${o._pid}:${o.property_id||o.id||o.name}:${o.price_paid}:${o.tenure}`).join('|');
+  if(grid._lastSig === sig) { grid._items=items; return; }
+  const snap = _snapFocus(); const snapInGrid = snap && snap.el && grid.contains(snap.el);
+  grid._lastSig = sig;
+  grid.innerHTML = items.map((op,i)=>{
+    const name=op.property_id||op.id||op.name||('Property '+(i+1));
+    const tenure=op.tenure||'owned';
+    const price=op.price_paid!=null? fmtCur(op.price_paid) : (op.rent!=null? fmtCur(op.rent)+'/mo' : '—');
+    const type=op.property_type||op.type||'house';
+    const key = `${op._pid}:${name}:${tenure}`;
+    return `<button class="tile" data-focusable tabindex="-1" data-focus-key="estate:${escapeHtml(key)}" onclick="openEstateDetail(${i})"><span class="kicker"><i class="fas fa-house"></i> ${escapeHtml(type)} • ${escapeHtml(tenure)} • P${escapeHtml(op._pid)}</span><b>${escapeHtml(name)}</b><span style="font-size:0.78rem; color:var(--muted)">${escapeHtml(price)} • ${escapeHtml(op.location||'—')}</span></button>`;
+  }).join('');
+  grid._items=items;
+  if(snapInGrid) _restoreFocus(snap);
+}
+
+// --- Wallet / Inventory / Players / Phone + subtabs ---
+let garageSubtab = 'owned';
+let estatesSubtab = 'owned';
+
+function switchGarageSubtab(tab){
+  garageSubtab = tab;
+  document.querySelectorAll('[data-garage-tab]').forEach(b=>{ const on=b.getAttribute('data-garage-tab')===tab; b.classList.toggle('primary', on); b.classList.toggle('small', true); });
+  document.getElementById('garageOwnedWrap').style.display = tab==='owned' ? '' : 'none';
+  document.getElementById('garageCatalogWrap').style.display = tab==='catalog' ? '' : 'none';
+  document.getElementById('garageCategoriesWrap').style.display = tab==='categories' ? '' : 'none';
+  if(tab==='catalog' || tab==='categories') loadShopCatalog();
+  refreshFocus();
+  try{ playTick('move'); }catch(e){}
+}
+function switchEstatesSubtab(tab){
+  estatesSubtab = tab;
+  document.querySelectorAll('[data-estate-tab]').forEach(b=>{ const on=b.getAttribute('data-estate-tab')===tab; b.classList.toggle('primary', on); });
+  document.getElementById('estatesOwnedWrap').style.display = tab==='owned' ? '' : 'none';
+  document.getElementById('estatesBrowseWrap').style.display = tab==='browse' ? '' : 'none';
+  document.getElementById('estatesAgentsWrap').style.display = tab==='agents' ? '' : 'none';
+  document.getElementById('estatesGaragesWrap').style.display = tab==='garages' ? '' : 'none';
+  if(tab==='browse') loadEstateBrowse();
+  if(tab==='agents') loadEstateAgents();
+  if(tab==='garages') loadEstateGarages();
+  refreshFocus();
+  try{ playTick('move'); }catch(e){}
+}
+
+async function renderWallet(){
+  const grid=document.getElementById('walletCardsGrid');
+  const bankList=document.getElementById('walletBankList');
+  const balPill=document.getElementById('walletBalPill');
+  const cashEl=document.getElementById('walletCash');
+  const banksEl=document.getElementById('walletBanks');
+  const countEl=document.getElementById('walletCardsCount');
+  if(!grid) return;
+  let data = await apiCall('get_bank_overview', 1);
+  if(!data || data.status!=='success'){
+    // fallback to hud
+    const hud = (appState&&appState.hud)||{};
+    data = { balance: hud.wallet_balance||0, cards: hud.bank_cards||[], banks: hud.bank_configs||{}, bank_names: hud.bank_names||[] };
+  }
+  const bal = Number(data.balance||0);
+  if(balPill) balPill.textContent = fmtCur(bal);
+  if(cashEl) cashEl.textContent = fmtCur(bal);
+  if(banksEl) banksEl.textContent = (data.bank_names||Object.keys(data.banks||{})).join(', ') || '—';
+  if(countEl) countEl.textContent = `${(data.cards||[]).length} cards`;
+  // cards
+  const cards = data.cards||[];
+  if(!cards.length){
+    grid.innerHTML = `<div class="tile" style="grid-column:1/-1; text-align:center"><b>No cards yet</b><span style="color:var(--muted); font-size:0.82rem">Join a bank to get debit+credit cards (limits enforced).</span></div>`;
+  } else {
+    grid.innerHTML = cards.map(c=>{
+      const isCredit = c.type==='credit';
+      const variant = isCredit ? (c.bank==='Westbank'?'credit':'gold') : 'debit';
+      const balOrDebt = isCredit ? `<div class="card-balance" style="color:#fde68a">${fmtCur(c.debt||0)} <span style="font-size:0.7rem">debt</span></div><div style="font-size:0.68rem; opacity:0.7">LIMIT ${fmtCur(c.credit_limit)} • ${c.expiry}</div>` : `<div class="card-balance">${fmtCur(bal)}</div><div style="font-size:0.68rem; opacity:0.7">DEBIT LIMIT ${fmtCur(c.debit_limit)} • ${c.expiry}</div>`;
+      const title = isCredit ? 'CREDIT • '+(c.bank||'') : 'DEBIT • '+(c.bank||'');
+      return `<button class="bank-card ${variant}" data-focusable tabindex="-1" data-focus-key="bank:${c.card_id}" onclick="openCardDetail('${c.card_id}')">
+        <div style="display:flex; justify-content:space-between; align-items:center"><span style="font-weight:800; font-size:0.82rem"><i class="fas fa-building-columns"></i> ${escapeHtml(c.bank||'Bank')}</span><span style="font-size:0.62rem; padding:2px 6px; border-radius:999px; background:rgba(255,255,255,0.16)">${escapeHtml(title)}</span></div>
+        <div style="display:flex; gap:10px; align-items:center; margin:6px 0"><div class="chip"></div><div class="card-number" style="flex:1">${escapeHtml(c.number||'•••• ••••')}</div><i class="fab fa-cc-visa" style="opacity:0.9"></i></div>
+        <div style="display:flex; justify-content:space-between; align-items:flex-end"><div><div style="font-size:0.62rem; opacity:0.7">PLAYER ${escapeHtml(String(data.player_id||'1'))}</div><div style="font-size:0.7rem; font-weight:700">${escapeHtml(c.bank||'')}</div></div><div style="text-align:right">${balOrDebt}</div></div>
+      </button>`;
+    }).join('');
+  }
+  // bank list quick join
+  if(bankList){
+    const banks = data.banks||{};
+    const names = data.bank_names||Object.keys(banks);
+    bankList.innerHTML = names.map(n=>{
+      const cfg = banks[n]||{};
+      return `<button class="tile" data-focusable tabindex="-1" onclick="applyBank('${escapeHtml(n)}')"><span class="kicker"><i class="fas fa-building-columns"></i> Bank</span><b>${escapeHtml(n)}</b><span style="font-size:0.72rem; color:var(--muted)">Debit ${fmtCur(cfg.debit_limit||0)} • Credit ${fmtCur(cfg.credit_limit||0)} • ${cfg.apr||'—'}% APR</span></button>`;
+    }).join('') || `<div class="tile" style="grid-column:1/-1"><b>No banks</b></div>`;
+  }
+}
+
+async function renderInventory(){
+  const grid=document.getElementById('invGrid'); const empty=document.getElementById('invEmpty'); const bar=document.getElementById('invWeightBar'); const pill=document.getElementById('invWeightPill');
+  if(!grid) return;
+  let res = await apiCall('get_inventory', 1);
+  if(!res || res.status!=='success'){ grid.innerHTML=`<div class="tile" style="grid-column:1/-1"><b>No data</b></div>`; return; }
+  const total = Number(res.total_weight||0); const max = Number(res.max_weight||35);
+  if(pill) pill.textContent = `${total.toFixed(1)} / ${max.toFixed(1)} kg`;
+  if(bar) bar.style.width = `${Math.min(100, (total/max)*100)}%`;
+  const stacks = res.stacks||[];
+  if(!stacks.length){ grid.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  grid.innerHTML = stacks.map((s,i)=>{
+    const d=s.def||{}; const name=d.name||`Item ${s.item_id}`; const cat=d.category||'misc';
+    return `<button class="tile" data-focusable tabindex="-1" data-focus-key="inv:${s.item_id}" onclick="openInvDetail(${i})"><span class="kicker"><i class="fas fa-cube"></i> ${escapeHtml(cat)} • #${s.item_id}</span><b>${escapeHtml(name)}</b><span style="font-size:0.78rem; color:var(--muted)">x${s.quantity} • ${d.weight||0}kg each • ${fmtCur(d.value||0)} value</span><span style="font-size:0.68rem; color:var(--muted)">${escapeHtml((d.description||'').slice(0,60))}</span></button>`;
+  }).join('');
+  grid._invStacks = stacks;
+}
+
+async function renderPlayers(){
+  const grid=document.getElementById('playersGrid'); const empty=document.getElementById('playersEmpty'); const pill=document.getElementById('playersCountPill');
+  if(!grid) return;
+  let res = await apiCall('get_players_detail');
+  if(!res || res.status!=='success'){ grid.innerHTML=`<div class="tile"><b>No data</b></div>`; return; }
+  const players = res.players||[];
+  if(pill) pill.textContent = String(players.length);
+  if(!players.length){ grid.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  grid.innerHTML = players.map(p=>{
+    const pos = p.pos||[0,0,0];
+    return `<button class="tile" data-focusable tabindex="-1" data-focus-key="player:${p.player_id}" onclick="openPlayerDetail(${p.player_id})"><span class="kicker"><i class="fas fa-user"></i> Player ${p.player_id}</span><b>Pos ${pos.map(n=>Number(n).toFixed(1)).join(', ')}</b><span style="font-size:0.72rem; color:var(--muted)">Tap A to move • B back</span></button>`;
+  }).join('');
+  grid._players = players;
+}
+
+async function renderPhone(){
+  const grid=document.getElementById('phoneGrid'); const empty=document.getElementById('phoneEmpty'); const pill=document.getElementById('phoneCountPill');
+  if(!grid) return;
+  let res = await apiCall('get_phone_contacts');
+  if(!res || res.status!=='success'){ grid.innerHTML=`<div class="tile"><b>No data</b></div>`; return; }
+  const contacts = res.contacts||[];
+  if(pill) pill.textContent = String(contacts.length);
+  if(!contacts.length){ grid.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  grid.innerHTML = contacts.map((c,i)=>{
+    return `<button class="tile" data-focusable tabindex="-1" data-focus-key="contact:${c.name}" onclick="openContactDetail(${i})"><span class="kicker"><i class="fas fa-address-book"></i> Contact</span><b>${escapeHtml(c.name||'Unknown')}</b><span style="font-size:0.78rem; color:var(--muted)">${escapeHtml(c.number||c.phone||'—')}</span></button>`;
+  }).join('');
+  grid._contacts = contacts;
+}
+
+let shopCache=null;
+async function loadShopCatalog(){
+  const grid=document.getElementById('garageCatalogGrid'); const catGrid=document.getElementById('garageCategoriesGrid'); const chips=document.getElementById('garageCatChips');
+  if(!grid) return;
+  let res = await apiCall('get_shop_catalog');
+  if(!res || res.status!=='success'){ grid.innerHTML=`<div class="tile"><b>No catalog</b></div>`; return; }
+  const cat = res.catalog||{};
+  const vehicles = cat.vehicles||cat.catalog||[];
+  // categories
+  let cats = cat.categories||[];
+  // fallback: derive cats from vehicles
+  if(!cats.length && vehicles.length){
+    const map={}; vehicles.forEach(v=>{ const c=v.category||'other'; if(!map[c]) map[c]={id:c, name:c}; });
+    cats = Object.values(map);
+  }
+  if(chips){
+    chips.innerHTML = `<button class="btn small primary" data-focusable tabindex="-1" onclick="filterShopByCat('')">All</button>` + cats.map(c=>`<button class="btn small" data-focusable tabindex="-1" onclick="filterShopByCat('${escapeHtml(c.id||c.name)}')"><i class="${escapeHtml(c.icon||'fa-car')}"></i> ${escapeHtml(c.name||c.id)}</button>`).join('');
+  }
+  if(catGrid){
+    catGrid.innerHTML = cats.map(c=>`<button class="tile" data-focusable tabindex="-1" onclick="filterShopByCat('${escapeHtml(c.id||c.name)}')"><span class="kicker"><i class="fas fa-layer-group"></i> Category</span><b>${escapeHtml(c.name||c.id)}</b><span style="font-size:0.72rem; color:var(--muted)">${escapeHtml(c.description||'')}</span></button>`).join('');
+  }
+  // store for filter
+  window._shopVehicles = vehicles;
+  renderShopFiltered('');
+}
+function filterShopByCat(cat){
+  renderShopFiltered(cat);
+}
+function renderShopFiltered(cat){
+  const grid=document.getElementById('garageCatalogGrid');
+  if(!grid || !window._shopVehicles) return;
+  let list = window._shopVehicles;
+  if(cat) list = list.filter(v=> (v.category||'').toLowerCase()===cat.toLowerCase());
+  if(!list.length){ grid.innerHTML=`<div class="tile" style="grid-column:1/-1"><b>No vehicles in ${escapeHtml(cat||'catalog')}</b></div>`; return; }
+  grid.innerHTML = list.slice(0,24).map((v,i)=>{
+    const price = v.price!=null ? fmtCur(v.price) : (v.value!=null?fmtCur(v.value):'—');
+    const name = v.name||v.vehicle_id||v.id||'Vehicle';
+    return `<button class="tile" data-focusable tabindex="-1" onclick="buyShopItem('${escapeHtml(v.vehicle_id||v.id||name)}')"><span class="kicker"><i class="fas fa-car"></i> ${escapeHtml(v.category||'vehicle')}</span><b>${escapeHtml(name)}</b><span style="font-size:0.72rem; color:var(--muted)">${price} • ${escapeHtml((v.description||'').slice(0,60))}</span></button>`;
+  }).join('');
+}
+
+async function loadEstateBrowse(){
+  const grid=document.getElementById('estatesBrowseGrid'); const chips=document.getElementById('estateTypeChips');
+  if(!grid) return;
+  let res = await apiCall('get_realestate_catalog');
+  if(!res || res.status!=='success'){ grid.innerHTML=`<div class="tile"><b>No catalog</b></div>`; return; }
+  const cat = res.catalog||{};
+  const props = cat.properties||cat.catalog||cat||[];
+  const list = Array.isArray(props) ? props : [];
+  // type chips
+  const types = [...new Set(list.map(p=>p.property_type||p.type||'house'))];
+  if(chips){
+    chips.innerHTML = `<button class="btn small primary" data-focusable tabindex="-1" onclick="filterEstateByType('')">All</button>` + types.map(t=>`<button class="btn small" data-focusable tabindex="-1" onclick="filterEstateByType('${escapeHtml(t)}')">${escapeHtml(t)}</button>`).join('');
+  }
+  window._estateProps = list;
+  renderEstateFiltered('');
+}
+function filterEstateByType(t){
+  renderEstateFiltered(t);
+}
+function renderEstateFiltered(type){
+  const grid=document.getElementById('estatesBrowseGrid');
+  if(!grid || !window._estateProps) return;
+  let list = window._estateProps;
+  if(type) list = list.filter(p=> (p.property_type||p.type||'').toLowerCase()===type.toLowerCase());
+  if(!list.length){ grid.innerHTML=`<div class="tile"><b>No properties</b></div>`; return; }
+  grid.innerHTML = list.slice(0,20).map((p,i)=>{
+    const price = p.price!=null ? fmtCur(p.price) : (p.price_paid!=null?fmtCur(p.price_paid):'—');
+    const rent = p.rent!=null ? `Rent ${fmtCur(p.rent)}/wk` : '';
+    const name = p.property_id||p.name||p.id||'Property';
+    const avail = p.available!==false ? 'Available' : 'Sold';
+    return `<button class="tile" data-focusable tabindex="-1" onclick="buyEstateItem('${escapeHtml(p.property_id||p.id||name)}')"><span class="kicker"><i class="fas fa-house"></i> ${escapeHtml(p.property_type||'house')} • ${avail}</span><b>${escapeHtml(name)}</b><span style="font-size:0.72rem; color:var(--muted)">${price} ${rent} • ${escapeHtml(p.location||'')}</span></button>`;
+  }).join('');
+}
+async function loadEstateAgents(){
+  const grid=document.getElementById('estatesAgentsGrid');
+  if(!grid) return;
+  let res = await apiCall('call_command', 'realestate.list_agents', {});
+  let agents = [];
+  if(res && res.status==='success') agents = res.result||res.agents||[];
+  else {
+    let r2 = await apiCall('get_realestate_catalog');
+    agents = r2?.catalog?.agents||[];
+  }
+  if(!agents.length){ grid.innerHTML=`<div class="tile"><b>No agents</b></div>`; return; }
+  grid.innerHTML = agents.map(a=>`<button class="tile" data-focusable tabindex="-1"><span class="kicker"><i class="fas fa-user-tie"></i> Agent</span><b>${escapeHtml(a.name||a.agent_id||'Agent')}</b><span style="font-size:0.72rem; color:var(--muted)">Fee ${a.fee||'—'} • Rating ${a.rating||'—'}</span></button>`).join('');
+}
+async function loadEstateGarages(){
+  const grid=document.getElementById('estatesGaragesList');
+  if(!grid) return;
+  let res = await apiCall('call_command', 'realestate.garages', {player_id:1});
+  let garages = [];
+  if(res && res.status==='success') garages = res.result||res.garages||[];
+  if(!garages.length){ grid.innerHTML=`<div class="tile"><b>No garages</b><span style="font-size:0.72rem; color:var(--muted)">Buy a property with parking to store vehicles.</span></div>`; return; }
+  grid.innerHTML = garages.map(g=>`<div class="tile" data-focusable tabindex="-1"><span class="kicker"><i class="fas fa-square-parking"></i> ${escapeHtml(g.property_id||'Garage')}</span><b>${escapeHtml(g.name||g.property_id||'Garage')}</b><span style="font-size:0.72rem; color:var(--muted)">${(g.stored_vehicles||[]).length} / ${g.capacity||0} vehicles</span></div>`).join('');
+}
+
+// actions — controller A triggers these via buttons, not typed commands
+async function applyBank(bank){
+  const res = await apiCall('call_command', 'bank.apply', {player_id:1, bank_name:bank});
+  showToast(res && res.message ? res.message : (res.status==='success'?'Joined '+bank:'Failed'), res && res.status==='success'?'success':'error');
+  renderWallet(); doRefresh();
+}
+function openBankApply(){ document.getElementById('walletBankList')?.scrollIntoView({behavior:'smooth', block:'nearest'}); showToast('Pick a bank card below', 'info'); }
+async function openCardDetail(cardId){ const res=await apiCall('call_command','bank.list_cards',{player_id:1}); showToast('Card '+cardId, 'info'); }
+async function buyShopItem(vehicleId){
+  // pick first card as payment via Payment-style: use bank pay limits checked server-side
+  const w = await apiCall('get_bank_overview',1); const card = w && w.cards && w.cards[0];
+  const args = {vehicle_id: vehicleId}; if(card) args.card_id = card.card_id;
+  const res = await apiCall('call_command', 'vehicleshop.buy', args);
+  showToast(res && res.message ? res.message : (res.status==='success'?'Bought '+vehicleId:'Failed'), res && res.status==='success'?'success':'error');
+  if(res && res.status==='success') doRefresh();
+}
+async function buyEstateItem(propId){
+  const w = await apiCall('get_bank_overview',1); const card = w && w.cards && w.cards[0];
+  const args = {property_id: propId}; if(card) args.card_id = card.card_id;
+  let res = await apiCall('call_command', 'realestate.buy', args);
+  if(!res || res.status!=='success') res = await apiCall('call_command', 'realestate.buy', {player_id:1, property_id:propId});
+  showToast(res && res.message ? res.message : (res.status==='success'?'Bought '+propId:'Failed'), res && res.status==='success'?'success':'error');
+  if(res && res.status==='success') doRefresh();
+}
+async function openInvAdd(){ const itemId = prompt('Item ID (number, e.g. 1 = bread):'); if(!itemId) return; const qty = prompt('Quantity:', '1')||'1'; const res=await apiCall('call_command','inventory.add',{player_id:1, item_id:parseInt(itemId), quantity:parseInt(qty)}); showToast(res.message|| (res.status==='success'?'Added':'Failed'), res.status==='success'?'success':'error'); if(res.status==='success') renderInventory(); }
+async function openInvDetail(idx){ const grid=document.getElementById('invGrid'); const s=grid && grid._invStacks && grid._invStacks[idx]; if(!s) return; document.getElementById('detailTitle').innerHTML=`<i class="fas fa-cube"></i> ${escapeHtml(s.def?.name||'Item '+s.item_id)}`; document.getElementById('detailBody').innerHTML=`<div class="detail-grid"><div class="stat"><span class="kicker">Item</span><b>#${s.item_id} — ${escapeHtml(s.def?.name||'')}</b><div style="opacity:0.7">${escapeHtml(s.def?.category||'')} • ${s.quantity} pcs</div></div><div class="stat"><span class="kicker">Weight</span><b>${s.def?.weight||0}kg each</b><div>Total ${(s.def?.weight||0)*s.quantity}kg</div></div><div class="stat" style="grid-column:1/-1"><b>Description</b><div>${escapeHtml(s.def?.description||'—')}</div><div style="margin-top:8px; display:flex; gap:8px"><button class="btn small primary" data-focusable tabindex="-1" onclick="removeInvItem(${s.item_id})"><i class="fas fa-minus"></i> Remove 1</button><button class="btn small" data-focusable tabindex="-1" onclick="closeDetail()">Close</button></div></div></div>`; document.getElementById('detailOverlay').classList.add('active'); refreshFocus(); }
+async function removeInvItem(itemId){ const res=await apiCall('call_command','inventory.remove_item',{player_id:1, item_id:itemId, quantity:1}); showToast(res.message||'Removed', res.status==='success'?'success':'error'); closeDetail(); renderInventory(); }
+async function openPlayerAdd(){ const pid = prompt('New player ID (number):'); if(!pid) return; const x=prompt('X:', '10')||'10'; const y=prompt('Y:', '0')||'0'; const z=prompt('Z:', '10')||'10'; const res=await apiCall('call_command','player.add',{player_id:parseInt(pid), pos:[parseFloat(x),parseFloat(y),parseFloat(z)]}); showToast(res.message||'Added', res.status==='success'?'success':'error'); if(res.status==='success') renderPlayers(); }
+async function openPlayerDetail(pid){ document.getElementById('detailTitle').innerHTML=`<i class="fas fa-user"></i> Player ${pid}`; const res=await apiCall('call_command','player.get',{player_id:pid}); const pos=res && (res.result||res.pos||res.position); document.getElementById('detailBody').innerHTML=`<div class="detail-grid"><div class="stat"><span class="kicker">Position</span><b>${pos? pos.join(', ') : '—'}</b></div><div class="stat"><span class="kicker">Actions</span><div style="display:flex; gap:8px; flex-wrap:wrap"><button class="btn small primary" data-focusable tabindex="-1" onclick="movePlayerPrompt(${pid})"><i class="fas fa-arrows"></i> Move</button><button class="btn small" data-focusable tabindex="-1" onclick="closeDetail()">Close</button></div></div></div>`; document.getElementById('detailOverlay').classList.add('active'); refreshFocus(); }
+async function movePlayerPrompt(pid){ const x=prompt('New X:', '0'); if(x===null) return; const y=prompt('Y:', '0')||'0'; const z=prompt('Z:', '5')||'5'; const res=await apiCall('call_command','player.move',{player_id:pid, pos:[parseFloat(x),parseFloat(y),parseFloat(z)]}); showToast(res.message||'Moved', res.status==='success'?'success':'error'); closeDetail(); renderPlayers(); }
+async function openContactAdd(){ const name=prompt('Contact name:'); if(!name) return; const num=prompt('Phone number:', '555-0100'); const res=await apiCall('call_command','phone.new_contact',{contact_name:name, contact_number:num||'555-0100'}); showToast(res.message||'Added', res.status==='success'?'success':'error'); if(res.status==='success') renderPhone(); }
+async function openContactDetail(idx){ const grid=document.getElementById('phoneGrid'); const c=grid && grid._contacts && grid._contacts[idx]; if(!c) return; document.getElementById('detailTitle').innerHTML=`<i class="fas fa-address-book"></i> ${escapeHtml(c.name)}`; document.getElementById('detailBody').innerHTML=`<div class="detail-grid"><div class="stat"><span class="kicker">Contact</span><b>${escapeHtml(c.name)}</b><div>${escapeHtml(c.number||'—')}</div></div><div class="stat"><span class="kicker">Actions</span><div style="display:flex; gap:8px"><button class="btn small primary" data-focusable tabindex="-1" onclick="deleteContact('${escapeHtml(c.name)}')"><i class="fas fa-trash"></i> Delete</button><button class="btn small" data-focusable tabindex="-1" onclick="closeDetail()">Close</button></div></div></div>`; document.getElementById('detailOverlay').classList.add('active'); refreshFocus(); }
+async function deleteContact(name){ const res=await apiCall('call_command','phone.delete_contact',{contact_name:name}); showToast(res.message||'Deleted', res.status==='success'?'success':'error'); closeDetail(); renderPhone(); }
+
+function renderSaves(){
+  const grid=document.getElementById('savesGrid'); const og=document.getElementById('overlaySavesGrid');
+  if(!grid) return;
+  const mk=(item, idx, withSelect)=>{
+    const has = item && item.saved_at;
+    const name=item.name||('slot'+(idx+1));
+    const isSel = selectedSave===name;
+    const cls = has? 'save-slot' : 'save-slot empty';
+    const sel = isSel? ' selected' : '';
+    const meta = has? `<span class="slot-meta">${fmtTime(item.saved_at)}</span><span class="slot-meta" style="opacity:0.6">${escapeHtml(item.version||'')}</span>` : `<span class="slot-meta">empty slot</span>`;
+    return `<button class="${cls}${sel}" data-focusable tabindex="-1" data-save="${escapeHtml(name)}" onclick="pickSave('${escapeHtml(name)}')"><span class="slot-num"><i class="fas fa-hard-drive"></i> ${escapeHtml(name)}</span>${meta}<span class="slot-meta">${isSel? '<b style="color:var(--accent)">● selected</b>' : ''}</span></button>`;
+  };
+  // Prefer detailed saves; otherwise synthesize slots 1..8
+  let slots=[];
+  if(detailedSaves && detailedSaves.length){
+    slots = detailedSaves.slice().sort((a,b)=> a.name.localeCompare(b.name));
+    // pad to at least 8
+    while(slots.length<8) slots.push({name:'slot'+(slots.length+1), saved_at:null});
+  } else {
+    const names = savesList.length? savesList : [];
+    const used=new Set(names);
+    slots = names.map(n=>({name:n, saved_at:null}));
+    let i=1; while(slots.length<8){ const nm='slot'+i; if(!used.has(nm)) slots.push({name:nm, saved_at:null}); i++; }
+  }
+  grid.innerHTML = slots.map((s,i)=> mk(s,i)).join('');
+  if(og) og.innerHTML = slots.map((s,i)=> mk(s,i)).join('');
+  updateSaveButtons();
+}
+function updateSaveButtons(){
+  const hasSel = !!selectedSave;
+  document.getElementById('btnSaveLoad').disabled=!hasSel;
+  const ol=document.getElementById('overlayLoadBtn'); if(ol) ol.disabled=!hasSel;
+  const os=document.getElementById('overlaySel'); if(os) os.textContent=selectedSave||'none';
+  const detailName=document.getElementById('saveDetailName'); if(detailName) detailName.textContent=selectedSave||'live';
+  // highlight
+  document.querySelectorAll('[data-save]').forEach(el=> el.classList.toggle('selected', el.dataset.save===selectedSave));
+}
+function pickSave(name){
+  selectedSave=name;
+  updateSaveButtons();
+  // subtle tick
+  try{ playTick('move'); }catch(e){}
+}
+async function doLoadSelected(isOverlay){
+  if(!selectedSave) return;
+  const res=await apiCall('load_game', selectedSave) || await apiCall('load_save', selectedSave);
+  if(res && res.status==='success'){
+    await fetchState(selectedSave);
+    renderHUD(); renderSaves();
+    showToast(`Loaded ${selectedSave}`, 'success');
+    closeSaveOverlay();
+  } else {
+    showToast(res? res.message : 'Load failed', 'error');
+  }
+}
+async function doSaveSelected(isOverlay){
+  let name=selectedSave;
+  if(!name){ openNewSave(); return; }
+  const res=await apiCall('save_game', name);
+  if(res && res.status==='success'){
+    await fetchState(name); await fetchSavesDetailed(); renderHUD(); renderSaves();
+    showToast(`Saved to ${name}`, 'success');
+    closeSaveOverlay();
+  } else showToast(res? res.message : 'Save failed', 'error');
+}
+function openNewSave(){ document.getElementById('newSaveOverlay').classList.add('active'); setTimeout(()=>{ const inp=document.getElementById('newSaveInput'); if(inp){ inp.value=''; inp.focus(); } refreshFocus(); }, 80); }
+function closeNewSave(){ document.getElementById('newSaveOverlay').classList.remove('active'); }
+async function confirmNewSave(){
+  const inp=document.getElementById('newSaveInput'); const name=(inp.value||'').trim();
+  if(!name){ showToast('Enter a save name', 'warning'); return; }
+  const res=await apiCall('save_game', name);
+  if(res && res.status==='success'){
+    selectedSave=name; await fetchState(name); await fetchSavesDetailed(); renderHUD(); renderSaves();
+    closeNewSave(); showToast(`Saved to ${name}`, 'success');
+  } else showToast(res? res.message : 'Save failed', 'error');
+}
+
+// detail modals
+function openSys(key){
+  const sys=(appState&&appState.systems&&appState.systems[key])||null;
+  document.getElementById('detailTitle').innerHTML=`<i class="fas fa-cube"></i> ${escapeHtml(key)}`;
+  const body=document.getElementById('detailBody');
+  if(sys==null) body.innerHTML=`<div class="stat">No data for ${escapeHtml(key)}</div>`;
+  else {
+    let html=`<div class="stat"><b>${escapeHtml(key)}</b><div style="margin-top:6px; max-height:40vh; overflow:auto; white-space:pre-wrap; word-break:break-all; font-size:0.72rem">${escapeHtml(JSON.stringify(sys,null,2))}</div></div>`;
+    body.innerHTML=html;
+  }
+  document.getElementById('detailOverlay').classList.add('active'); refreshFocus();
+}
+function openGarageDetail(idx){
+  const grid=document.getElementById('garageGrid'); const item=grid&&grid._items&&grid._items[idx];
+  if(!item) return;
+  document.getElementById('detailTitle').innerHTML=`<i class="fas fa-car"></i> ${escapeHtml(item.vehicle_id||item.name||'Vehicle')}`;
+  document.getElementById('detailBody').innerHTML=`<div class="detail-grid">
+    <div class="stat"><span class="kicker">Vehicle</span><b>${escapeHtml(item.vehicle_id||'—')}</b><div style="opacity:0.7">${escapeHtml(item.category||'vehicle')}</div></div>
+    <div class="stat"><span class="kicker">Owner</span><b>P${escapeHtml(item._pid)}</b><div style="opacity:0.7">${escapeHtml(item.tenure||'owned')}</div></div>
+    <div class="stat"><span class="kicker">Paid</span><b>${escapeHtml(fmtCur(item.price_paid||0))}</b></div>
+    <div class="stat"><span class="kicker">Raw</span><div style="max-height:22vh; overflow:auto; white-space:pre-wrap; word-break:break-all; font-size:0.68rem">${escapeHtml(JSON.stringify(item,null,2))}</div></div>
+  </div>`;
+  document.getElementById('detailOverlay').classList.add('active'); refreshFocus();
+}
+function openEstateDetail(idx){
+  const grid=document.getElementById('estatesGrid'); const op=grid&&grid._items&&grid._items[idx];
+  if(!op) return;
+  document.getElementById('detailTitle').innerHTML=`<i class="fas fa-house"></i> ${escapeHtml(op.property_id||op.name||'Property')}`;
+  document.getElementById('detailBody').innerHTML=`<div class="detail-grid">
+    <div class="stat"><span class="kicker">Property</span><b>${escapeHtml(op.property_id||'—')}</b><div style="opacity:0.7">${escapeHtml(op.property_type||op.type||'house')} • ${escapeHtml(op.tenure||'owned')}</div></div>
+    <div class="stat"><span class="kicker">Owner</span><b>P${escapeHtml(op._pid)}</b><div style="opacity:0.7">${escapeHtml(op.location||'—')}</div></div>
+    <div class="stat"><span class="kicker">Paid</span><b>${escapeHtml(fmtCur(op.price_paid||0))}</b><div style="opacity:0.7">Fee ${escapeHtml(fmtCur(op.fee_paid||0))}</div></div>
+    <div class="stat"><span class="kicker">Stats</span><div style="font-size:0.72rem">${escapeHtml(JSON.stringify(op.stats||op,null,2))}</div></div>
+  </div>`;
+  document.getElementById('detailOverlay').classList.add('active'); refreshFocus();
+}
+function closeDetail(){ document.getElementById('detailOverlay').classList.remove('active'); }
+function openSaveOverlay(){ document.getElementById('saveOverlay').classList.add('active'); refreshFocus(); }
+function closeSaveOverlay(){ document.getElementById('saveOverlay').classList.remove('active'); }
+
+// tabs — controller friendly, lazy-load system data
+function switchTab(id){
+  if(activeTab===id) return;
+  activeTab=id;
+  document.querySelectorAll('.tab').forEach(t=>{ const on=t.dataset.tab===id; t.classList.toggle('active',on); t.setAttribute('aria-selected', String(on)); });
+  document.querySelectorAll('.view').forEach(v=> v.classList.toggle('active', v.id==='view-'+id));
+  // lazy load per-tab data
+  if(id==='wallet') renderWallet();
+  else if(id==='inventory') renderInventory();
+  else if(id==='players') renderPlayers();
+  else if(id==='phone') renderPhone();
+  else if(id==='garage' && garageSubtab==='catalog') loadShopCatalog();
+  else if(id==='estates'){
+    if(estatesSubtab==='browse') loadEstateBrowse();
+    else if(estatesSubtab==='agents') loadEstateAgents();
+    else if(estatesSubtab==='garages') loadEstateGarages();
+  }
+  // focus first element in new view
+  setTimeout(()=>{ refreshFocus(); focusFirstInView(id); }, 40);
+  try{ playTick('move'); }catch(e){}
+}
+function focusFirstInView(id){
+  const view=document.getElementById('view-'+id);
+  if(!view) return;
+  const first=view.querySelector('[data-focusable]');
+  if(first && window._mttFocus) window._mttFocus.focus(first);
+}
+
+// refresh + quit — refresh all integrated systems
+async function doRefresh(){
+  await fetchState(selectedSave||null); await fetchSavesDetailed(); renderHUD(); renderSaves();
+  // refresh active system views controller-friendly
+  if(activeTab==='wallet') renderWallet();
+  else if(activeTab==='inventory') renderInventory();
+  else if(activeTab==='players') renderPlayers();
+  else if(activeTab==='phone') renderPhone();
+  else if(activeTab==='garage'){
+    if(garageSubtab==='catalog' || garageSubtab==='categories') loadShopCatalog();
+  } else if(activeTab==='estates'){
+    if(estatesSubtab==='browse') loadEstateBrowse();
+    else if(estatesSubtab==='agents') loadEstateAgents();
+    else if(estatesSubtab==='garages') loadEstateGarages();
+  }
+  showToast('Refreshed', 'info'); refreshFocus();
+}
+async function quitApp(){
+  await apiCall('quit_dashboard');
+  try{ window.close(); }catch(e){}
+}
+
+// toast
+let toastTimer=null;
+function showToast(msg, level){
+  let c=document.getElementById('toast'); if(!c){ c=document.createElement('div'); c.id='toast'; c.style.cssText='position:fixed; top:72px; right:16px; z-index:60; display:flex; flex-direction:column; gap:8px; max-width:360px; pointer-events:none'; document.body.appendChild(c); }
+  const d=document.createElement('div'); d.style.cssText='pointer-events:auto; background:rgba(20,20,35,0.96); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:12px; padding:10px 12px; font-size:0.84rem; box-shadow:0 10px 28px rgba(0,0,0,0.35)';
+  if(level==='success') d.style.borderLeftColor='#22c55e';
+  if(level==='error') d.style.borderLeftColor='#ef4444';
+  if(level==='warning') d.style.borderLeftColor='#f59e0b';
+  d.textContent=msg; c.appendChild(d);
+  setTimeout(()=>{ d.style.opacity='0'; d.style.transform='translateX(8px)'; d.style.transition='all 0.22s var(--ease)'; }, 2200);
+  setTimeout(()=>{ try{d.remove();}catch(e){} }, 2600);
+}
+
+// clock
+function tickClock(){ const el=document.getElementById('clock'); if(!el) return; const n=new Date(); let h=n.getHours(); const m=String(n.getMinutes()).padStart(2,'0'); const am=h>=12?'PM':'AM'; h=h%12||12; el.textContent=`${String(h).padStart(2,'0')}:${m} ${am}`; }
+setInterval(tickClock, 1000); tickClock();
+
+// audio tick
+let audioCtx=null;
+function ensureAudio(){ if(audioCtx) return; try{ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
+function playTick(type){
+  ensureAudio(); if(!audioCtx) return; if(audioCtx.state==='suspended') audioCtx.resume();
+  const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+  if(type==='move'){ o.type='sine'; o.frequency.setValueAtTime(600,audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(300,audioCtx.currentTime+0.03); g.gain.setValueAtTime(0.05,audioCtx.currentTime); }
+  else { o.type='triangle'; o.frequency.setValueAtTime(800,audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(1200,audioCtx.currentTime+0.1); g.gain.setValueAtTime(0.09,audioCtx.currentTime); }
+  g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.05); o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+0.1);
+}
+
+// controller + focus wiring
+let _ctrl=null, _focus=null;
+function initController(){
+  if(!window.MTTController || !window.MTTFocus){ console.warn('controller.js not loaded'); return; }
+  _ctrl = new MTTController({ deadzone:0.42, repeatDelay:320, repeatRate:130 });
+  _focus = new MTTFocus({ selector:'[data-focusable]', loop:false });
+  window._mttCtrl=_ctrl; window._mttFocus=_focus;
+  // status dot
+  _ctrl.on('status', ({connected,name})=>{
+    const dot=document.getElementById('gpDot'); const txt=document.getElementById('gpText');
+    if(!dot||!txt) return;
+    if(connected){ dot.firstElementChild.style.background='#22c55e'; dot.firstElementChild.style.boxShadow='0 0 8px #22c55e'; txt.textContent='Controller: '+(name? name.slice(0,28) : 'connected'); }
+    else { dot.firstElementChild.style.background='#6b7280'; dot.firstElementChild.style.boxShadow='none'; txt.textContent='No controller — keyboard ready'; }
+  });
+  _ctrl.on('connect', ()=> playTick('select'));
+  _ctrl.on('a', ()=>{ /* handled by focus */ });
+  _ctrl.on('b', ()=>{
+    // Back hierarchy: close overlay first, else go to tabs
+    if(document.getElementById('detailOverlay').classList.contains('active')){ closeDetail(); return; }
+    if(document.getElementById('saveOverlay').classList.contains('active')){ closeSaveOverlay(); return; }
+    if(document.getElementById('newSaveOverlay').classList.contains('active')){ closeNewSave(); return; }
+    // if focus is inside content, jump to tab strip
+    const cur=_focus.current;
+    if(cur && cur.closest && cur.closest('.view')){
+      const firstTab=document.querySelector('#tabStrip [data-focusable]');
+      if(firstTab) _focus.focus(firstTab);
+    }
+  });
+  _ctrl.start();
+  _focus.bind(_ctrl);
+  _focus.observe();
+  // keep focus visible for mouse: sync focus manager with mouse hover
+  document.addEventListener('mouseover', e=>{
+    const t=e.target.closest && e.target.closest('[data-focusable]');
+    if(t && _focus.focusable.includes(t)) _focus.focus(t);
+  });
+  // edge event: when at top of content and pressing up, go to tabs
+  document.addEventListener('mtt:edge', e=>{
+    const dir=e.detail.dir; const from=e.detail.from;
+    if(dir==='up' && from && from.closest && from.closest('.view')){
+      const firstTab=document.querySelector('#tabStrip [data-focusable]');
+      if(firstTab) _focus.focus(firstTab);
+    }
+  });
+  // initial focus
+  setTimeout(()=>{ const first=document.querySelector('#tabStrip [data-focusable]'); if(first) _focus.focus(first); }, 120);
+}
+function refreshFocus(){
+  if(!_focus) return;
+  // re-ensure at least one focused
+  const cur=_focus.current;
+  if(!cur || !document.contains(cur) || !cur.offsetParent) {
+    const activeView=document.querySelector('.view.active');
+    const cand = activeView ? activeView.querySelector('[data-focusable]') : null;
+    const tab = document.querySelector('#tabStrip [data-focusable].active') || document.querySelector('#tabStrip [data-focusable]');
+    if(cand) _focus.focus(cand);
+    else if(tab) _focus.focus(tab);
+  }
+}
+
+// boot
+(async()=>{
+  await whenPyviewReady();
+  initController();
+  await loadSettings();
+  await fetchState(null);
+  await fetchSavesDetailed();
+  renderHUD(); renderSaves();
+  refreshFocus();
+  // tick HUD every 3s
+  setInterval(async()=>{ await fetchState(selectedSave||null); renderHUD(); }, 3000);
+})();
+
+// global key fallback for B/Escape when controller not bound yet
+window.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){
+    if(document.getElementById('detailOverlay').classList.contains('active')){ e.preventDefault(); closeDetail(); }
+    else if(document.getElementById('saveOverlay').classList.contains('active')){ e.preventDefault(); closeSaveOverlay(); }
+    else if(document.getElementById('newSaveOverlay').classList.contains('active')){ e.preventDefault(); closeNewSave(); }
+  }
+});
+</script>
+</body>
+</html>

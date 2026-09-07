@@ -239,6 +239,58 @@ class XMBDashboardAPI:
         """Launch Dashboard V2 (Debugger — XMB-themed)."""
         return self._spawn_dashboard_v2()
 
+    def _spawn_dashboard_v3(self):
+        """Helper: spawn dashboard_v3 as independent process and close XMB."""
+        try:
+            project_root = Path(__file__).resolve().parents[3]
+            cmd = [sys.executable, "-m", "core.renderer.dashboard_v3.dashboard_v3"]
+            subprocess.Popen(cmd, cwd=str(project_root), close_fds=True)  # noqa: S603
+        except Exception as e:
+            return {"status": "error", "message": f"Failed to launch Dashboard V3: {e}"}
+        try:
+            import webview
+            if webview.windows:
+                for w in list(webview.windows):
+                    try:
+                        w.destroy()
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+        return {"status": "success", "message": "Dashboard V3 launched"}
+
+    @menu_option("misc", "Misc", "fa-ellipsis-h", "Dashboard V3",
+                 "Open MTT Dashboard V3 — Console Hub. Controller-first, no commands, pure UI menus. Big-screen friendly. Gamepad + keyboard.")
+    def launch_dashboard_v3(self):
+        """Launch Dashboard V3 (Console Hub)."""
+        return self._spawn_dashboard_v3()
+
+    def _spawn_dashboard_v4(self):
+        """Helper: spawn dashboard_v4 (PyImGui) as independent process and close XMB."""
+        try:
+            project_root = Path(__file__).resolve().parents[3]
+            cmd = [sys.executable, "-m", "core.renderer.dashboard_v4.dashboard_v4"]
+            subprocess.Popen(cmd, cwd=str(project_root), close_fds=True)  # noqa: S603
+        except Exception as e:
+            return {"status": "error", "message": f"Failed to launch Dashboard V4: {e}"}
+        try:
+            import webview
+            if webview.windows:
+                for w in list(webview.windows):
+                    try:
+                        w.destroy()
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+        return {"status": "success", "message": "Dashboard V4 (ImGui) launched"}
+
+    @menu_option("misc", "Misc", "fa-ellipsis-h", "Dashboard V4",
+                 "Open MTT Dashboard V4 — Dear ImGui console hub. Native PyImGui + OpenGL, controller + keyboard + mouse. Replaces HTML dashboards.")
+    def launch_dashboard_v4(self):
+        """Launch Dashboard V4 (ImGui Console Hub)."""
+        return self._spawn_dashboard_v4()
+
     @menu_option("misc", "Misc", "fa-ellipsis-h", "Quit",
                  "Save progress and return to desktop.")
     def quit_game(self):

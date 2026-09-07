@@ -44,8 +44,19 @@ def get_xmb_html_path():
     return str(html_path)
 
 
-def run():
-    """Initialize and run the Milk Toast Taco XMB application."""
+def run(debug: bool | None = None):
+    """Initialize and run the Milk Toast Taco XMB application.
+
+    DevTools are now opt-in: pass --debug or set MTT_DEBUG=1.
+    Previously this always used debug=True which forced Edge DevTools
+    to open on every launch.
+    """
+    # Debug is opt-in — check explicit arg, CLI flag, and env var
+    if debug is None:
+        debug = "--debug" in sys.argv or os.environ.get("MTT_DEBUG") == "1"
+    else:
+        debug = bool(debug)
+
     try:
         # Get the path to the XMB HTML dashboard
         html_path = get_xmb_html_path()
@@ -70,8 +81,8 @@ def run():
             fullscreen=_fullscreen,
         )
         
-        # Start the webview event loop
-        webview.start(debug=True)
+        # Start the webview event loop (debug=False hides Edge DevTools)
+        webview.start(debug=debug)
         
     except FileNotFoundError as e:
         print(f"Error: {e}", file=sys.stderr)
@@ -82,4 +93,9 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    import argparse
+
+    _p = argparse.ArgumentParser(description="Milk Toast Taco — XMB (Edge DevTools hidden unless --debug)")
+    _p.add_argument("--debug", action="store_true", help="Enable pywebview debug / Edge DevTools")
+    _args = _p.parse_args()
+    run(debug=_args.debug)

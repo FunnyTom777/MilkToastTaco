@@ -372,6 +372,8 @@
         <div class="stat-card" style="border-left: 2px solid var(--accent);"><i class="fas fa-wallet" style="color:var(--accent)"></i> Wallet <span id="stat-wallet">$—</span></div>
         <div class="stat-card"><i class="fas fa-warehouse" style="color:#a78bfa"></i> Garage <span id="stat-garage">0 • $0</span></div>
         <div class="stat-card"><i class="fas fa-building-columns" style="color:#38bdf8"></i> Bank <span id="stat-bank">—</span></div>
+        <div class="stat-card" style="border-left: 2px solid #f59e0b;"><i class="fas fa-house" style="color:#f59e0b"></i> Real Estate <span id="stat-realestate">0 • $0</span></div>
+        <div class="stat-card" style="font-size:0.72rem;"><i class="fas fa-square-parking" style="color:#22c55e"></i> Parking <span id="stat-parking">0/0</span></div>
       </div>
       <div>
         <div class="section-label"><i class="fas fa-coins"></i> Economy</div>
@@ -386,6 +388,14 @@
         <div class="section-label"><i class="fas fa-store"></i> Vehicle Shop</div>
         <button class="quick-btn" onclick="openShop()" style="background:var(--accent-subtle); border-color:var(--accent);"><span><i class="fas fa-shop"></i> Open Vehicle Shop</span><span style="opacity:0.6;">/vehicleshop</span></button>
         <button class="quick-btn" onclick="openShopTab('owned')"><span><i class="fas fa-warehouse"></i> My Vehicles</span><span id="owned-count-badge" class="pill" style="font-size:0.65rem;">0</span></button>
+      </div>
+
+      <div>
+        <div class="section-label"><i class="fas fa-house-chimney"></i> Real Estate</div>
+        <button class="quick-btn" onclick="openRealEstate()" style="background:var(--accent-subtle); border-color:var(--accent);"><span><i class="fas fa-house"></i> Open Real Estate</span><span style="opacity:0.6;">/realestate</span></button>
+        <button class="quick-btn" onclick="openRealEstateTab('owned')"><span><i class="fas fa-key"></i> My Properties</span><span id="realestate-owned-badge" class="pill" style="font-size:0.65rem;">0</span></button>
+        <button class="quick-btn" onclick="openRealEstateTab('agents')"><span><i class="fas fa-handshake"></i> Agents</span><span style="opacity:0.5;">5</span></button>
+        <button class="quick-btn" onclick="openRealEstateTab('garages')"><span><i class="fas fa-square-parking"></i> Garages</span><span id="realestate-garage-badge" class="pill" style="font-size:0.65rem;">0/0</span></button>
       </div>
 
       <div>
@@ -477,6 +487,92 @@
             <button class="save-action-btn secondary" onclick="closePaymentMenu()">Cancel</button>
             <button id="payConfirmBtn" class="save-action-btn primary" disabled onclick="confirmPayment()"><i class="fas fa-lock"></i> Pay</button>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Real Estate Overlay (FS22-style, property browser) -->
+  <div id="realEstateOverlay" class="shop-overlay" onclick="if(event.target===this) closeRealEstate()">
+    <div class="shop-window" role="dialog" aria-modal="true" aria-label="Real Estate" style="width:min(1240px,97vw); height:min(840px,93vh);">
+      <div class="shop-header">
+        <div class="shop-title"><i class="fas fa-house-chimney" style="color:#f59e0b"></i> Real Estate
+          <span class="shop-meta"><span id="reBalance" class="shop-balance"><i class="fas fa-coins"></i> $—</span> <span id="reOwnedMeta" class="pill" style="font-size:0.65rem;"><i class="fas fa-key"></i> <span id="reOwnedCount">0</span> owned</span> <span id="reGarageMeta" class="pill" style="font-size:0.62rem;"><i class="fas fa-square-parking"></i> <span id="reGarageText">0/0</span></span></span>
+        </div>
+        <div class="shop-tabs">
+          <button class="shop-tab active" data-retab="browse" onclick="switchRealEstateTab('browse')">Browse</button>
+          <button class="shop-tab" data-retab="owned" onclick="switchRealEstateTab('owned')">My Properties</button>
+          <button class="shop-tab" data-retab="agents" onclick="switchRealEstateTab('agents')">Agents</button>
+          <button class="shop-tab" data-retab="garages" onclick="switchRealEstateTab('garages')">Garages</button>
+        </div>
+        <button class="shop-close" onclick="closeRealEstate()" aria-label="Close">✕</button>
+      </div>
+      <div class="shop-body" style="display:flex; flex-direction:column; overflow:hidden;">
+        <div class="shop-breadcrumb" id="reBreadcrumb"><a onclick="renderRealEstateBrowse()">All Properties</a> <span style="opacity:0.35">›</span> <span id="reCrumbLabel">Browse</span></div>
+        <div id="reFilters" style="display:flex; gap:8px; padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.06); flex-wrap:wrap; align-items:center; background:rgba(0,0,0,0.14);">
+          <div style="display:flex; gap:6px; flex-wrap:wrap;" id="reTypeChips">
+            <button class="mini-btn primary" data-retype="" onclick="setRealEstateFilterType('')">All</button>
+            <button class="mini-btn" data-retype="house" onclick="setRealEstateFilterType('house')"><i class="fas fa-house"></i> House</button>
+            <button class="mini-btn" data-retype="apartment" onclick="setRealEstateFilterType('apartment')"><i class="fas fa-building"></i> Apt</button>
+            <button class="mini-btn" data-retype="vacant_land" onclick="setRealEstateFilterType('vacant_land')"><i class="fas fa-mountain"></i> Vacant</button>
+            <button class="mini-btn" data-retype="farm" onclick="setRealEstateFilterType('farm')"><i class="fas fa-tractor"></i> Farm</button>
+            <button class="mini-btn" data-retype="business" onclick="setRealEstateFilterType('business')"><i class="fas fa-shop"></i> Business</button>
+            <button class="mini-btn" data-retype="commercial" onclick="setRealEstateFilterType('commercial')"><i class="fas fa-industry"></i> Comms</button>
+          </div>
+          <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+            <label style="font-size:0.68rem; display:flex; gap:4px; align-items:center; cursor:pointer;"><input type="checkbox" id="reAvailableOnly" onchange="refreshRealEstateBrowse()"> <span>Available only</span></label>
+            <select id="reSaleRentFilter" onchange="refreshRealEstateBrowse()" style="background:var(--bg-dark); border:1px solid var(--panel-border); border-radius:6px; padding:4px 6px; color:var(--text-main); font-size:0.70rem;"><option value="">All (sale+rent)</option><option value="sale">For Sale only</option><option value="rent">For Rent only</option></select>
+            <div style="position:relative;"><input id="reSearch" type="text" placeholder="Search name/location …" oninput="debounceRealEstateSearch()" style="background:var(--bg-dark); border:1px solid var(--panel-border); border-radius:6px; padding:4px 8px; color:var(--text-main); font-size:0.72rem; width:160px;"><i class="fas fa-search" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); opacity:0.4; font-size:0.65rem;"></i></div>
+          </div>
+          <div style="margin-left:auto; display:flex; gap:6px;">
+            <button class="mini-btn" onclick="refreshRealEstateBrowse()"><i class="fas fa-sync"></i> Refresh</button>
+            <button class="mini-btn" onclick="executeQuick('/realestate.list_properties')"><i class="fas fa-terminal"></i> Console</button>
+          </div>
+        </div>
+        <!-- Browse grid -->
+        <div id="reBrowseGrid" class="shop-grid"></div>
+        <!-- Owned grid -->
+        <div id="reOwnedGrid" class="shop-grid" style="display:none;"></div>
+        <!-- Agents grid -->
+        <div id="reAgentsGrid" class="shop-grid" style="display:none;"></div>
+        <!-- Garages pane (custom layout) -->
+        <div id="reGaragesPane" style="display:none; flex:1; overflow:auto; padding:12px; flex-direction:column; gap:10px;"></div>
+      </div>
+      <div class="shop-stats-bar" id="reStatsBar"><span style="opacity:0.6;">Browse properties • filter by type • hover for stats • Buy/Rent adds to ownership • store cars if parking >0 • <code style="opacity:0.8">/realestate.buy house_maple_12</code></span></div>
+    </div>
+  </div>
+
+  <!-- Real Estate Property Detail Modal -->
+  <div id="reDetailModal" class="modal-overlay" onclick="if(event.target===this) closeRealEstateDetail()">
+    <div class="modal-card" role="dialog" aria-modal="true" style="width:min(620px,94vw);">
+      <div class="modal-head">
+        <h3><i class="fas fa-house" style="color:#f59e0b"></i> <span id="reDetailTitle">Property</span> <span id="reDetailTypeBadge" class="pill" style="font-size:0.62rem;"></span></h3>
+        <button class="modal-close" onclick="closeRealEstateDetail()">✕</button>
+      </div>
+      <div class="modal-body" id="reDetailBody" style="gap:10px;"></div>
+      <div class="modal-foot" style="flex-wrap:wrap;">
+        <button class="mini-btn" onclick="closeRealEstateDetail()">Close</button>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button id="reDetailBuyBtn" class="mini-btn primary" onclick="buyRealEstateFromDetail()"><i class="fas fa-cart-plus"></i> Buy</button>
+          <button id="reDetailRentBtn" class="mini-btn" style="background:rgba(34,197,94,0.12); border-color:rgba(34,197,94,0.30); color:#86efac;" onclick="rentRealEstateFromDetail()"><i class="fas fa-key"></i> Rent</button>
+          <button id="reDetailGarageBtn" class="mini-btn" style="display:none;" onclick="manageGarageFromDetail()"><i class="fas fa-square-parking"></i> Garage</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Garage Manage Modal (store/retrieve) -->
+  <div id="reGarageModal" class="modal-overlay" onclick="if(event.target===this) closeGarageModal()">
+    <div class="modal-card" role="dialog" aria-modal="true" style="width:min(560px,94vw);">
+      <div class="modal-head">
+        <h3><i class="fas fa-square-parking" style="color:#22c55e"></i> <span id="reGarageTitle">Garage</span> <span id="reGarageCapBadge" class="pill" style="font-size:0.62rem;"></span></h3>
+        <button class="modal-close" onclick="closeGarageModal()">✕</button>
+      </div>
+      <div class="modal-body" id="reGarageBody"></div>
+      <div class="modal-foot">
+        <button class="mini-btn" onclick="closeGarageModal()">Close</button>
+        <div style="display:flex; gap:6px;">
+          <button class="mini-btn" onclick="refreshGarageModal()"><i class="fas fa-sync"></i> Refresh</button>
         </div>
       </div>
     </div>
@@ -630,6 +726,7 @@
     const BUILTIN_COMMANDS = [
       { cmd: '/stats', desc: 'Display live state (HUD)', category: 'builtin' },
       { cmd: '/vehicleshop', desc: 'Open Vehicle Shop', category: 'builtin' },
+      { cmd: '/realestate', desc: 'Open Real Estate — browse/buy/rent/garages', category: 'builtin' },
       { cmd: '/saves', desc: 'List saves/*.xml', category: 'builtin' },
       { cmd: '/load', desc: 'Load save: /load [name]', category: 'builtin' },
       { cmd: '/clear', desc: 'Clear console logs', category: 'builtin' },
@@ -877,7 +974,15 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
       const elWallet=document.getElementById('stat-wallet'); if(elWallet) elWallet.textContent = fmtCur(hud.wallet_balance ?? 0) + ` • P${hud.wallet_pid||'1'}`;
       const elGarage=document.getElementById('stat-garage'); if(elGarage) elGarage.textContent = `${hud.owned_count||0} • ${fmtCur(hud.owned_value||0)}`;
       const elBank=document.getElementById('stat-bank'); if(elBank) elBank.textContent = hud.bank_member ? hud.bank_member : '— none';
+      const elRE=document.getElementById('stat-realestate'); if(elRE) elRE.textContent = `${hud.realestate_count||0} • ${fmtCur(hud.realestate_value||0)}${hud.realestate_rented? ' ('+hud.realestate_rented+' rent)':''}`;
+      const elPark=document.getElementById('stat-parking'); if(elPark) elPark.textContent = `${hud.realestate_garage_used||0}/${hud.realestate_garage_cap||0} ${hud.realestate_garage_free!==undefined? '('+hud.realestate_garage_free+' free)':''}`;
       const badge=document.getElementById('owned-count-badge'); if(badge) badge.textContent = String(hud.owned_count||0);
+      const reBadge=document.getElementById('realestate-owned-badge'); if(reBadge) reBadge.textContent = String(hud.realestate_count||0);
+      const reGarBadge=document.getElementById('realestate-garage-badge'); if(reGarBadge) reGarBadge.textContent = `${hud.realestate_garage_used||0}/${hud.realestate_garage_cap||0}`;
+      // also update real estate overlay meta if open
+      const reBal=document.getElementById('reBalance'); if(reBal) reBal.innerHTML='<i class="fas fa-coins"></i> '+fmtCur(hud.wallet_balance??0);
+      const reOwned=document.getElementById('reOwnedCount'); if(reOwned) reOwned.textContent=String(hud.realestate_count||0);
+      const reGarText=document.getElementById('reGarageText'); if(reGarText) reGarText.textContent=`${hud.realestate_garage_used||0}/${hud.realestate_garage_cap||0}`;
       const elSave=document.getElementById('save-name'); if(elSave) elSave.textContent = currentSave || 'live';
       if(savesList.length){
         document.getElementById('sys-ready').textContent = `SYS_READY // ${savesList.length} saves`;
@@ -1127,6 +1232,12 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
       }
       if(e.key==='Escape'){
         hideSuggestions(); hideParamAssist();
+        const rgm=document.getElementById('reGarageModal');
+        if(rgm && rgm.classList.contains('active')){ closeGarageModal(); e.preventDefault(); return; }
+        const rdm=document.getElementById('reDetailModal');
+        if(rdm && rdm.classList.contains('active')){ closeRealEstateDetail(); e.preventDefault(); return; }
+        const re=document.getElementById('realEstateOverlay');
+        if(re && re.classList.contains('active')){ closeRealEstate(); e.preventDefault(); return; }
         const pay=document.getElementById('paymentOverlay');
         if(pay && pay.classList.contains('active')){ closePaymentMenu(); e.preventDefault(); return; }
         const v2lm=document.getElementById('v2LoanModal');
@@ -1739,7 +1850,605 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
       await renderOwned();
       markUnsaved();
     }
-    // --- Save menu (top-right, 1-20 slots) ----------------------------------------
+
+    // --- Real Estate (property browser + agents + garages) -----------------------
+    let reCatalog=null, reAgents=[], reFilterType='', reAvailableOnly=false, reSearchTimer=null;
+    let reCurrentProp=null; // for detail modal
+    let reGaragePropId=null;
+    let reOwnedCache=[], reGaragesCache=null;
+
+    function iconForPropertyType(type){
+      const m={house:'fa-house', apartment:'fa-building', vacant_land:'fa-mountain', farm:'fa-tractor', business:'fa-shop', commercial:'fa-industry'};
+      return m[(type||'').toLowerCase()]||'fa-house';
+    }
+    function colorForPropertyType(type){
+      const m={house:'#f59e0b', apartment:'#3b82f6', vacant_land:'#84cc16', farm:'#22c55e', business:'#8b5cf6', commercial:'#06b6d4'};
+      return m[(type||'').toLowerCase()]||'#f59e0b';
+    }
+    function iconForAgent(a){
+      return a.icon||'fa-handshake';
+    }
+    function formatPropertyStats(stats){
+      if(!stats) return '';
+      const parts=[];
+      if(stats.beds!==undefined && stats.beds!==null) parts.push(`<span class="stat"><i class="fas fa-bed"></i> <b>${stats.beds}</b> bd</span>`);
+      if(stats.baths!==undefined) parts.push(`<span class="stat"><i class="fas fa-bath"></i> <b>${stats.baths}</b> ba</span>`);
+      const parking=Number(stats.parking||0), garage=Number(stats.garage_spaces||0);
+      const cap=parking+garage;
+      if(cap>0) parts.push(`<span class="stat"><i class="fas fa-square-parking"></i> <b>${cap}</b> ${garage? '('+garage+' gar)':''}</span>`);
+      else if(parking===0&&garage===0) parts.push(`<span class="stat" style="opacity:0.55"><i class="fas fa-square-parking"></i> 0 parking</span>`);
+      if(stats.land_sqm) parts.push(`<span class="stat"><i class="fas fa-ruler-combined"></i> <b>${Number(stats.land_sqm).toLocaleString()}</b> m²</span>`);
+      else if(stats.land_acres) parts.push(`<span class="stat"><i class="fas fa-mountain"></i> <b>${stats.land_acres}</b> ac</span>`);
+      if(stats.vacant) parts.push(`<span class="stat" style="color:#facc15"><i class="fas fa-leaf"></i> Vacant</span>`);
+      if(stats.condition) parts.push(`<span class="stat"><i class="fas fa-star"></i> ${stats.condition}</span>`);
+      if(stats.business_type) parts.push(`<span class="stat"><i class="fas fa-briefcase"></i> ${stats.business_type}</span>`);
+      return parts.join(' ');
+    }
+    function showReStats(prop){
+      const bar=document.getElementById('reStatsBar');
+      if(!bar) return;
+      if(!prop){ bar.innerHTML='<span style="opacity:0.6;">Browse properties • filter by type • hover for stats • Buy/Rent adds to ownership • store cars if parking >0 • <code style="opacity:0.8">/realestate.buy house_maple_12</code></span>'; return; }
+      const ag = (reCatalog && reCatalog.agents||[]).find(a=> a.id===prop.agent_id);
+      const fee = ag ? `+${ag.fee_percent}% fee` : '';
+      const avail = prop.available===false? '<span style="color:#f87171; font-weight:700;">• OWNED</span>' : prop.available? '<span style="color:#86efac;">• Available</span>' : '';
+      const price = prop.for_sale? `<b style="color:var(--accent)">$${Number(prop.price).toLocaleString()} ${fee}</b>` : '';
+      const rent = prop.for_rent? `<b style="color:#22c55e">$${Number(prop.rent_price).toLocaleString()}/wk ${fee}</b>` : '';
+      bar.innerHTML=`<strong>${prop.name}</strong> <span style="opacity:0.5;">${prop.type} • ${prop.location||''}</span> ${avail} <span style="margin-left:8px;">${price}</span> ${rent? '<span style="opacity:0.5">|</span> '+rent:''} <span style="margin-left:auto;">${formatPropertyStats(prop.stats)}</span>`;
+    }
+    async function fetchRealEstateCatalog(){
+      let res = await apiCall('call_command','realestate.get_catalog',{});
+      let cat=null;
+      if(res && res.status==='success' && res.result && res.result.catalog) cat=res.result.catalog;
+      else if(res && res.status==='success' && res.catalog) cat=res.catalog;
+      else if(res && res.catalog) cat=res.catalog;
+      if(cat){ reCatalog=cat; reAgents=cat.agents||[]; }
+      // also refresh hud meta
+      try{ const r=await apiCall('call_command','realestate.owned',{player_id:1}); const cnt=(r&&r.result&&r.result.count)||(r&&r.count)||0; const el=document.getElementById('reOwnedCount'); if(el) el.textContent=String(cnt); const b=document.getElementById('realestate-owned-badge'); if(b) b.textContent=String(cnt); }catch(e){}
+      return reCatalog;
+    }
+    async function openRealEstate(){
+      const ov=document.getElementById('realEstateOverlay');
+      if(!ov) return;
+      ov.classList.add('active');
+      switchRealEstateTab('browse');
+      if(!reCatalog){
+        document.getElementById('reBrowseGrid').innerHTML='<div class="shop-empty"><i class="fas fa-spinner fa-spin"></i> Loading Real Estate…</div>';
+        await fetchRealEstateCatalog();
+      }
+      await refreshRealEstateBrowse();
+      await refreshStateMonitor();
+    }
+    function openRealEstateTab(tab){ openRealEstate().then(()=> switchRealEstateTab(tab)); }
+    function closeRealEstate(){ const ov=document.getElementById('realEstateOverlay'); if(ov) ov.classList.remove('active'); }
+    function switchRealEstateTab(tab){
+      document.querySelectorAll('#realEstateOverlay .shop-tab').forEach(b=> b.classList.toggle('active', b.dataset.retab===tab));
+      const bg=document.getElementById('reBrowseGrid'), og=document.getElementById('reOwnedGrid'), ag=document.getElementById('reAgentsGrid'), gp=document.getElementById('reGaragesPane'), filters=document.getElementById('reFilters'), bc=document.getElementById('reBreadcrumb');
+      if(bg) bg.style.display = tab==='browse'? '': 'none';
+      if(og) og.style.display = tab==='owned'? '': 'none';
+      if(ag) ag.style.display = tab==='agents'? '': 'none';
+      if(gp) gp.style.display = tab==='garages'? 'flex': 'none';
+      if(filters) filters.style.display = tab==='browse'? 'flex': 'none';
+      if(bc) bc.style.display = tab==='browse'? 'flex': 'none';
+      const crumb=document.getElementById('reCrumbLabel');
+      if(crumb) crumb.textContent = tab==='browse'?'Browse': tab==='owned'?'My Properties': tab==='agents'?'Agents':'Garages';
+      if(tab==='browse') refreshRealEstateBrowse();
+      else if(tab==='owned') renderRealEstateOwned();
+      else if(tab==='agents') renderRealEstateAgents();
+      else if(tab==='garages') renderRealEstateGarages();
+    }
+    function setRealEstateFilterType(type){
+      reFilterType=type;
+      document.querySelectorAll('#reTypeChips .mini-btn').forEach(b=>{ const v=b.dataset.retype||''; b.classList.toggle('primary', v===type); });
+      refreshRealEstateBrowse();
+    }
+    function debounceRealEstateSearch(){
+      clearTimeout(reSearchTimer);
+      reSearchTimer=setTimeout(()=> refreshRealEstateBrowse(), 350);
+    }
+    async function refreshRealEstateBrowse(){
+      reAvailableOnly = !!document.getElementById('reAvailableOnly')?.checked;
+      const saleRent = document.getElementById('reSaleRentFilter')?.value || '';
+      const q = document.getElementById('reSearch')?.value.trim() || '';
+      const grid=document.getElementById('reBrowseGrid');
+      if(grid) grid.innerHTML='<div class="shop-empty"><i class="fas fa-spinner fa-spin"></i> Loading…</div>';
+      let res=null;
+      try{
+        const args={};
+        if(reFilterType) args.type=reFilterType;
+        if(reAvailableOnly) args.available_only=true;
+        if(saleRent==='sale'){ args.for_sale='true'; }
+        else if(saleRent==='rent'){ args.for_rent='true'; }
+        if(q) args.search=q;
+        res = await apiCall('call_command','realestate.list_properties',args);
+      }catch(e){ res=null; }
+      let props=[];
+      if(res && res.status==='success'){
+        const r=res.result||res;
+        props=r.properties||[];
+      }
+      // fallback to local catalog filtered
+      if(!props.length && reCatalog && !q && !reAvailableOnly && !saleRent){
+        props = (reCatalog.properties||[]).filter(p=> !reFilterType || p.type.toLowerCase()===reFilterType);
+        // annotate available locally via reOwnedCache check
+        props.forEach(p=> p.available=true);
+      }
+      renderRealEstateBrowseGrid(props);
+    }
+    function renderRealEstateBrowseGrid(props){
+      const grid=document.getElementById('reBrowseGrid');
+      if(!grid) return;
+      if(!props || !props.length){
+        grid.innerHTML=`<div class="shop-empty"><i class="fas fa-house" style="font-size:1.4rem; opacity:0.4;"></i><div style="margin-top:8px;">No properties match</div><div style="margin-top:8px; font-size:0.72rem; color:var(--text-muted);">Try All types or clear search • <code>available_only</code> hides owned</div></div>`;
+        return;
+      }
+      showReStats(null);
+      grid.innerHTML='';
+      props.forEach(p=>{
+        const vac = p.stats && p.stats.vacant;
+        const col=colorForPropertyType(p.type);
+        const cap = Number(p.stats?.parking||0)+Number(p.stats?.garage_spaces||0);
+        const priceStr = p.for_sale ? `<span class="shop-price">$${Number(p.price).toLocaleString()}</span>` : '<span style="font-size:0.68rem; opacity:0.5;">Not for sale</span>';
+        const rentStr = p.for_rent ? `<span style="font-size:0.68rem; color:#86efac;">$${Number(p.rent_price).toLocaleString()}/wk</span>` : '';
+        const availBadge = p.available===false? `<span class="cat-badge" style="background:rgba(239,68,68,0.22); border-color:rgba(239,68,68,0.35);">Owned</span>` : p.available? `<span class="cat-badge" style="background:rgba(34,197,94,0.14); border-color:rgba(34,197,94,0.3);">Available</span>` : `<span class="cat-badge">${p.type}</span>`;
+        const agent = (reCatalog?.agents||[]).find(a=>a.id===p.agent_id);
+        const agentLabel = agent ? `${agent.display||agent.name} • ${agent.fee_percent}% • ⭐${agent.rating}` : p.agent_id||'';
+        const card=document.createElement('div');
+        card.className='shop-card'+(p.available===false?'':'');
+        card.style.opacity = p.available===false? '0.72': '1';
+        card.onmouseenter=()=> showReStats(p);
+        card.onmouseleave=()=> showReStats(null);
+        card.onclick=()=> openRealEstateDetail(p.id);
+        card.innerHTML=`
+          <div class="shop-card-img" style="height:96px; background: radial-gradient(ellipse at 30% 20%, ${col}22 0%, transparent 55%), linear-gradient(180deg, ${col}14 0%, rgba(0,0,0,0.22) 100%); border-color:${col}44;">
+            <i class="fas ${iconForPropertyType(p.type)}" style="color:${col}; font-size:28px;"></i>
+            ${availBadge}
+          </div>
+          <div class="shop-card-body">
+            <div class="shop-card-name" title="${p.name}">${p.name}</div>
+            <div class="shop-card-sub"><i class="fas fa-location-dot" style="opacity:0.6"></i> ${p.location||''} • ${p.type}${vac? ' • Vacant':''}</div>
+            <div style="display:flex; gap:4px; flex-wrap:wrap; margin-top:4px; font-size:0.62rem; color:var(--text-muted);"><span style="border:1px solid var(--panel-border); padding:1px 5px; border-radius:999px;">${p.stats?.beds||0}bd • ${p.stats?.baths||0}ba</span> <span style="border:1px solid var(--panel-border); padding:1px 5px; border-radius:999px;">${cap} park${cap!==1?'s':''}</span> ${p.stats?.land_sqm? `<span style="border:1px solid var(--panel-border); padding:1px 5px; border-radius:999px;">${Number(p.stats.land_sqm).toLocaleString()}m²</span>`: p.stats?.land_acres? `<span style="border:1px solid var(--panel-border); padding:1px 5px; border-radius:999px;">${p.stats.land_acres} ac</span>`:''}</div>
+            <div style="font-size:0.62rem; color:var(--text-muted); margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${agentLabel}"><i class="fas ${agent? iconForAgent(agent): 'fa-handshake'}" style="color:${agent?.color||'#94a3b8'}"></i> ${agentLabel}</div>
+            <div class="shop-card-foot">
+              <div style="display:flex; flex-direction:column; gap:2px;">${priceStr}${rentStr}</div>
+              <div style="display:flex; gap:4px;">
+                ${p.for_sale? `<button class="shop-buy-btn" style="background:${col}; border-color:${col};" onclick="event.stopPropagation(); buyRealEstate('${p.id}')"><i class="fas fa-cart-plus"></i> Buy</button>`:''}
+                ${p.for_rent? `<button class="shop-buy-btn" style="background:rgba(34,197,94,0.9); border-color:#22c55e;" onclick="event.stopPropagation(); rentRealEstate('${p.id}')"><i class="fas fa-key"></i> Rent</button>`:''}
+              </div>
+            </div>
+          </div>`;
+        grid.appendChild(card);
+      });
+    }
+    async function renderRealEstateBrowse(){
+      if(!reCatalog) await fetchRealEstateCatalog();
+      await refreshRealEstateBrowse();
+    }
+    async function renderRealEstateAgents(){
+      const grid=document.getElementById('reAgentsGrid');
+      if(!grid) return;
+      grid.innerHTML='<div class="shop-empty"><i class="fas fa-spinner fa-spin"></i> Loading agents…</div>';
+      let res=await apiCall('call_command','realestate.list_agents',{});
+      let agents=[];
+      if(res && res.status==='success'){ const r=res.result||res; agents=r.agents||[]; }
+      if(!agents.length) agents=reCatalog?.agents||reAgents||[];
+      if(!agents.length){ grid.innerHTML='<div class="shop-empty">No agents found.</div>'; return; }
+      grid.innerHTML='';
+      // map property counts per agent
+      const counts={};
+      (reCatalog?.properties||[]).forEach(p=>{ counts[p.agent_id]=(counts[p.agent_id]||0)+1; });
+      agents.forEach(a=>{
+        const listingCount = counts[a.id]||a.listings||0;
+        const card=document.createElement('div');
+        card.className='shop-card';
+        card.style.minHeight='150px';
+        card.innerHTML=`
+          <div class="shop-card-img" style="height:86px; background: radial-gradient(ellipse at 30% 20%, ${a.color||'#f59e0b'}22 0%, transparent 60%), linear-gradient(180deg, ${a.color||'#f59e0b'}14 0%, rgba(0,0,0,0.22) 100%); border-color:${a.color||'#f59e0b'}55;">
+            <i class="fas ${iconForAgent(a)}" style="color:${a.color||'#f59e0b'}; font-size:30px;"></i>
+            <span class="cat-badge" style="background:rgba(0,0,0,0.45);">⭐ ${a.rating} • ${a.fee_percent}% fee</span>
+          </div>
+          <div class="shop-card-body">
+            <div class="shop-card-name">${a.display||a.name}</div>
+            <div class="shop-card-sub">${a.agency||''} • ${a.phone||''}</div>
+            <div style="font-size:0.68rem; color:var(--text-muted); margin-top:4px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${a.description||''}</div>
+            <div style="font-size:0.62rem; color:var(--text-muted); margin-top:4px;">Spec: ${a.specialty||''}</div>
+            <div class="shop-card-foot"><span class="pill" style="font-size:0.62rem;">${listingCount} listings</span><button class="shop-buy-btn" style="font-size:0.62rem;" onclick="filterByAgent('${a.id}')"><i class="fas fa-filter"></i> Show</button></div>
+          </div>`;
+        grid.appendChild(card);
+      });
+    }
+    function filterByAgent(agentId){
+      switchRealEstateTab('browse');
+      // quickly filter via search? use browse list for that agent's properties
+      // For now, set detail search via api call? We'll just call list with no filter then filter locally and render
+      // Simpler: close and re-open with query to server? Use search via agent name not ideal; just filter catalog locally
+      if(reCatalog){
+        const props=(reCatalog.properties||[]).filter(p=> p.agent_id===agentId);
+        renderRealEstateBrowseGrid(props);
+        const ag=(reCatalog.agents||[]).find(a=>a.id===agentId);
+        const bar=document.getElementById('reStatsBar');
+        if(bar) bar.innerHTML=`<strong>${ag?ag.display:agentId}</strong> <span style="opacity:0.6">• ${props.length} properties</span> <span style="margin-left:auto;"><a onclick="refreshRealEstateBrowse()" style="color:var(--accent); cursor:pointer;">Clear filter →</a></span>`;
+      }
+    }
+    async function renderRealEstateOwned(){
+      const grid=document.getElementById('reOwnedGrid');
+      if(!grid) return;
+      grid.innerHTML='<div class="shop-empty"><i class="fas fa-spinner fa-spin"></i> Loading your properties…</div>';
+      let res=await apiCall('call_command','realestate.owned',{player_id:1});
+      let props=[];
+      if(res && res.status==='success'){ const r=res.result||res; props=r.properties||[]; reOwnedCache=props; const bal=r.balance; if(bal!==undefined) { const el=document.getElementById('reBalance'); if(el) el.innerHTML='<i class="fas fa-coins"></i> $'+Number(bal).toLocaleString(); } }
+      if(!props.length){
+        grid.innerHTML='<div class="shop-empty"><i class="fas fa-key" style="font-size:1.6rem; opacity:0.3;"></i><div style="margin-top:10px; font-weight:700;">No properties yet</div><div style="margin-top:6px; font-size:0.72rem; color:var(--text-muted);">Visit <a onclick="switchRealEstateTab(\'browse\')" style="color:var(--accent); cursor:pointer; font-weight:700;">Browse</a> to buy or rent — or run <code>/realestate.buy house_maple_12</code></div></div>';
+        return;
+      }
+      grid.innerHTML='';
+      props.forEach(op=>{
+        const cap = Number(op.stats?.parking||0)+Number(op.stats?.garage_spaces||0);
+        const used = (op.stored_vehicles||[]).length;
+        const col=colorForPropertyType(op.type);
+        const tenureBadge = op.tenure==='rented' ? `<span class="cat-badge" style="background:rgba(34,197,94,0.18); border-color:rgba(34,197,94,0.3);">Rented • ${op.lease_end? new Date(op.lease_end*1000).toLocaleDateString():''}</span>` : `<span class="cat-badge" style="background:rgba(245,158,11,0.18); border-color:rgba(245,158,11,0.35);">Owned</span>`;
+        const vac = op.stats?.vacant ? ' • Vacant' : '';
+        const card=document.createElement('div');
+        card.className='shop-card';
+        card.onclick=()=> openRealEstateDetail(op.property_id);
+        card.innerHTML=`
+          <div class="shop-card-img" style="height:92px; background: radial-gradient(ellipse at 30% 20%, ${col}22 0%, transparent 55%), linear-gradient(180deg, ${col}14 0%, rgba(0,0,0,0.22) 100%); border-color:${col}44;">
+            <i class="fas ${iconForPropertyType(op.type)}" style="color:${col}; font-size:26px;"></i>
+            ${tenureBadge}
+          </div>
+          <div class="shop-card-body">
+            <div class="shop-card-name" title="${op.name}">${op.name}</div>
+            <div class="shop-card-sub"><i class="fas fa-location-dot" style="opacity:0.6"></i> ${op.location||''} • ${op.type}${vac} • <span style="font-family:var(--font-mono);">${op.property_id}</span></div>
+            <div style="display:flex; gap:4px; flex-wrap:wrap; margin-top:4px; font-size:0.62rem;"><span style="border:1px solid var(--panel-border); padding:1px 5px; border-radius:999px;">${op.stats?.beds||0}bd</span> <span style="border:1px solid var(--panel-border); padding:1px 5px; border-radius:999px;">Parking ${used}/${cap}</span> ${op.stats?.land_sqm? `<span style="border:1px solid var(--panel-border); padding:1px 5px; border-radius:999px;">${Number(op.stats.land_sqm).toLocaleString()}m²</span>`:''}</div>
+            <div class="shop-card-foot">
+              <span style="font-family:var(--font-mono); font-size:0.68rem; color:var(--accent);">$${Number(op.price_paid).toLocaleString()} <span style="opacity:0.6; font-size:0.60rem;">+${Number(op.fee_paid).toLocaleString()} fee</span></span>
+              <div style="display:flex; gap:4px;">
+                <button class="shop-buy-btn" style="background:rgba(255,255,255,0.04); color:var(--text-main); border-color:var(--panel-border);" onclick="event.stopPropagation(); openGarageModal('${op.property_id}')"><i class="fas fa-square-parking"></i> Garage</button>
+                ${op.tenure==='rented'? `<button class="shop-buy-btn" style="background:rgba(239,68,68,0.12); color:#f87171; border-color:rgba(239,68,68,0.35);" onclick="event.stopPropagation(); cancelRent('${op.property_id}')"><i class="fas fa-xmark"></i> Cancel</button>` : `<button class="shop-buy-btn" style="background:rgba(239,68,68,0.12); color:#f87171; border-color:rgba(239,68,68,0.35);" onclick="event.stopPropagation(); sellRealEstate('${op.property_id}')"><i class="fas fa-dollar-sign"></i> Sell</button>`}
+              </div>
+            </div>
+          </div>`;
+        grid.appendChild(card);
+      });
+      // also update garages badge
+      try{
+        let garRes=await apiCall('call_command','realestate.garages',{player_id:1});
+        const g=(garRes&&garRes.result)||garRes;
+        if(g && g.total_capacity!==undefined){ const el=document.getElementById('reGarageText'); if(el) el.textContent=`${g.total_used||0}/${g.total_capacity||0}`; const b=document.getElementById('realestate-garage-badge'); if(b) b.textContent=`${g.total_used||0}/${g.total_capacity||0}`; reGaragesCache=g; }
+      }catch(e){}
+    }
+    async function renderRealEstateGarages(){
+      const pane=document.getElementById('reGaragesPane');
+      if(!pane) return;
+      pane.innerHTML='<div class="shop-empty"><i class="fas fa-spinner fa-spin"></i> Loading garages…</div>';
+      let res=await apiCall('call_command','realestate.garages',{player_id:1});
+      let data=(res&&res.result)||res;
+      if(!data || data.status==='error'){ pane.innerHTML=`<div class="shop-empty">Failed: ${data?.message||'no data'}</div>`; return; }
+      const garages=data.garages||[];
+      if(!garages.length){ pane.innerHTML='<div class="shop-empty"><i class="fas fa-square-parking" style="font-size:1.6rem; opacity:0.3;"></i><div style="margin-top:8px;">No garages — buy a property with parking!</div><div style="margin-top:6px; font-size:0.72rem; color:var(--text-muted);">Vacant blocks have parking, houses have garages. Check capacity on cards.</div></div>'; return; }
+      pane.innerHTML='';
+      // summary header
+      const sum=document.createElement('div');
+      sum.style.cssText='display:flex; gap:8px; flex-wrap:wrap; align-items:center; padding:8px 10px; border-radius:10px; background:rgba(0,0,0,0.14); border:1px solid var(--panel-border); font-family:var(--font-mono); font-size:0.72rem;';
+      sum.innerHTML=`<span><i class="fas fa-warehouse"></i> Total <b>${data.total_capacity||0}</b> slots • <span style="color:#86efac;"><b>${data.total_used||0}</b> used</span> • <b>${data.total_available||0}</b> free</span><span style="margin-left:auto; display:flex; gap:6px;"><button class="mini-btn" onclick="renderRealEstateGarages()"><i class="fas fa-sync"></i> Refresh</button><button class="mini-btn" onclick="switchRealEstateTab('owned')"><i class="fas fa-key"></i> Properties</button></span>`;
+      pane.appendChild(sum);
+      for(const g of garages){
+        const col=colorForPropertyType(g.type);
+        const card=document.createElement('div');
+        card.style.cssText='background: rgba(255,255,255,0.04); border:1px solid var(--panel-border); border-radius:10px; padding:10px; display:flex; flex-direction:column; gap:8px;';
+        const stored = g.stored||[];
+        const used = g.used||0, cap=g.capacity||0;
+        let storedHtml = '';
+        if(!stored.length) storedHtml = `<div style="font-size:0.72rem; color:var(--text-muted);"><i class="fas fa-inbox"></i> Empty — ${cap} slot${cap!==1?'s':''} free</div>`;
+        else {
+          storedHtml = `<div style="display:flex; flex-wrap:wrap; gap:6px;">`+ stored.map(id=> `<span class="pill" style="font-family:var(--font-mono); font-size:0.66rem; display:flex; gap:6px; align-items:center; background:rgba(255,255,255,0.06);"><i class="fas fa-car" style="opacity:0.7"></i> ${id} <button class="mini-btn" style="padding:1px 6px; font-size:0.62rem;" onclick="retrieveVehicleFromGarage('${g.property_id}','${id}')"><i class="fas fa-arrow-up-from-bracket"></i> Retrieve</button></span>`).join('') + `</div>`;
+        }
+        // available vehicles not stored (for quick store)
+        card.innerHTML=`
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div style="width:38px; height:38px; border-radius:8px; background:${col}1a; border:1px solid ${col}44; display:flex; align-items:center; justify-content:center;"><i class="fas ${iconForPropertyType(g.type)}" style="color:${col};"></i></div>
+            <div style="flex:1;">
+              <div style="font-weight:700; font-size:0.85rem;">${g.name} <span style="font-weight:400; opacity:0.6; font-size:0.72rem;">— ${g.property_id}</span></div>
+              <div style="font-size:0.68rem; color:var(--text-muted);">${g.type} • ${g.location||''} • Parking ${used}/${cap} • <span style="color:${used>=cap? '#f87171':'#86efac'}">${cap-used} free</span> ${g.tenure==='rented'? '• Rented':''}</div>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <button class="mini-btn primary" onclick="openGarageModal('${g.property_id}')"><i class="fas fa-square-parking"></i> Manage</button>
+              <button class="mini-btn" onclick="openRealEstateDetail('${g.property_id}')"><i class="fas fa-eye"></i></button>
+            </div>
+          </div>
+          <div style="background:rgba(0,0,0,0.14); border:1px solid var(--panel-border); border-radius:8px; padding:8px;">${storedHtml}</div>
+          ${cap>0? `<div style="font-size:0.68rem; color:var(--text-muted);">Quick store: <button class="mini-btn" onclick="promptStoreVehicle('${g.property_id}')"><i class="fas fa-plus"></i> Store vehicle…</button> <span style="opacity:0.6;">needs owned vehicle + free slot</span></div>` : `<div style="font-size:0.68rem; color:#f87171;"><i class="fas fa-triangle-exclamation"></i> No parking on this property — cannot store vehicles</div>`}
+        `;
+        pane.appendChild(card);
+      }
+    }
+    async function openRealEstateDetail(propertyId){
+      let res=await apiCall('call_command','realestate.info',{property_id: propertyId});
+      let prop=(res&&res.result&&res.result.property)||(res&&res.property)||null;
+      if(!prop){
+        // fallback from catalog
+        prop=(reCatalog?.properties||[]).find(p=> p.id===propertyId);
+        if(prop) prop={...prop, available:true};
+      }
+      if(!prop){ appendGameResponse(`**✖ Real Estate:** Unknown property \`${propertyId}\``); return; }
+      reCurrentProp=prop;
+      const modal=document.getElementById('reDetailModal');
+      const title=document.getElementById('reDetailTitle');
+      const badge=document.getElementById('reDetailTypeBadge');
+      const body=document.getElementById('reDetailBody');
+      if(title) title.textContent = prop.name;
+      if(badge) badge.textContent = `${prop.type} • ${prop.location||''}`;
+      const ag=(reCatalog?.agents||[]).find(a=>a.id===prop.agent_id);
+      const cap = Number(prop.stats?.parking||0)+Number(prop.stats?.garage_spaces||0);
+      const feeBuy = ag? Math.round(Number(prop.price||0)*Number(ag.fee_percent||0)/100):0;
+      const feeRent = ag? Math.round(Number(prop.rent_price||0)*Number(ag.fee_percent||0)/100):0;
+      const availText = prop.available===false? `<span style="color:#f87171; font-weight:700;"><i class="fas fa-lock"></i> Owned by ${prop.owned_by!==undefined? 'P'+prop.owned_by : 'someone'}</span>` : `<span style="color:#86efac; font-weight:700;"><i class="fas fa-check"></i> Available</span>`;
+      body.innerHTML=`
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:220px;">
+            <div style="width:100%; height:120px; border-radius:10px; background: radial-gradient(ellipse at 30% 20%, ${colorForPropertyType(prop.type)}22 0%, transparent 55%), linear-gradient(180deg, ${colorForPropertyType(prop.type)}14 0%, rgba(0,0,0,0.22) 100%); border:1px solid ${colorForPropertyType(prop.type)}44; display:flex; align-items:center; justify-content:center;"><i class="fas ${iconForPropertyType(prop.type)}" style="font-size:48px; color:${colorForPropertyType(prop.type)}; opacity:0.9;"></i></div>
+            <div style="margin-top:8px; font-size:0.78rem; color:var(--text-muted);">${prop.description||''}</div>
+            <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">${formatPropertyStats(prop.stats)}</div>
+            <div style="margin-top:8px; font-size:0.72rem; display:flex; gap:6px; flex-wrap:wrap;"><span class="pill">Beds ${prop.stats?.beds||0}</span> <span class="pill">Baths ${prop.stats?.baths||0}</span> <span class="pill">Parking ${Number(prop.stats?.parking||0)} + Garage ${Number(prop.stats?.garage_spaces||0)} = <b>${cap}</b></span> <span class="pill">Land ${prop.stats?.land_sqm? Number(prop.stats.land_sqm).toLocaleString()+'m²' : prop.stats?.land_acres? prop.stats.land_acres+' ac':'—'}</span> <span class="pill">Year ${prop.stats?.year_built||'—'}</span> <span class="pill" style="background:${prop.stats?.vacant?'rgba(250,204,21,0.15)':''}; border-color:${prop.stats?.vacant?'rgba(250,204,21,0.35)':''}">Condition: ${prop.stats?.condition||'—'}</span></div>
+          </div>
+          <div style="flex:1; min-width:220px; display:flex; flex-direction:column; gap:8px;">
+            <div style="background:rgba(0,0,0,0.14); border:1px solid var(--panel-border); border-radius:10px; padding:10px;">
+              <div style="font-weight:700; font-size:0.82rem; display:flex; gap:6px; align-items:center;"><i class="fas fa-tag" style="color:var(--accent)"></i> Pricing <span style="margin-left:auto; font-size:0.68rem; opacity:0.6;">via ${ag?ag.display||ag.name:prop.agent_id}</span></div>
+              ${prop.for_sale? `<div style="margin-top:6px; display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:0.78rem;"><span>Buy price</span><b style="color:var(--accent)">$${Number(prop.price).toLocaleString()}</b></div><div style="font-size:0.68rem; color:var(--text-muted);">Fee ${ag?ag.fee_percent:0}% = $${feeBuy.toLocaleString()} → Total <b>$${(Number(prop.price)+feeBuy).toLocaleString()}</b></div>`: `<div style="margin-top:6px; font-size:0.72rem; color:var(--text-muted);">Not for sale</div>`}
+              ${prop.for_rent? `<div style="margin-top:8px; display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:0.78rem;"><span>Rent /wk</span><b style="color:#86efac">$${Number(prop.rent_price).toLocaleString()}</b></div><div style="font-size:0.68rem; color:var(--text-muted);">Fee ${ag?ag.fee_percent:0}% = $${feeRent.toLocaleString()} → Total <b>$${(Number(prop.rent_price)+feeRent).toLocaleString()}/wk</b> (30-day lease)</div>`: `<div style="margin-top:6px; font-size:0.72rem; color:var(--text-muted);">Not for rent</div>`}
+              <div style="margin-top:8px; font-size:0.72rem;">${availText} • <span style="opacity:0.6;">Capacity ${cap} vehicle${cap!==1?'s':''}</span></div>
+            </div>
+            <div style="background:rgba(255,255,255,0.04); border:1px solid var(--panel-border); border-radius:10px; padding:10px;">
+              <div style="font-weight:700; font-size:0.78rem; display:flex; gap:6px; align-items:center;"><i class="fas fa-handshake" style="color:${ag?.color||'#f59e0b'}"></i> Agent — ${ag?ag.display||ag.name:prop.agent_id} <span style="margin-left:auto; font-size:0.62rem; background:${ag?.color||'#334155'}; color:#fff; padding:2px 6px; border-radius:999px;">⭐ ${ag?.rating||'—'}</span></div>
+              <div style="font-size:0.68rem; color:var(--text-muted); margin-top:4px;">${ag?.description||''}</div>
+              <div style="font-size:0.68rem; margin-top:4px;">Fee <b>${ag?.fee_percent||0}%</b> • <span style="opacity:0.6;">${ag?.phone||''} • ${ag?.agency||''}</span></div>
+              <div style="font-size:0.62rem; margin-top:4px; color:var(--text-muted);">Spec: ${ag?.specialty||''}</div>
+            </div>
+            <div id="reDetailOwnedHint" style="font-size:0.68rem; color:var(--text-muted);"></div>
+          </div>
+        </div>`;
+      const buyBtn=document.getElementById('reDetailBuyBtn');
+      const rentBtn=document.getElementById('reDetailRentBtn');
+      const garBtn=document.getElementById('reDetailGarageBtn');
+      if(buyBtn){ buyBtn.style.display = prop.for_sale ? '': 'none'; buyBtn.disabled = prop.available===false; buyBtn.innerHTML = prop.available===false? '<i class="fas fa-lock"></i> Owned' : `<i class="fas fa-cart-plus"></i> Buy $${Number(prop.price).toLocaleString()}${ag? ' +'+ag.fee_percent+'%':''}`; }
+      if(rentBtn){ rentBtn.style.display = prop.for_rent ? '': 'none'; rentBtn.disabled = prop.available===false; rentBtn.innerHTML = prop.available===false? '<i class="fas fa-lock"></i> Rented' : `<i class="fas fa-key"></i> Rent $${Number(prop.rent_price).toLocaleString()}/wk`; }
+      // check if owned by player 1
+      let isOwned=false;
+      try{
+        const r=await apiCall('call_command','realestate.owned',{player_id:1});
+        const lst=(r&&r.result&&r.result.properties)||(r&&r.properties)||[];
+        isOwned = lst.some(p=> p.property_id===prop.id);
+        if(isOwned){
+          if(garBtn) garBtn.style.display='';
+          const hint=document.getElementById('reDetailOwnedHint');
+          if(hint) hint.innerHTML=`<span style="color:#86efac"><i class="fas fa-check"></i> You own this property — ${cap>0? cap+' parking slots': 'no parking'}</span> • <a onclick="openGarageModal('${prop.id}')" style="color:var(--accent); cursor:pointer;">Manage garage</a>`;
+          if(buyBtn) buyBtn.style.display='none';
+          if(rentBtn) rentBtn.style.display='none';
+        } else {
+          if(garBtn) garBtn.style.display='none';
+        }
+      }catch(e){}
+      modal.classList.add('active');
+    }
+    function closeRealEstateDetail(){ const m=document.getElementById('reDetailModal'); if(m) m.classList.remove('active'); }
+    function manageGarageFromDetail(){ if(reCurrentProp){ const id=reCurrentProp.id || reCurrentProp.property_id; closeRealEstateDetail(); openGarageModal(id); } }
+    // buy/rent with payment menu (reuses bank limits)
+    let _rePayPending=null; // {property_id, action}
+    async function buyRealEstate(propertyId){
+      // open payment for property buy
+      const prop=(reCatalog?.properties||[]).find(p=>p.id===propertyId) || reCurrentProp;
+      if(!prop){ appendGameResponse(`**✖** Unknown property ${propertyId}`); return; }
+      const ag=(reCatalog?.agents||[]).find(a=>a.id===prop.agent_id);
+      const fee= ag? Math.round(Number(prop.price||0)*Number(ag.fee_percent||0)/100):0;
+      const total=Number(prop.price||0)+fee;
+      _rePayPending={property_id:propertyId, action:'buy', price: prop.price, fee, total, name: prop.name};
+      openRealEstatePayment(prop, 'buy', total);
+    }
+    async function rentRealEstate(propertyId){
+      const prop=(reCatalog?.properties||[]).find(p=>p.id===propertyId) || reCurrentProp;
+      if(!prop){ return; }
+      const ag=(reCatalog?.agents||[]).find(a=>a.id===prop.agent_id);
+      const fee= ag? Math.round(Number(prop.rent_price||0)*Number(ag.fee_percent||0)/100):0;
+      const total=Number(prop.rent_price||0)+fee;
+      _rePayPending={property_id:propertyId, action:'rent', price: prop.rent_price, fee, total, name: prop.name};
+      openRealEstatePayment(prop, 'rent', total);
+    }
+    function buyRealEstateFromDetail(){ if(reCurrentProp) buyRealEstate(reCurrentProp.id); closeRealEstateDetail(); }
+    function rentRealEstateFromDetail(){ if(reCurrentProp) rentRealEstate(reCurrentProp.id); closeRealEstateDetail(); }
+    async function openRealEstatePayment(prop, action, total){
+      // reuse existing paymentOverlay but override pay logic
+      document.getElementById('payItemName').textContent = `${action==='rent'?'Rent':'Buy'} ${prop.name}`;
+      document.getElementById('payPrice').textContent = fmtCur(total);
+      document.getElementById('payPrice').style.background = action==='rent'? 'rgba(34,197,94,0.14)' : 'rgba(245,158,11,0.14)';
+      document.getElementById('payPrice').style.color = action==='rent'? '#86efac':'#f59e0b';
+      document.getElementById('payStatus').textContent = 'Pick a card';
+      document.getElementById('paySummary').textContent = `${action==='buy'? 'Purchase':'Rent (30-day lease)'} — ${prop.name} — price $${Number(action==='buy'?prop.price:prop.rent_price).toLocaleString()} + fee $${(action==='buy'? (await getFeeForProp(prop, action)):0)} → $${total.toLocaleString()}`;
+      // load cards like payment menu does
+      let cards=[];
+      try{
+        const res=await apiCall('call_command','bank.list_cards',{player_id:1});
+        if(res && res.status==='success' && res.cards) cards=res.cards;
+        else if(res && res.result && res.result.cards) cards=res.result.cards;
+      }catch(e){}
+      if(!cards.length){
+        try{ const r=await apiCall('call_command','bank.apply',{player_id:1, bank_name:'Westbank'}); const r2=await apiCall('call_command','bank.list_cards',{player_id:1}); if(r2&&r2.cards) cards=r2.cards; }catch(e){}
+      }
+      const grid=document.getElementById('payCardsGrid');
+      grid.innerHTML='';
+      let selected=null;
+      function updateRePay(){
+        const btn=document.getElementById('payConfirmBtn');
+        const status=document.getElementById('payStatus');
+        const summary=document.getElementById('paySummary');
+        if(!selected){ btn.disabled=true; btn.innerHTML='<i class="fas fa-lock"></i> Pay'; status.textContent='Pick a card'; status.style.color='var(--text-muted)'; summary.textContent=`${action==='rent'?'Rent':'Buy'} ${prop.name} — $${total.toLocaleString()} total — pick a card to check limit.`; return; }
+        const card=cards.find(c=>c.card_id===selected);
+        if(!card){ btn.disabled=true; return; }
+        const limit = card.type==='debit'? Number(card.debit_limit||0): Number(card.credit_limit||0);
+        const avail = card.type==='credit'? Math.max(0, Number(card.credit_limit)-Number(card.debt||0)): Number(card.debit_limit);
+        let over=false, reason='';
+        if(total>limit){ over=true; reason=`Over per-transaction limit ${fmtCur(limit)}`; }
+        else if(card.type==='credit' && total>avail){ over=true; reason=`Over credit available ${fmtCur(avail)}`; }
+        if(over){ btn.disabled=true; btn.innerHTML='<i class="fas fa-ban"></i> Transaction Failed'; status.textContent='Transaction Failed'; status.style.color='#f87171'; summary.innerHTML=`<span style="color:#f87171; font-weight:700;">Transaction Failed</span> — ${reason}`; }
+        else { btn.disabled=false; btn.innerHTML=`<i class="fas fa-check"></i> Pay ${fmtCur(total)} with ${card.bank} ${card.type}`; status.textContent='Ready to pay'; status.style.color='#86efac'; if(card.type==='debit') summary.textContent=`Debit • ${card.bank} • limit ${fmtCur(limit)} • will deduct wallet • Total ${fmtCur(total)} ✓`; else summary.textContent=`Credit • ${card.bank} • limit ${fmtCur(limit)} • available ${fmtCur(avail)} • debt after ${fmtCur(Number(card.debt||0)+total)} • Total ${fmtCur(total)} ✓`; }
+        grid.querySelectorAll('.bank-card-v2').forEach(el=>{ el.style.outline = el.dataset.cardId===selected? '2px solid var(--accent)':''; });
+      }
+      // temporarily override confirmPayment handler
+      window._origConfirm = window.confirmPayment;
+      window.confirmPayment = async function(){
+        if(!selected){ appendGameResponse('**✖** No card selected'); return; }
+        const btn=document.getElementById('payConfirmBtn'); if(btn){ btn.disabled=true; btn.textContent='…'; }
+        const cmd = _rePayPending.action==='rent'? 'realestate.rent' : 'realestate.buy';
+        const res=await apiCall('call_command', cmd, {player_id:1, property_id: _rePayPending.property_id, card_id: selected});
+        if(!res || res.status!=='success'){
+          appendGameResponse(`**✖ ${ _rePayPending.action==='rent'?'Rent':'Buy'} failed:** ${res?res.message:'unknown'} \n\n*Pick different card — limits vary.*`);
+          if(btn){ btn.disabled=false; btn.innerHTML='<i class="fas fa-ban"></i> Transaction Failed'; setTimeout(()=>{ btn.innerHTML='<i class="fas fa-lock"></i> Pay'; window._payUpdate? window._payUpdate():null; },1500); }
+          return;
+        }
+        const data=res.result||res;
+        appendGameResponse(`**✔ ${ _rePayPending.action==='rent'?'Rented':'Bought'} \`${_rePayPending.property_id}\`** — ${data.message||''} • Balance ${data.balance!==undefined? fmtCur(data.balance):''}`);
+        closePaymentMenu();
+        // restore
+        if(window._origConfirm) window.confirmPayment=window._origConfirm;
+        _rePayPending=null;
+        markUnsaved();
+        await fetchRealEstateCatalog();
+        await refreshRealEstateBrowse();
+        await renderRealEstateOwned();
+        await refreshStateMonitor();
+      };
+      // render cards
+      cards.forEach(card=>{
+        const isDebit=card.type==='debit';
+        const limit=isDebit? card.debit_limit: card.credit_limit;
+        const avail=isDebit? card.debit_limit: Math.max(0, Number(card.credit_limit)-Number(card.debt||0));
+        const balLine=isDebit? `${fmtCur(card.debit_limit)} per txn` : `${fmtCur(card.debt||0)} debt / ${fmtCur(card.credit_limit)} limit`;
+        const el=document.createElement('div');
+        el.className='bank-card-v2 '+(isDebit?'debit':'gold');
+        el.dataset.cardId=card.card_id;
+        el.onclick=()=>{ selected=card.card_id; updateRePay(); };
+        const over=total>(isDebit? Number(card.debit_limit): avail);
+        el.style.opacity=over?'0.62':'1';
+        el.innerHTML=`<div class="shine"></div><div style="display:flex; justify-content:space-between;"><span style="font-weight:700; font-size:0.8rem;"><i class="fas fa-credit-card"></i> ${card.bank}</span><span style="font-size:0.6rem; padding:2px 7px; border-radius:999px; background:rgba(255,255,255,0.12);">${card.type.toUpperCase()}</span></div><div style="display:flex; align-items:center; gap:10px; margin-top:8px;"><div class="chip"></div><div style="flex:1;"><div class="card-number">${card.number||'••••'}</div></div><i class="fab fa-cc-visa" style="opacity:0.85"></i></div><div style="display:flex; justify-content:space-between; margin-top:6px;"><div style="font-size:0.6rem; opacity:0.7;">${card.card_id.slice(0,14)}…</div><div style="text-align:right;"><div style="font-weight:800;">${balLine}</div><div style="font-size:0.55rem; opacity:0.7;">avail ${fmtCur(avail)}${over?' • <span style=color:#f87171>OVER</span>':''}</div></div></div>`;
+        grid.appendChild(el);
+      });
+      if(cards.length===1){ selected=cards[0].card_id; setTimeout(updateRePay, 80); } else updateRePay();
+      document.getElementById('paymentOverlay').classList.add('active');
+      // patch close to restore
+      const origClose=window.closePaymentMenu;
+      const wrappedClose=()=>{ origClose(); if(window._origConfirm) window.confirmPayment=window._origConfirm; _rePayPending=null; window.closePaymentMenu=origClose; };
+      window.closePaymentMenu=wrappedClose;
+    }
+    async function getFeeForProp(prop, action){
+      const ag=(reCatalog?.agents||[]).find(a=>a.id===prop.agent_id);
+      if(!ag) return 0;
+      const price = action==='rent'? Number(prop.rent_price||0): Number(prop.price||0);
+      return Math.round(price*Number(ag.fee_percent||0)/100);
+    }
+    async function sellRealEstate(propertyId){
+      if(!confirm(`Sell ${propertyId} for 75% refund? Vehicles parked there will be freed.`)) return;
+      let res=await apiCall('call_command','realestate.sell',{player_id:1, property_id: propertyId});
+      if(!res || res.status!=='success'){ appendGameResponse(`**✖ Sell failed:** ${res?res.message:'unknown'}`); return; }
+      const data=res.result||res;
+      appendGameResponse(`**✔ Sold \`${propertyId}\`** — refund $${Number(data.refund||0).toLocaleString()} • Balance $${Number(data.balance||0).toLocaleString()} • ${data.vehicles_freed||0} vehicle(s) freed`);
+      markUnsaved();
+      await fetchRealEstateCatalog();
+      await renderRealEstateOwned();
+      await refreshRealEstateBrowse();
+      await refreshStateMonitor();
+    }
+    async function cancelRent(propertyId){
+      if(!confirm(`Cancel rent on ${propertyId}? No refund, parked vehicles freed.`)) return;
+      let res=await apiCall('call_command','realestate.cancel_rent',{player_id:1, property_id: propertyId});
+      if(!res || res.status!=='success'){ appendGameResponse(`**✖ Cancel failed:** ${res?res.message:'unknown'}`); return; }
+      appendGameResponse(`**✔ Cancelled rent \`${propertyId}\`** — ${res.vehicles_freed||0} vehicle(s) freed`);
+      markUnsaved();
+      await fetchRealEstateCatalog();
+      await renderRealEstateOwned();
+      await refreshRealEstateBrowse();
+      await refreshStateMonitor();
+    }
+    // --- Garage modal ---
+    async function openGarageModal(propertyId){
+      reGaragePropId=propertyId;
+      const modal=document.getElementById('reGarageModal');
+      const title=document.getElementById('reGarageTitle');
+      const capBadge=document.getElementById('reGarageCapBadge');
+      const body=document.getElementById('reGarageBody');
+      modal.classList.add('active');
+      if(title) title.textContent = propertyId;
+      body.innerHTML='<div style="text-align:center; padding:18px; color:var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Loading garage…</div>';
+      await refreshGarageModal();
+    }
+    function closeGarageModal(){ const m=document.getElementById('reGarageModal'); if(m) m.classList.remove('active'); reGaragePropId=null; }
+    async function refreshGarageModal(){
+      if(!reGaragePropId) return;
+      const body=document.getElementById('reGarageBody');
+      const capBadge=document.getElementById('reGarageCapBadge');
+      // get garage for that property
+      let res=await apiCall('call_command','realestate.garage',{player_id:1, property_id: reGaragePropId});
+      let data=(res&&res.result)||res;
+      if(!data || data.status==='error'){ body.innerHTML=`<div style="color:#f87171; padding:10px;">Failed: ${data?.message||'unknown'}</div>`; return; }
+      const cap=data.capacity||0, used=data.used||0;
+      if(capBadge) capBadge.textContent=`${used}/${cap} • ${Math.max(0,cap-used)} free`;
+      // get owned vehicles not yet stored elsewhere
+      let ownRes=await apiCall('call_command','vehicleshop.owned',{player_id:1});
+      let ownedVehicles=(ownRes&&ownRes.result&&ownRes.result.vehicles)||(ownRes&&ownRes.vehicles)||[];
+      // also get all garages to know which vehicles are already parked elsewhere
+      let allGarRes=await apiCall('call_command','realestate.garages',{player_id:1});
+      let allGar=(allGarRes&&allGarRes.result)||allGarRes;
+      const parkedSet=new Set();
+      (allGar?.garages||[]).forEach(g=> (g.stored||[]).forEach(id=> parkedSet.add(id)));
+      const unparked = ownedVehicles.filter(v=> !parkedSet.has(v.instance_id));
+      const storedDetails=data.stored_details||[];
+      body.innerHTML=`
+        <div style="background:rgba(0,0,0,0.12); border:1px solid var(--panel-border); border-radius:8px; padding:8px; font-size:0.72rem; font-family:var(--font-mono); display:flex; justify-content:space-between;"><span><i class="fas fa-square-parking"></i> ${reGaragePropId}</span><span>${used}/${cap} used</span><span>${cap-used} free</span></div>
+        <div style="margin-top:10px;">
+          <div style="font-weight:700; font-size:0.78rem; display:flex; justify-content:space-between; align-items:center;"><span><i class="fas fa-warehouse"></i> Parked here (${storedDetails.length})</span><span style="font-size:0.68rem; color:var(--text-muted);">${cap? cap+' slots': 'No parking'}</span></div>
+          <div id="garageStoredList" style="margin-top:6px; display:flex; flex-direction:column; gap:6px; max-height:180px; overflow:auto; padding:4px; background:rgba(255,255,255,0.03); border:1px solid var(--panel-border); border-radius:8px; min-height:44px;"></div>
+        </div>
+        <div style="margin-top:10px;">
+          <div style="font-weight:700; font-size:0.78rem;">Store a vehicle <span style="font-weight:400; opacity:0.6; font-size:0.68rem;">— ${unparked.length} available</span></div>
+          <div id="garageStoreList" style="margin-top:6px; display:flex; flex-direction:column; gap:6px; max-height:200px; overflow:auto; padding:4px; background:rgba(255,255,255,0.03); border:1px solid var(--panel-border); border-radius:8px; min-height:44px;"></div>
+        </div>
+        ${cap===0? '<div style="margin-top:8px; color:#f87171; font-size:0.72rem;"><i class="fas fa-triangle-exclamation"></i> No parking on this property — cannot store vehicles</div>':''}
+      `;
+      const storedList=document.getElementById('garageStoredList');
+      if(storedDetails.length){
+        storedList.innerHTML=storedDetails.map(s=>`<div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.05); border:1px solid var(--panel-border); border-radius:8px; padding:6px 8px; font-size:0.72rem;"><span><i class="fas fa-car" style="opacity:0.7"></i> ${s.name||s.instance_id} <span style="opacity:0.6; font-family:var(--font-mono);">${s.instance_id}</span> ${s.license_plate? `<span class="pill" style="font-size:0.62rem;">${s.license_plate}</span>`:''}</span><button class="mini-btn" style="border-color:rgba(239,68,68,0.35); color:#f87171;" onclick="retrieveVehicleFromGarage('${reGaragePropId}','${s.instance_id}')"><i class="fas fa-arrow-up"></i> Retrieve</button></div>`).join('');
+      } else {
+        storedList.innerHTML='<div style="font-size:0.72rem; color:var(--text-muted); text-align:center; padding:10px;"><i class="fas fa-inbox"></i> Empty — '+cap+' free slot'+(cap!==1?'s':'')+'</div>';
+      }
+      const storeList=document.getElementById('garageStoreList');
+      if(cap===0){
+        storeList.innerHTML='<div style="font-size:0.72rem; color:var(--text-muted); text-align:center; padding:10px;">— cannot store —</div>';
+      } else if(!unparked.length){
+        storeList.innerHTML='<div style="font-size:0.72rem; color:var(--text-muted); text-align:center; padding:10px;">No unparked vehicles — all are already stored. Buy more via Vehicle Shop.</div>';
+      } else {
+        storeList.innerHTML=unparked.map(v=>`<div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); border:1px solid var(--panel-border); border-radius:8px; padding:6px 8px; font-size:0.72rem;"><span><i class="fas fa-car"></i> ${v.name} <span style="opacity:0.6; font-family:var(--font-mono);">${v.instance_id}</span> <span style="opacity:0.6;">${v.category}</span></span><button class="mini-btn primary" ${used>=cap?'disabled style="opacity:0.5"':''} onclick="storeVehicleInGarage('${reGaragePropId}','${v.instance_id}')"><i class="fas fa-arrow-down"></i> Store</button></div>`).join('');
+      }
+    }
+    async function storeVehicleInGarage(propertyId, instanceId){
+      let res=await apiCall('call_command','realestate.store_vehicle',{player_id:1, property_id: propertyId, instance_id: instanceId});
+      if(!res || res.status!=='success'){ appendGameResponse(`**✖ Store failed:** ${res?res.message:'unknown'}`); return; }
+      appendGameResponse(`**✔ Stored \`${instanceId}\` at \`${propertyId}\`** — ${res.used||'?'} / ${res.capacity||'?'} used`);
+      markUnsaved();
+      await refreshGarageModal();
+      await renderRealEstateGarages();
+      await renderRealEstateOwned();
+      await refreshStateMonitor();
+    }
+    async function retrieveVehicleFromGarage(propertyId, instanceId){
+      let res=await apiCall('call_command','realestate.retrieve_vehicle',{player_id:1, property_id: propertyId, instance_id: instanceId});
+      if(!res || res.status!=='success'){ appendGameResponse(`**✖ Retrieve failed:** ${res?res.message:'unknown'}`); return; }
+      appendGameResponse(`**✔ Retrieved \`${instanceId}\` from \`${propertyId}\`**`);
+      markUnsaved();
+      await refreshGarageModal();
+      await renderRealEstateGarages();
+      await renderRealEstateOwned();
+      await refreshStateMonitor();
+    }
+    function promptStoreVehicle(propertyId){ openGarageModal(propertyId); }
+    // hook Escape to also close real estate modals
+
     let hasUnsavedChanges = false;
     let selectedSaveSlot = null;
     let saveSlotsCache = []; // from list_saves_detailed
@@ -2038,6 +2747,19 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
         await openShop();
         cmdInput.value=''; hideSuggestions(); hideParamAssist(); return;
       }
+      // Real Estate overlay triggers
+      if(text.toLowerCase()==='/realestate' || text.toLowerCase()==='/realestate.open' || text.toLowerCase()==='/realestate.view'){
+        appendUserMessage(text);
+        appendGameResponse(`**🏠 Real Estate** — opening browser…\n*Browse 11 properties • Buy/Rent • Agents with fees/ratings • Store cars if parking>0. Also: \`/realestate.buy house_maple_12\` in console.*`);
+        await openRealEstate();
+        cmdInput.value=''; hideSuggestions(); hideParamAssist(); return;
+      }
+      if(text.toLowerCase().startsWith('/realestate ') && !text.includes('.')){
+        appendUserMessage(text);
+        appendGameResponse(`**🏠 Real Estate** — opening browser…`);
+        await openRealEstate();
+        cmdInput.value=''; hideSuggestions(); hideParamAssist(); return;
+      }
       if(text==='/clear'){ chatHistory.innerHTML=''; cmdInput.value=''; hideSuggestions(); hideParamAssist(); return; }
       if(text==='/quit'){ await apiCall('quit_dashboard'); setTimeout(()=>window.close(),250); return; }
       // /help with optional arg: "/help" or "/help /player.move"
@@ -2122,10 +2844,10 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
             }
             appendGameResponse(md);
             // auto refresh monitor if state mutated
-            if(['player.move','player.add','player.remove','inventory.add','inventory.remove_item','inventory.set_max_weight','bank.apply','vehicleshop.buy','vehicleshop.sell','ownership.add','ownership.remove','ownership.clear','economy.add_funds','economy.set_balance'].includes(meta.name)){
+            if(['player.move','player.add','player.remove','inventory.add','inventory.remove_item','inventory.set_max_weight','bank.apply','vehicleshop.buy','vehicleshop.sell','ownership.add','ownership.remove','ownership.clear','economy.add_funds','economy.set_balance','realestate.buy','realestate.rent','realestate.sell','realestate.cancel_rent','realestate.store_vehicle','realestate.retrieve_vehicle'].includes(meta.name)){
               try{ await refreshStateMonitor(); }catch(e){}
               markUnsaved();
-            } else if(['vehicleshop.list_categories','vehicleshop.list_vehicles','vehicleshop.info','vehicleshop.owned','vehicleshop.get_catalog','vehicleshop.open','ownership.list','economy.balance','economy.can_afford','player.get','inventory.list','inventory.has','inventory.get'].includes(meta.name)){
+            } else if(['vehicleshop.list_categories','vehicleshop.list_vehicles','vehicleshop.info','vehicleshop.owned','vehicleshop.get_catalog','vehicleshop.open','ownership.list','economy.balance','economy.can_afford','player.get','inventory.list','inventory.has','inventory.get','realestate.list_properties','realestate.list_agents','realestate.info','realestate.agent_info','realestate.owned','realestate.get_catalog','realestate.open','realestate.view','realestate.garage','realestate.garages'].includes(meta.name)){
               // read-only — no dirty
             } else {
               // generic mutating fallback: if command name suggests write, mark unsaved
@@ -2174,7 +2896,7 @@ Relocated entity to \`Sector 09 [120, 64, -12]\`. Area loaded in \`14ms\`.`,
           // if only optional defaults, still try direct but if it errors we'll auto-popup via handleSend fallback
         }
         // also if the quick button was clicked and the command is known to need attributes (heuristic), popup
-        const needsAttrs = ['bank.apply','bank.get_loan','economy.can_afford','economy.add_funds','economy.set_balance','vehicleshop.buy','vehicleshop.sell','ownership.add','ownership.remove','player.move','inventory.add'];
+        const needsAttrs = ['bank.apply','bank.get_loan','economy.can_afford','economy.add_funds','economy.set_balance','vehicleshop.buy','vehicleshop.sell','ownership.add','ownership.remove','player.move','inventory.add','realestate.buy','realestate.rent','realestate.sell','realestate.cancel_rent','realestate.store_vehicle','realestate.retrieve_vehicle','realestate.info','realestate.agent_info'];
         if(needsAttrs.includes(meta.name) && !hasArgs){
           openArgsModal(meta.name);
           return;

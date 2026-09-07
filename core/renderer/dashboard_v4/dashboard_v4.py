@@ -1,18 +1,23 @@
 """
-MTT Dashboard V2 — Python backend for pywebview.
+MTT Dashboard V4 — Python backend + PyImGui launcher.
 
-Mirrors the Dashboard and XMB architecture:
-  - dashboard_v2.py  -> Python API exposed via pywebview JS bridge
-  - static/dashboard_v2.html -> UI layer (Game System Debugger, XMB-themed)
+Console-style hub built with Dear ImGui (pyimgui) over pygame+OpenGL.
+Reuses XMB settings (theme, fullscreen) from xmbsettings.xml.
+Reuses the same HUD/state bridge as Dashboard V3 (live saves, economy, etc.)
+but renders natively via ImGui instead of HTML/CSS/JS + pywebview.
 
-Lives in its own folder: core/renderer/dashboard_v2/ with its own static/ folder.
-Re-uses XMB settings (theme, fullscreen) from xmbsettings.xml so V2 looks
-consistent with the XMB. Fullscreen is honoured the same way as other dashboards.
+Controller-first: left stick / D-pad drives ImGui nav, A/B map to Activate/Cancel;
+keyboard arrows + Enter/Escape mirror the pad so couch + desk both work.
+Mouse remains fully usable (ImGui hover+click).
 
-Spawned from XMB via XMBDashboardAPI.launch_dashboard_v2() and runnable
-standalone:
-    python -m core.renderer.dashboard_v2.dashboard_v2
-    python -m core.renderer.dashboard_v2.dashboard_v2 --debug
+Lives in its own folder: core/renderer/dashboard_v4/
+  - dashboard_v4.py -> API + launcher (pygame+OpenGL+imgui)
+  - app.py          -> Dear ImGui draw code (tabs, cards, modals)
+
+Run:
+    python -m core.renderer.dashboard_v4.dashboard_v4
+    python -m core.renderer.dashboard_v4.dashboard_v4 --debug
+    python dashboard_v4.py
 """
 
 from __future__ import annotations
@@ -20,42 +25,28 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
-# Paths --------------------------------------------------------------------
-# core/renderer/dashboard_v2/dashboard_v2.py -> parents[3] -> MilkToastTaco/
+# Paths
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-STATIC_DIR = Path(__file__).parent / "static"
-DASHBOARD_V2_HTML_PATH = STATIC_DIR / "dashboard_v2.html"
 
-# Support both direct file execution and `python -m core.renderer.dashboard_v2.dashboard_v2`
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 
-def get_dashboard_v2_html_path() -> str:
-    """Absolute path to static/dashboard_v2.html."""
-    return str(DASHBOARD_V2_HTML_PATH.resolve())
-
-
 # ---------------------------------------------------------------------------
-# Dashboard V2 API — exposed to JS via pywebview.api.*
+# Dashboard V4 API — same HUD/bridge contract as V3 (so XMB / saves stay compat)
 # ---------------------------------------------------------------------------
 
-class DashboardV2API:
-    """Python API for the MTT Dashboard V2 frontend (pywebview bridge)."""
+class DashboardV4API:
+    """Python API for Dashboard V4 (ImGui frontend). No JS bridge — direct calls."""
 
     def __init__(self):
-        self.game_state = {
-            "started": False,
-            "mode": "debug",
-        }
-        # in-memory save editing: mirrors dashboard.py caching
+        self.game_state = {"started": False, "mode": "hub", "version": "V4", "renderer": "imgui"}
         self._current_save: Optional[str] = None
         self._current_data: Optional[Dict[str, Any]] = None
 
-    # -- settings (reuse XMB settings) -------------------------------------
-
+    # -- settings (reuse XMB) -----------------------------------------------
     def get_xmb_settings(self):
         from core.renderer.main_menu.xmb_settings import load_settings
         return {"status": "success", "settings": load_settings()}
@@ -65,18 +56,6 @@ class DashboardV2API:
         s = load_settings()
         s["fullscreen"] = bool(enabled)
         save_settings(s)
-        try:
-            import webview
-            if webview.windows:
-                w = webview.windows[0]
-                if hasattr(w, "toggle_fullscreen"):
-                    is_fs = getattr(w, "fullscreen", False)
-                    if bool(is_fs) != bool(enabled):
-                        w.toggle_fullscreen()
-                elif hasattr(w, "fullscreen"):
-                    w.fullscreen = bool(enabled)
-        except Exception:
-            pass
         return {"status": "success", "settings": s}
 
     def set_theme(self, theme: str):
@@ -92,13 +71,11 @@ class DashboardV2API:
         from core.renderer.main_menu.xmb_settings import THEMES
         return {"status": "success", "themes": THEMES}
 
-    # -- saves / state (delegate to save manager, read-only HUD) -----------
-
+    # -- saves --------------------------------------------------------------
     def list_saves(self):
         try:
             from core.systems.save.manager import list_saves as _list
-            saves = _list()
-            return {"status": "success", "saves": saves}
+            return {"status": "success", "saves": _list()}
         except Exception as e:
             return {"status": "error", "message": str(e)}
 
@@ -106,35 +83,70 @@ class DashboardV2API:
         return self.list_saves()
 
     def list_saves_detailed(self):
-        """Return saves with meta (name, saved_at, version) for save-menu grid."""
         try:
-            from core.systems.save.manager import _resolve_save_dir, _sanitize_filename
+            from core.systems.save.manager import _resolve_save_dir
             from core.xml_loader import load_xml_file
             save_dir = _resolve_save_dir()
-            saves = []
+            saves: List[Dict[str, Any]] = []
             for p in sorted(save_dir.glob("*.xml")):
                 try:
                     root = load_xml_file(str(p), strict=False)
                     if root is None:
                         saves.append({"name": p.stem, "exists": True, "saved_at": None, "version": None, "error": "corrupt"})
                         continue
-                    saves.append({
-                        "name": p.stem,
-                        "exists": True,
-                        "saved_at": root.get("saved_at"),
-                        "version": root.get("version"),
-                        "save_name_attr": root.get("name", p.stem),
-                    })
+                    saves.append({"name": p.stem, "exists": True, "saved_at": root.get("saved_at"), "version": root.get("version"), "save_name_attr": root.get("name", p.stem)})
                 except Exception as e:
                     saves.append({"name": p.stem, "exists": True, "saved_at": None, "error": str(e)})
             return {"status": "success", "saves": saves}
         except Exception as e:
             return {"status": "error", "message": str(e)}
 
-    def save_game(self, save_name: str):
-        """Save current state to a slot/file. Exposed to JS save-menu."""
+    def load_save(self, save_name: str):
         try:
-            # Ensure all providers are registered before saving (so empty saves don't happen on fresh boot)
+            from core.xml_loader import load_xml_file
+            from core.systems.save.manager import _resolve_save_dir, _sanitize_filename
+            from core.systems.save.xml_codec import element_to_value
+            save_dir = _resolve_save_dir()
+            fname = f"{_sanitize_filename(save_name)}.xml"
+            fpath = save_dir / fname
+            root = load_xml_file(str(fpath), strict=False)
+            if root is None:
+                return {"status": "error", "message": f"Save '{save_name}' not found or corrupt"}
+            systems_el = root.find("systems")
+            data: Dict[str, Any] = {}
+            if systems_el is not None:
+                for sys_el in systems_el.findall("system"):
+                    key = sys_el.get("key", "")
+                    try:
+                        data[key] = element_to_value(sys_el)
+                    except Exception as e:
+                        data[key] = {"_error": str(e)}
+            meta = {"name": root.get("name", save_name), "version": root.get("version"), "saved_at": root.get("saved_at")}
+            self._current_save = save_name
+            self._current_data = {"meta": meta, "systems": data}
+            return {"status": "success", "save": save_name, "meta": meta, "systems": data}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    def load_game(self, save_name: str):
+        try:
+            from core.systems.save.manager import load_game as _load
+            if not save_name or not str(save_name).strip():
+                return {"status": "error", "message": "save_name required"}
+            ok = _load(str(save_name).strip())
+            if not ok:
+                return {"status": "error", "message": f"Save '{save_name}' not found or failed to load"}
+            self._current_save = str(save_name).strip()
+            try:
+                self.load_save(self._current_save)
+            except Exception:
+                pass
+            return {"status": "success", "save": self._current_save, "message": f"Loaded {self._current_save}.xml"}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    def save_game(self, save_name: str):
+        try:
             try:
                 import core.systems.economy.wallet  # noqa: F401
                 import core.systems.player.ownership  # noqa: F401
@@ -149,7 +161,6 @@ class DashboardV2API:
                 return {"status": "error", "message": "save_name required"}
             path = _save(str(save_name).strip())
             self._current_save = str(save_name).strip()
-            # also update _current_data cache by re-reading?
             try:
                 self.load_save(self._current_save)
             except Exception:
@@ -158,88 +169,20 @@ class DashboardV2API:
         except Exception as e:
             return {"status": "error", "message": str(e)}
 
-    def get_save_slot_info(self, slot: int):
-        """Helper for JS: get info for slot 1..20 (maps to save name slot<slot>)."""
-        try:
-            slot = int(slot)
-            if not 1 <= slot <= 20:
-                return {"status": "error", "message": "slot must be 1..20"}
-            name = f"slot{slot}"
-            return self.load_save(name)
-        except Exception as e:
-            return {"status": "error", "message": str(e)}
-
-    def load_game(self, save_name: str):
-        """Restore live game state from a save (for slot Load)."""
-        try:
-            from core.systems.save.manager import load_game as _load
-            if not save_name or not str(save_name).strip():
-                return {"status": "error", "message": "save_name required"}
-            ok = _load(str(save_name).strip())
-            if not ok:
-                return {"status": "error", "message": f"Save '{save_name}' not found or failed to load"}
-            self._current_save = str(save_name).strip()
-            # refresh cache
-            try:
-                self.load_save(self._current_save)
-            except Exception:
-                pass
-            return {"status": "success", "save": self._current_save, "message": f"Loaded {self._current_save}.xml"}
-        except Exception as e:
-            return {"status": "error", "message": str(e)}
-
-    def load_save(self, save_name: str):
-        try:
-            from core.xml_loader import load_xml_file
-            from core.systems.save.manager import _resolve_save_dir, _sanitize_filename
-            from core.systems.save.xml_codec import element_to_value
-
-            save_dir = _resolve_save_dir()
-            fname = f"{_sanitize_filename(save_name)}.xml"
-            fpath = save_dir / fname
-            root = load_xml_file(str(fpath), strict=False)
-            if root is None:
-                return {"status": "error", "message": f"Save '{save_name}' not found or corrupt"}
-
-            systems_el = root.find("systems")
-            data: Dict[str, Any] = {}
-            if systems_el is not None:
-                for sys_el in systems_el.findall("system"):
-                    key = sys_el.get("key", "")
-                    try:
-                        data[key] = element_to_value(sys_el)
-                    except Exception as e:
-                        data[key] = {"_error": str(e)}
-
-            meta = {
-                "name": root.get("name", save_name),
-                "version": root.get("version"),
-                "saved_at": root.get("saved_at"),
-            }
-            self._current_save = save_name
-            self._current_data = {"meta": meta, "systems": data}
-            return {"status": "success", "save": save_name, "meta": meta, "systems": data}
-        except Exception as e:
-            return {"status": "error", "message": str(e)}
-
     def get_state(self, save_name: Optional[str] = None):
-        """Bridge for dashboard_v2.html to pull structured MTT state (HUD)."""
         try:
             from core.renderer.main_menu.xmb_settings import load_settings
             xmb_settings = load_settings()
         except Exception:
             xmb_settings = {"fullscreen": False, "theme": "default"}
-
         try:
             from core.systems.save.manager import list_saves as _list
             saves = _list()
         except Exception:
             saves = []
-
         systems: Dict[str, Any] = {}
         meta: Dict[str, Any] = {}
         current = self._current_save
-
         if save_name is not None:
             res = self.load_save(save_name)
             if res.get("status") == "success":
@@ -261,55 +204,8 @@ class DashboardV2API:
                         systems[key] = {"_error": str(e)}
             except Exception as e:
                 systems = {"_error": str(e)}
-
         hud = self._build_hud_summary(systems)
-
-        return {
-            "status": "success",
-            "saves": saves,
-            "current_save": current,
-            "meta": meta,
-            "systems": systems,
-            "hud": hud,
-            "xmb_settings": xmb_settings,
-        }
-
-        # -- command registry bridge (autodiscovering, shared via bridge mixin) --
-    # Inherits autodiscover behaviour from core.renderer.bridge.CommandBridgeMixin
-    # so new @command files appear automatically in V2 (shows all) and
-    # future dashboards/game share the same bridge.
-    def call_command(self, name: str, args=None):
-        from core.renderer.bridge import bridge_call_command as _bcc
-
-        return _bcc(name, args)
-
-    def call_function(self, function_id, args=None):
-        from core.renderer.bridge import CommandBridgeMixin as _CBM
-
-        # Delegate via mixin to keep alias semantics (list-wrapped ids, etc.)
-        return _CBM.call_function(self, function_id, args)
-
-    def list_commands(self, category: str | None = None, refresh: bool = False):
-        from core.renderer.bridge import bridge_list_commands as _blc
-
-        res = _blc(category, refresh=refresh)
-        # Normalise to {status, commands, category} shape expected by JS
-        if res.get("status") == "success":
-            res["category"] = category
-        return res
-
-    def get_commands(self, category: str | None = None, refresh: bool = False):
-        return self.list_commands(category, refresh=refresh)
-
-    def refresh_commands(self):
-        """Force filesystem rescan — JS can call refresh_commands() after adding new @command files."""
-        return self.list_commands(refresh=True)
-
-    def get_game_status(self):
-        return {"status": "success", "game_state": self.game_state}
-
-    # Expose command for output demo (so /output can be typed even without args)
-    # Actual output emission is via get_output/poll_output; no extra command needed.
+        return {"status": "success", "saves": saves, "current_save": current, "meta": meta, "systems": systems, "hud": hud, "xmb_settings": xmb_settings}
 
     def _build_hud_summary(self, systems: Dict[str, Any]) -> Dict[str, Any]:
         hud: Dict[str, Any] = {}
@@ -325,7 +221,6 @@ class DashboardV2API:
                 hud["player_pos"] = [0, 0, 0]
         except Exception:
             hud["player_pos"] = [0, 0, 0]
-
         inv = systems.get("inventory") or {}
         if isinstance(inv, dict) and inv:
             total_stacks = 0
@@ -344,7 +239,6 @@ class DashboardV2API:
         else:
             hud["inventory_stacks"] = 0
             hud["inventory_items"] = 0
-
         for k in ("vehicles", "world", "construction", "weather"):
             if k in systems:
                 v = systems[k]
@@ -352,8 +246,6 @@ class DashboardV2API:
                     hud[f"{k}_keys"] = list(v.keys())[:6]
                 elif isinstance(v, list):
                     hud[f"{k}_count"] = len(v)
-
-        # --- Economy HUD (mirrors Dashboard) ----------------------------------
         raw_wallet = systems.get("wallet") or systems.get("economy") or {}
         if isinstance(raw_wallet, dict) and raw_wallet:
             wallet_all: Dict[str, float] = {}
@@ -389,7 +281,6 @@ class DashboardV2API:
                 hud["wallet_balance"] = 0.0
                 hud["wallet_pid"] = "1"
             hud["wallet_all"] = {hud["wallet_pid"]: hud["wallet_balance"]}
-
         owned = systems.get("ownership") or {}
         owned_count = 0
         owned_value = 0
@@ -407,8 +298,6 @@ class DashboardV2API:
         hud["owned_count"] = owned_count
         hud["owned_value"] = owned_value
         hud["owned_by_player"] = owned_by_player
-
-        # --- Real Estate HUD ---------------------------------------------------
         re_raw = systems.get("realestate") or {}
         re_owned = re_raw.get("owned") if isinstance(re_raw, dict) else None
         re_count = 0
@@ -419,7 +308,6 @@ class DashboardV2API:
         re_garage_cap = 0
         re_garage_used = 0
         re_by_player: Dict[str, int] = {}
-        re_details: Dict[str, Any] = {}
         if isinstance(re_owned, dict):
             for pid, lst in re_owned.items():
                 if not isinstance(lst, list):
@@ -442,7 +330,6 @@ class DashboardV2API:
                         re_fees += int(float(op.get("fee_paid", 0) or 0))
                     except Exception:
                         pass
-                    # garage capacity from stats
                     stats = op.get("stats") if isinstance(op.get("stats"), dict) else {}
                     try:
                         parking = int(stats.get("parking", 0) or 0)
@@ -456,12 +343,10 @@ class DashboardV2API:
                     re_garage_cap += cap
                     stored = op.get("stored_vehicles") if isinstance(op.get("stored_vehicles"), list) else []
                     re_garage_used += len(stored)
-        # fallback: if realestate not in save yet, try live provider directly
         if re_count == 0:
             try:
-                from core.systems.realestate.realestate import get_owned_properties as _re_get
+                from core.systems.realestate.realestate import get_owned_properties as _re_get  # noqa
                 pid_for_re = int(hud.get("wallet_pid", "1"))
-                # gather for all pids? just pid_for_re for quick hud, but also aggregate all via internal _owned
                 try:
                     from core.systems.realestate import realestate as _re_mod
                     all_owned = getattr(_re_mod, "_owned", {})
@@ -477,12 +362,9 @@ class DashboardV2API:
                                     re_owned_count += 1
                                 re_value += int(getattr(op, "price_paid", 0) or 0)
                                 re_fees += int(getattr(op, "fee_paid", 0) or 0)
-                                cap = getattr(op, "capacity", 0) or int(getattr(op, "capacity", 0) if hasattr(op, "capacity") else 0)
-                                # property capacity property may be int
                                 try:
                                     cap = int(op.capacity) if hasattr(op, "capacity") and not callable(getattr(op, "capacity", None)) else 0
                                 except Exception:
-                                    # fallback to stats
                                     try:
                                         parking = int(op.stats.get("parking", 0) or 0)
                                         garage = int(op.stats.get("garage_spaces", 0) or 0)
@@ -494,7 +376,6 @@ class DashboardV2API:
                             except Exception:
                                 continue
                 except Exception:
-                    # single player fallback
                     live = _re_get(pid_for_re)
                     re_by_player[str(pid_for_re)] = len(live)
                     re_count = len(live)
@@ -523,7 +404,6 @@ class DashboardV2API:
         hud["realestate_garage_used"] = re_garage_used
         hud["realestate_garage_free"] = max(0, re_garage_cap - re_garage_used)
         hud["realestate_by_player"] = re_by_player
-
         try:
             import core.systems.orchestrator as _orch
             hud["bank_member"] = getattr(_orch, "current_bank_member", None)
@@ -541,12 +421,171 @@ class DashboardV2API:
         except Exception:
             hud["bank_cards"] = []
             hud["bank_configs"] = {}
-
         return hud
 
-    # -- universal output bus (core/output.py) -----------------------------
+    def get_game_status(self):
+        return {"status": "success", "game_state": self.game_state}
+
+    def quit_dashboard(self):
+        return {"status": "success", "message": "dashboard_v4 quit"}
+
+    # -- controller-friendly bridge -----------------------------------------
+    def call_command(self, name: str, args=None):
+        try:
+            from core.renderer.bridge import bridge_call_command as _bcc
+            return _bcc(name, args)
+        except Exception as e:
+            return {"status": "error", "message": str(e), "command": name}
+
+    def call_function(self, function_id, args=None):
+        try:
+            from core.renderer.bridge import CommandBridgeMixin as _CBM
+            return _CBM.call_function(self, function_id, args)
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    def list_commands(self, category: str | None = None, refresh: bool = False):
+        try:
+            from core.renderer.bridge import bridge_list_commands as _blc
+            res = _blc(category, refresh=refresh)
+            if res.get("status") == "success":
+                res["category"] = category
+            return res
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    def get_system(self, name: str):
+        try:
+            n = (name or "").strip().lower()
+            if n in ("inventory", "inv"):
+                return self.get_inventory()
+            if n in ("players", "player"):
+                return self.get_players_detail()
+            if n in ("phone", "contacts"):
+                return self.get_phone_contacts()
+            if n in ("shop", "vehicleshop", "vehicles"):
+                return self.get_shop_catalog()
+            if n in ("realestate", "estate", "property"):
+                return self.get_realestate_catalog()
+            if n in ("bank", "wallet", "economy"):
+                return self.get_bank_overview()
+            if n in ("police",):
+                return self.get_police()
+            return {"status": "error", "message": f"Unknown system '{name}'"}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    def get_inventory(self, player_id: int = 1):
+        try:
+            from core.systems.inventory.manager import ensure_inventory
+            from core.systems.inventory.loader import get_item_def
+            pid = int(player_id)
+            inv = ensure_inventory(pid)
+            d = inv.to_dict()
+            enriched = []
+            for s in d.get("stacks", []):
+                defn = get_item_def(int(s.get("item_id", 0)))
+                enriched.append({
+                    "item_id": s.get("item_id"),
+                    "quantity": s.get("quantity"),
+                    "acquired_at": s.get("acquired_at"),
+                    "def": {
+                        "name": getattr(defn, "name", f"Item {s.get('item_id')}") if defn else f"Item {s.get('item_id')}",
+                        "value": getattr(defn, "value", 0) if defn else 0,
+                        "weight": getattr(defn, "weight", 0) if defn else 0,
+                        "category": getattr(defn, "category", "misc") if defn else "misc",
+                        "perishable": getattr(defn, "perishable", False) if defn else False,
+                        "description": getattr(defn, "description", "") if defn else "",
+                    } if defn else None
+                })
+            return {"status": "success", "player_id": pid, "max_weight": d.get("max_weight"), "total_weight": inv.total_weight(), "remaining": inv.remaining_capacity(), "stacks": enriched}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    def get_players_detail(self):
+        try:
+            from core.systems.player_manager import _players
+            out = []
+            for pid, pos in _players.items():
+                out.append({"player_id": int(pid), "pos": list(pos)})
+            return {"status": "success", "players": out}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    def get_phone_contacts(self):
+        try:
+            from core.systems.phone.phone import contacts_list
+            if isinstance(contacts_list, dict):
+                arr = [{"name": k, "number": v} if not isinstance(v, dict) else {"name": k, **v} for k, v in contacts_list.items()]
+            else:
+                arr = []
+            return {"status": "success", "contacts": arr, "count": len(arr)}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    def get_shop_catalog(self):
+        try:
+            from core.systems.shop.vehicle_shop import get_catalog
+            cat = get_catalog()
+            owned = []
+            try:
+                from core.command_registry import execute
+                r = execute("vehicleshop.owned", player_id=1)
+                if isinstance(r, dict) and r.get("status") == "success":
+                    owned = r.get("result") or r.get("vehicles") or []
+            except Exception:
+                pass
+            return {"status": "success", "catalog": cat, "owned": owned}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    def get_realestate_catalog(self):
+        try:
+            from core.systems.realestate.realestate import get_catalog
+            c = get_catalog()
+            return {"status": "success", "catalog": c}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    def get_bank_overview(self, player_id: int = 1):
+        try:
+            from core.systems.economy.wallet import get_balance
+            from core.systems.economy.bank import get_cards, get_bank_names, BANKS
+            pid = int(player_id)
+            bal = float(get_balance(pid))
+            cards = get_cards(pid)
+            banks = {k: dict(v) for k, v in BANKS.items()} if BANKS else {}
+            names = get_bank_names()
+            return {"status": "success", "player_id": pid, "balance": bal, "cards": cards, "banks": banks, "bank_names": names}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    def get_police(self):
+        try:
+            from core.command_registry import execute
+            r = execute("police.list_patrols")
+            if isinstance(r, dict) and r.get("status") == "success":
+                return r
+            return {"status": "success", "patrols": [], "message": "No active patrols"}
+        except Exception as e:
+            return {"status": "success", "patrols": [], "note": str(e)}
+
+    def get_catalog_preview(self):
+        out: Dict[str, Any] = {}
+        try:
+            from core.systems.shop.vehicle_shop import get_catalog as _cat
+            out["vehicleshop"] = _cat()  # type: ignore
+        except Exception:
+            out["vehicleshop"] = None
+        try:
+            from core.systems.realestate.realestate import list_properties as _lp  # type: ignore
+            out["realestate"] = _lp(limit=6)
+        except Exception:
+            out["realestate"] = None
+        return {"status": "success", "catalog": out}
+
+    # -- output bus ---------------------------------------------------------
     def get_output(self, since_id: int = 0, limit: int = 100, level: str | None = None, channel: str | None = None):
-        """Poll output bus for dashboard chat. Wraps core.output.get_output()."""
         try:
             from core.output import get_output as _get
             return _get(since_id=int(since_id) if isinstance(since_id, int) else 0, limit=int(limit) if isinstance(limit, int) else 100, level=level, channel=channel)
@@ -554,14 +593,12 @@ class DashboardV2API:
             return {"status": "error", "message": str(e), "messages": []}
 
     def poll_output(self, since_id: int = 0, limit: int = 100):
-        """Alias for get_output — JS polls poll_output(since_id)."""
         return self.get_output(since_id=since_id, limit=limit)
 
-    def push_output(self, message: str, level: str = "info", channel: str = "general", source: str = "dashboard_v2"):
-        """Push a message into the output bus from JS/frontend."""
+    def push_output(self, message: str, level: str = "info", channel: str = "general", source: str = "dashboard_v4"):
         try:
             from core.output import emit as _emit
-            entry = _emit(str(message), level=level or "info", channel=channel or "general", source=source or "dashboard_v2")
+            entry = _emit(str(message), level=level or "info", channel=channel or "general", source=source or "dashboard_v4")
             return {"status": "success", "entry": entry}
         except Exception as e:
             return {"status": "error", "message": str(e)}
@@ -573,81 +610,66 @@ class DashboardV2API:
         except Exception as e:
             return {"status": "error", "message": str(e)}
 
-    # also expose print_to_user as a pywebview-callable for JS-initiated toasts
-    def print_to_user(self, text: str, level: str = "info", channel: str = "general"):
-        try:
-            from core.output import print_to_user as _ptu
-            entry = _ptu(str(text), level=level or "info", channel=channel or "general", source="dashboard_v2")
-            return {"status": "success", "entry": entry}
-        except Exception as e:
-            return {"status": "error", "message": str(e)}
-
-    def quit_dashboard(self):
-        try:
-            import webview
-            if webview.windows:
-                for w in list(webview.windows):
-                    try:
-                        w.destroy()
-                    except Exception:
-                        pass
-        except Exception:
-            pass
-        return {"status": "success", "message": "dashboard_v2 quit"}
-
-
-# -- entrypoint ------------------------------------------------------------
 
 def _parse_args():
-    p = argparse.ArgumentParser(description="MTT Dashboard V2 — Game System Debugger (XMB-themed)")
-    p.add_argument("--debug", action="store_true", help="Enable pywebview debug")
+    p = argparse.ArgumentParser(description="MTT Dashboard V4 — PyImGui Console Hub (controller + KBM)")
+    p.add_argument("--debug", action="store_true", help="Verbose / show ImGui metrics")
+    p.add_argument("--width", type=int, default=1280, help="Window width")
+    p.add_argument("--height", type=int, default=800, help="Window height")
+    p.add_argument("--fullscreen", action="store_true", help="Open fullscreen (default is windowed for fast launch)")
+    p.add_argument("--no-fullscreen", action="store_true", help="Force windowed (default)")
     return p.parse_args()
 
 
-def run(debug: bool | None = None):
-    """Start the Dashboard V2 pywebview window (DevTools hidden unless --debug)."""
+def run(debug: bool | None = None, width: int = 1280, height: int = 800):
+    """Start the Dashboard V4 ImGui window (Dear ImGui via pygame+OpenGL).
+
+    Controller and keyboard both drive ImGui nav; mouse works natively.
+    V4 opens windowed by default for instant launch (no fullscreen resize lag).
+    Pass --fullscreen to open fullscreen.
+    """
+    # Lazy imports so `from core.renderer.dashboard_v4.dashboard_v4 import DashboardV4API` never requires pygame/imgui
     try:
-        import webview
-    except ImportError:
-        print(
-            "Error: pywebview is not installed.\n"
-            "Install with: pip install -e '.[xmb]'  or  pip install pywebview",
-            file=sys.stderr,
-        )
+        import imgui  # noqa: F401
+        import pygame  # noqa: F401
+        import OpenGL.GL  # noqa: F401
+    except ImportError as e:
+        print(f"Error: Dashboard V4 requires PyImGui stack. Missing: {e}\nInstall with: pip install -e '.[dashboard_v4]'  or  pip install imgui pygame PyOpenGL", file=sys.stderr)
         sys.exit(1)
 
-    # Debug opt-in (was previously True by default)
     if debug is None:
         import os
-
         debug = "--debug" in sys.argv or os.environ.get("MTT_DEBUG") == "1"
     else:
         debug = bool(debug)
 
-    html_path = get_dashboard_v2_html_path()
-    if not Path(html_path).exists():
-        print(f"Dashboard V2 HTML not found at {html_path}", file=sys.stderr)
-        sys.exit(1)
-
-    api = DashboardV2API()
-
-    try:
-        from core.renderer.main_menu.xmb_settings import load_settings
-        s = load_settings()
-        fullscreen = bool(s.get("fullscreen", False))
-    except Exception:
+    # V4 is windowed by default (fast open). Only go fullscreen if --fullscreen is passed.
+    fullscreen = "--fullscreen" in sys.argv
+    if "--no-fullscreen" in sys.argv:
         fullscreen = False
 
-    webview.create_window(
-        title="Milk Toast Taco — Dashboard V2",
-        url=f"file://{html_path}",
-        js_api=api,
-        min_size=(1200, 800),
-        fullscreen=fullscreen,
-    )
-    webview.start(debug=debug)
+    api = DashboardV4API()
+    # hand off to ImGui app (keeps this file API-only, like V3)
+    from core.renderer.dashboard_v4.app import run_app
+
+    # width/height from CLI if given
+    cli_w = width
+    cli_h = height
+    # if invoked via _parse_args custom sizes, respect them
+    for tok in sys.argv:
+        if tok.startswith("--width"):
+            try:
+                cli_w = int(tok.split("=")[-1]) if "=" in tok else int(sys.argv[sys.argv.index(tok) + 1])
+            except Exception:
+                pass
+        if tok.startswith("--height"):
+            try:
+                cli_h = int(tok.split("=")[-1]) if "=" in tok else int(sys.argv[sys.argv.index(tok) + 1])
+            except Exception:
+                pass
+    run_app(api=api, width=cli_w, height=cli_h, fullscreen=fullscreen, debug=debug)
 
 
 if __name__ == "__main__":
     args = _parse_args()
-    run(debug=args.debug)
+    run(debug=args.debug, width=args.width, height=args.height)

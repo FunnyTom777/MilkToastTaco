@@ -28,6 +28,8 @@ dashboard = ["rich>=13"]
 web = ["Flask>=3"]
 # XMB desktop application with pywebview.
 xmb = ["pywebview>=5"]
+# Dashboard V4 — Dear ImGui (pygame + OpenGL) with controller + KBM.
+dashboard_v4 = ["imgui>=2.0", "pygame>=2.5", "PyOpenGL>=3.1"]
 # Development tooling: building distributions.
 dev = ["build>=1.2"]
 

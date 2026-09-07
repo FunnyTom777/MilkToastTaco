@@ -1073,7 +1073,9 @@
                 title: "Misc",
                 icon: "fa-ellipsis-h",
                 items: [
-                    { name: "Launch MTT Dashboard", desc: "Open the Milk Toast Taco developer dashboard (terminal/web)." },
+                    { name: "Launch MTT Dashboard", desc: "This dashboard is outdated. Please use Dashboard V2 Instead" },
+                    { name: "Dashboard V2", desc: "Open MTT Dashboard V2 — Game System Debugger with XMB themes. Fullscreen follows XMB settings. Uses the same pywebview engine." },
+                    { name: "Dashboard V3", desc: "Open MTT Dashboard V3 — Console Hub. Controller-first, no commands, pure UI menus. Big-screen friendly. Gamepad + keyboard." },
                     { name: "Quit", desc: "Save progress and return to desktop." }
                 ]
             }
@@ -1173,6 +1175,46 @@
                     showPopup('Failed to launch Dashboard V2 — check console/py logs.<br><span style="opacity:0.7">You can also run <code>python -m core.renderer.dashboard_v2.dashboard_v2</code></span>');
                 } else {
                     showPopup('Dashboard V2 launch needs the desktop app (pywebview).<br>Preview: run <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">python -m core.renderer.dashboard_v2.dashboard_v2</code> in your terminal. <i class="fas fa-terminal" style="color:#34d399"></i>');
+                }
+                return;
+            }
+            // Dashboard V3 — Console Hub (controller-first, pure UI)
+            if (catId === 'misc' && selectedItem.name === 'Dashboard V3') {
+                if (window.pywebview && window.pywebview.api && window.pywebview.api.launch_dashboard_v3) {
+                    try {
+                        const res = await window.pywebview.api.launch_dashboard_v3();
+                        if (res && res.status === 'success') {
+                            showPopup(`<strong>Dashboard V3</strong> launching...<br><span style="opacity:0.7">Console Hub — controller-first, no commands. Big-screen friendly. XMB is closing — V3 will appear. <i class="fas fa-gamepad" style="color:#22c55e"></i></span>`);
+                            setTimeout(()=>{ try{ window.close(); }catch(e){} }, 900);
+                            return;
+                        } else if (res && res.status === 'error') {
+                            showPopup(`Failed to launch Dashboard V3:<br><code style="background:rgba(255,255,255,0.08); padding:4px 8px; border-radius:6px;">${res.message||'unknown error'}</code>`);
+                            return;
+                        }
+                    } catch(e){ console.error(e); }
+                    showPopup('Failed to launch Dashboard V3 — check console/py logs.<br><span style="opacity:0.7">You can also run <code>python -m core.renderer.dashboard_v3.dashboard_v3</code></span>');
+                } else {
+                    showPopup('Dashboard V3 launch needs the desktop app (pywebview).<br>Preview: run <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">python -m core.renderer.dashboard_v3.dashboard_v3</code> in your terminal. <i class="fas fa-terminal" style="color:#34d399"></i>');
+                }
+                return;
+            }
+            // Dashboard V4 — Dear ImGui (pygame+OpenGL, controller+KBM)
+            if (catId === 'misc' && selectedItem.name === 'Dashboard V4') {
+                if (window.pywebview && window.pywebview.api && window.pywebview.api.launch_dashboard_v4) {
+                    try {
+                        const res = await window.pywebview.api.launch_dashboard_v4();
+                        if (res && res.status === 'success') {
+                            showPopup(`<strong>Dashboard V4</strong> launching...<br><span style="opacity:0.7">Dear ImGui hub — pygame + OpenGL, controller + KBM + mouse. Replaces HTML dashboards. XMB is closing — V4 will appear. <i class="fas fa-cubes" style="color:#a78bfa"></i></span>`);
+                            setTimeout(()=>{ try{ window.close(); }catch(e){} }, 900);
+                            return;
+                        } else if (res && res.status === 'error') {
+                            showPopup(`Failed to launch Dashboard V4:<br><code style="background:rgba(255,255,255,0.08); padding:4px 8px; border-radius:6px;">${res.message||'unknown error'}</code>`);
+                            return;
+                        }
+                    } catch(e){ console.error(e); }
+                    showPopup('Failed to launch Dashboard V4 — check console/py logs.<br><span style="opacity:0.7">You can also run <code>python -m core.renderer.dashboard_v4.dashboard_v4</code> or <code>python dashboard_v4.py</code></span>');
+                } else {
+                    showPopup('Dashboard V4 launch needs the desktop app (pywebview).<br>Preview: run <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">python -m core.renderer.dashboard_v4.dashboard_v4</code> in your terminal. <i class="fas fa-terminal" style="color:#34d399"></i><br><span style="opacity:0.7">Requires <code>pip install -e .[dashboard_v4]</code> (imgui + pygame + PyOpenGL)</span>');
                 }
                 return;
             }
