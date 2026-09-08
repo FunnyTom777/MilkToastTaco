@@ -297,6 +297,8 @@
     /* Vehicle Shop — FS22-style overlay */
     .shop-overlay { display:none; position:fixed; inset:0; z-index:250; background:rgba(8,10,14,0.86); backdrop-filter: blur(6px); align-items:center; justify-content:center; padding:18px; }
     .shop-overlay.active { display:flex; }
+    /* Payment Menu must stack above Real Estate / Vehicle Shop overlays (same .shop-overlay class, same z-index, later DOM would otherwise hide it) */
+    #paymentOverlay.shop-overlay { z-index: 320; }
     .shop-window { width:min(1180px, 96vw); height:min(760px, 92vh); background: linear-gradient(180deg, var(--panel-bg) 0%, #0f1115 100%); border:1px solid var(--panel-border); border-radius:14px; box-shadow: 0 24px 64px rgba(0,0,0,0.55); display:flex; flex-direction:column; overflow:hidden; }
     .shop-header { display:flex; align-items:center; justify-content:space-between; padding:0.85rem 1rem; border-bottom:1px solid var(--panel-border); background: rgba(0,0,0,0.18); gap:10px; }
     .shop-title { font-weight:800; letter-spacing:0.6px; text-transform:uppercase; display:flex; align-items:center; gap:10px; font-size:0.95rem; }
