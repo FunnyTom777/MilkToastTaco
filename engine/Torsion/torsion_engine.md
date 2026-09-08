@@ -2,7 +2,26 @@
 
 `Version 0.1.0` — now scaffolded! See `torsion/` package at repo root.
 
-### Quickstart
+### REALLY Easy Quickstart (procedural — no boilerplate)
+
+```python
+import torsion
+
+torsion.new_window("Milk Toast Taco", 1280, 720)
+torsion.draw_mesh("assets/models/truck.glb", (0, 0, 0))
+torsion.draw_cube((2, 0, 0), size=1.5, color="#ff4422")
+torsion.draw_sphere((0, 3, 0), radius=0.5, color="skyblue")
+torsion.draw_ground(size=30, color="#3a7d44")
+torsion.camera((6, 5, 8), look_at=(0, 0, 0))
+torsion.sun(direction=(-0.5, -1, -0.3))
+torsion.run()  # blocks; headless if panda3d not installed
+
+# even shorter aliases:
+# torsion.cube((0,1,0)) / torsion.sphere(...) / torsion.ground() / torsion.draw_model(...)
+# torsion.light((0,3,0), color="#ffffaa") / torsion.quit()
+```
+
+### Classic OOP Quickstart
 
 ```python
 import torsion
@@ -50,8 +69,10 @@ torsion/
   primitives.py      # Cube / Sphere / Ground sugar
   renderer.py        # Backend abstraction (panda3d ↔ headless)
   app.py             # App + WindowConfig + main loop
+  easy.py            # REALLY easy sugar: new_window / draw_mesh / draw_cube / camera / sun / run
   debug.py           # DearPyGUI overlay (lazy)
-  examples/basic.py  # `python -m torsion.examples.basic`
+  examples/basic.py  # `python -m torsion.examples.basic`  (OOP)
+  examples/easy.py   # `python -m torsion.examples.easy`   (one-liners)
 ```
 
 ### Design Goal
