@@ -30,6 +30,9 @@ web = ["Flask>=3"]
 xmb = ["pywebview>=5"]
 # Dashboard V4 — Native Desktop Hub (PyQt6).
 dashboard_v4 = ["PyQt6>=6.5"]
+# Torsion3D engine — Panda3D rendering + DearPyGui debug overlay.
+torsion = ["panda3d>=1.10", "dearpygui>=1.10"]
+torsion_full = ["panda3d>=1.10", "dearpygui>=1.10", "gltf>=1.0"]
 # Development tooling: building distributions.
 dev = ["build>=1.2"]
 
@@ -40,7 +43,7 @@ Homepage = "https://github.com/FunnyTom777/MilkToastTaco"
 milk-toast-taco = "main:run"
 
 [tool.setuptools.packages.find]
-include = ["core*"]
+include = ["core*", "torsion*", "engine*"]
 
 [tool.unittest]
 # Run with: python -m unittest discover -s core -p "test_*.py"
