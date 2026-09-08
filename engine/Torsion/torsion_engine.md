@@ -1,4 +1,4 @@
-**Torsion 3D Game Engine**
+**Torsion 3D Game Engine** (Deprecated)
 
 `Version 0.1.0` — now scaffolded! See `torsion/` package at repo root.
 
