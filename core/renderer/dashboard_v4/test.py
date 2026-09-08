@@ -1,6 +1,6 @@
 import sys
-from PyQt6.QtCore import Qt, QDate
-from PyQt6.QtWidgets import (
+from PyQt6.QtCore import Qt, QDate # type: ignore
+from PyQt6.QtWidgets import ( # type: ignore
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QTabWidget, QLabel, QPushButton, QLineEdit, QTextEdit,
     QCheckBox, QRadioButton, QComboBox, QSpinBox, QSlider,
