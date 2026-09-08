@@ -8,9 +8,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Milk Toast Taco - XMB Interface</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="./local-icons.js"></script>
+    <!-- Local icons: assets/icons/ (Material Symbols) – replaces CDN Font Awesome -->
+    <!-- No CDN: fonts are system stack, icons are local SVG (assets/icons/*.svg) -->
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600&display=swap');
+        /* System font stack – replaces Google Fonts CDN (offline-safe) */
 
         :root {
             --xmb-highlight: rgba(255, 255, 255, 0.9);
@@ -25,6 +27,14 @@
             --wave1: rgba(30, 80, 150, 0.15);
             --wave2: rgba(80, 30, 150, 0.1);
         }
+        /* MTT Local Icon System — replaces Font Awesome CDN (assets/icons/*.svg) */
+        .mtt-icon { width: 1em; height: 1em; display: inline-block; vertical-align: -0.15em; flex-shrink: 0; line-height: 1; }
+        .mtt-icon svg { width: 100%; height: 100%; display: block; fill: currentColor; }
+        .mtt-icon.mtt-spin { animation: mttSpin 1s linear infinite; }
+        @keyframes mttSpin { from { transform: rotate(0deg);} to { transform: rotate(360deg);} }
+        /* XMB category icons are large – mtt-icon scales with font-size */
+        .category-icon.mtt-icon { font-size: 2.5rem; width: 50px; height: 50px; display: inline-flex; align-items: center; justify-content: center; }
+        .category-icon.mtt-icon svg { width: 2.5rem; height: 2.5rem; }
 
         body {
             margin: 0;
@@ -631,7 +641,7 @@
     <!-- UI Overlays -->
     <div id="clock">00:00 AM</div>
     <div class="controls-hint" id="controls-hint">USE ARROW KEYS / D-PAD TO NAVIGATE • ENTER / A TO SELECT • BACKSPACE / B / ESC TO CLOSE</div>
-    <div id="gamepad-hint" style="position:absolute; bottom:3vh; right:3vw; font-size:0.7rem; color:rgba(255,255,255,0.3); display:none; align-items:center; gap:6px; letter-spacing:0.5px;"><i class="fas fa-gamepad"></i> <span id="gamepad-status">Controller connected</span></div>
+    <div id="gamepad-hint" style="position:absolute; bottom:3vh; right:3vw; font-size:0.7rem; color:rgba(255,255,255,0.3); display:none; align-items:center; gap:6px; letter-spacing:0.5px;"><span class="mtt-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M182-200q-51 0-79-35.5T82-322l42-300q9-60 53.5-99T282-760h396q60 0 104.5 39t53.5 99l42 300q7 51-21 86.5T778-200q-21 0-39-7.5T706-230l-90-90H344l-90 90q-15 15-33 22.5t-39 7.5Zm16-86 114-114h336l114 114q2 2 16 6 11 0 17.5-6.5T800-304l-44-308q-4-29-26-48.5T678-680H282q-30 0-52 19.5T204-612l-44 308q-2 11 4.5 17.5T182-280q2 0 16-6Zm510.5-165.5Q720-463 720-480t-11.5-28.5Q697-520 680-520t-28.5 11.5Q640-497 640-480t11.5 28.5Q663-440 680-440t28.5-11.5Zm-80-120Q640-583 640-600t-11.5-28.5Q617-640 600-640t-28.5 11.5Q560-617 560-600t11.5 28.5Q583-560 600-560t28.5-11.5ZM310-440h60v-70h70v-60h-70v-70h-60v70h-70v60h70v70Zm170-40Z"/></svg></span> <span id="gamepad-status">Controller connected</span></div>
 
     <div id="info-panel">
         <div id="info-title">Title</div>
@@ -646,10 +656,10 @@
     <!-- Not-Implemented Popup -->
     <div id="popup-overlay" class="overlay hidden" onclick="if(event.target===this) hidePopup()">
         <div class="modal">
-            <div class="modal-icon"><i class="fas fa-tools"></i></div>
+            <div class="modal-icon"><span class="mtt-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M686-132 444-376q-20 8-40.5 12t-43.5 4q-100 0-170-70t-70-170q0-36 10-68.5t28-61.5l146 146 72-72-146-146q29-18 61.5-28t68.5-10q100 0 170 70t70 170q0 23-4 43.5T584-516l244 242q12 12 12 29t-12 29l-84 84q-12 12-29 12t-29-12Zm29-85 27-27-256-256q18-20 26-46.5t8-53.5q0-60-38.5-104.5T386-758l74 74q12 12 12 28t-12 28L332-500q-12 12-28 12t-28-12l-74-74q9 57 53.5 95.5T360-440q26 0 52-8t47-25l256 256ZM472-488Z"/></svg></span></div>
             <h2>Not Implemented Yet</h2>
-            <p>This feature is not implemented yet.<br><strong>Try using the Dashboard</strong> for now — it's where all the real magic happens. <i class="fas fa-wand-magic-sparkles" style="color:#a78bfa"></i></p>
-            <button id="popup-btn" class="btn-primary kb-focus" onclick="hidePopup()"><i class="fas fa-check" style="margin-right:6px"></i> Got it</button>
+            <p>This feature is not implemented yet.<br><strong>Try using the Dashboard</strong> for now — it's where all the real magic happens. <span class="mtt-icon" aria-hidden="true" style="color:#a78bfa"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M852-212 732-332l56-56 120 120-56 56ZM708-692l-56-56 120-120 56 56-120 120Zm-456 0L132-812l56-56 120 120-56 56ZM108-212l-56-56 120-120 56 56-120 120Zm246-75 126-76 126 77-33-144 111-96-146-13-58-136-58 135-146 13 111 97-33 143ZM233-120l65-281L80-590l288-25 112-265 112 265 288 25-218 189 65 281-247-149-247 149Zm247-361Z"/></svg></span></p>
+            <button id="popup-btn" class="btn-primary kb-focus" onclick="hidePopup()"><span class="mtt-icon" aria-hidden="true" style="margin-right:6px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z"/></svg></span> Got it</button>
             <div class="kbd-hint"><kbd>ENTER</kbd> / <kbd>BACKSPACE</kbd> / <kbd>ESC</kbd> to close</div>
         </div>
     </div>
@@ -657,13 +667,13 @@
     <!-- XMB Settings Overlay -->
     <div id="settings-overlay" class="overlay hidden" onclick="if(event.target===this) hideSettings()">
         <div class="modal settings-modal">
-            <div class="modal-icon"><i class="fas fa-sliders" style="color:#a78bfa"></i></div>
+            <div class="modal-icon"><span class="mtt-icon" aria-hidden="true" style="color:#a78bfa"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M400-240v-80h160v80H400ZM240-440v-80h480v80H240ZM120-640v-80h720v80H120Z"/></svg></span></div>
             <h2>XMB Options</h2>
             <p style="text-align:center; margin-bottom:18px; color:#aaa; font-size:0.9rem;">Personalize your XMB experience. Settings save to <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px; font-size:0.8rem;">xmbsettings.xml</code></p>
             
             <div id="setting-row-fullscreen" class="setting-row">
                 <div class="setting-label">
-                    <span><i class="fas fa-expand"></i> Open in Fullscreen</span>
+                    <span><span class="mtt-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M120-120v-320h80v184l504-504H520v-80h320v320h-80v-184L256-200h184v80H120Z"/></svg></span> Open in Fullscreen</span>
                     <span>Launch the XMB directly in fullscreen mode</span>
                 </div>
                 <div id="fullscreen-toggle" class="toggle" onclick="toggleFullscreenSetting()" role="switch" aria-checked="false" tabindex="-1">
@@ -673,7 +683,7 @@
 
             <div style="margin-top: 8px;">
                 <div class="setting-label" style="margin-bottom:4px;">
-                    <span><i class="fas fa-palette"></i> Theme</span>
+                    <span><span class="mtt-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="m270-120-10-88 114-314q15 14 32.5 23.5T444-484L334-182l-64 62Zm420 0-64-62-110-302q20-5 37.5-14.5T586-522l114 314-10 88ZM395-555q-35-35-35-85 0-39 22.5-69.5T440-752v-88h80v88q35 12 57.5 42.5T600-640q0 50-35 85t-85 35q-50 0-85-35Zm113.5-56.5Q520-623 520-640t-11.5-28.5Q497-680 480-680t-28.5 11.5Q440-657 440-640t11.5 28.5Q463-600 480-600t28.5-11.5Z"/></svg></span> Theme</span>
                     <span>Choose your XMB color vibe</span>
                 </div>
                 <div id="theme-grid" class="theme-grid">
@@ -682,7 +692,7 @@
             </div>
 
             <div class="settings-actions">
-                <button id="settings-done-btn" class="btn-primary" onclick="hideSettings()"><i class="fas fa-check" style="margin-right:6px"></i> Done</button>
+                <button id="settings-done-btn" class="btn-primary" onclick="hideSettings()"><span class="mtt-icon" aria-hidden="true" style="margin-right:6px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z"/></svg></span> Done</button>
             </div>
             <div class="kbd-hint"><kbd>↑</kbd><kbd>↓</kbd> navigate • <kbd>←</kbd><kbd>→</kbd> theme grid • <kbd>ENTER</kbd> select • <kbd>BACKSPACE</kbd>/<kbd>ESC</kbd> close</div>
         </div>
@@ -691,12 +701,12 @@
     <!-- General Config Overlay (Dev Mode) -->
     <div id="general-config-overlay" class="overlay hidden" onclick="if(event.target===this) hideGeneralConfig()">
         <div class="modal general-modal">
-            <div class="modal-icon"><i class="fas fa-screwdriver-wrench" style="color:#fbbf24"></i></div>
+            <div class="modal-icon"><span class="mtt-icon" aria-hidden="true" style="color:#fbbf24"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M739-83.5q-7-2.5-13-8.5L522-296q-6-6-8.5-13t-2.5-15q0-8 2.5-15t8.5-13l85-85q6-6 13-8.5t15-2.5q8 0 15 2.5t13 8.5l204 204q6 6 8.5 13t2.5 15q0 8-2.5 15t-8.5 13l-85 85q-6 6-13 8.5T754-81q-8 0-15-2.5Zm15-92.5 29-29-147-147-29 29 147 147ZM189.5-83q-7.5-3-13.5-9l-84-84q-6-6-9-13.5T80-205q0-8 3-15t9-13l212-212h85l34-34-165-165h-57L80-765l113-113 121 121v57l165 165 116-116-43-43 56-56H495l-28-28 142-142 28 28v113l56-56 142 142q17 17 26 38.5t9 45.5q0 24-9 46t-26 39l-85-85-56 56-42-42-207 207v84L233-92q-6 6-13 9t-15 3q-8 0-15.5-3Zm15.5-93 170-170v-29h-29L176-205l29 29Zm0 0-29-29 15 14 14 15Zm549 0 29-29-29 29Z"/></svg></span></div>
             <h2>General Config Settings</h2>
             <p style="text-align:center; margin-bottom:18px; color:#aaa; font-size:0.9rem;">General behavior toggles. Saved to <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px; font-size:0.8rem;">xmbsettings.xml</code></p>
             <div id="setting-row-devmode" class="setting-row">
                 <div class="setting-label">
-                    <span><i class="fas fa-flask"></i> Dev Mode</span>
+                    <span><span class="mtt-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M200-120q-51 0-72.5-45.5T138-250l222-270v-240h-40q-17 0-28.5-11.5T280-800q0-17 11.5-28.5T320-840h320q17 0 28.5 11.5T680-800q0 17-11.5 28.5T640-760h-40v240l222 270q32 39 10.5 84.5T760-120H200Zm0-80h560L520-492v-268h-80v268L200-200Zm280-280Z"/></svg></span> Dev Mode</span>
                     <span>When off you only see Dashboard V2. Turn on to reveal all 4 dashboards</span>
                 </div>
                 <div id="devmode-toggle" class="toggle" onclick="toggleDevMode()" role="switch" aria-checked="false" tabindex="-1">
@@ -704,7 +714,7 @@
                 </div>
             </div>
             <div class="settings-actions">
-                <button id="general-done-btn" class="btn-primary" onclick="hideGeneralConfig()"><i class="fas fa-check" style="margin-right:6px"></i> Done</button>
+                <button id="general-done-btn" class="btn-primary" onclick="hideGeneralConfig()"><span class="mtt-icon" aria-hidden="true" style="margin-right:6px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z"/></svg></span> Done</button>
             </div>
             <div class="kbd-hint"><kbd>↑</kbd><kbd>↓</kbd> navigate • <kbd>ENTER</kbd>/<kbd>←</kbd><kbd>→</kbd> toggle • <kbd>BACKSPACE</kbd>/<kbd>ESC</kbd> close</div>
         </div>
@@ -712,11 +722,11 @@
 
     <!-- Dashboard XMB Submenu — proper XMB (not a modal) -->
     <div id="dashboard-xmb-layer" class="hidden" aria-hidden="true" onclick="if(event.target===this) hideDashboardSubmenu()">
-        <div class="xmb-submenu-breadcrumb"><i class="fas fa-chevron-left"></i> Game Modes <span style="opacity:0.5">›</span> <strong>Dashboard</strong> <span style="opacity:0.35; margin-left:8px; letter-spacing:0.8px; text-transform:none; font-size:0.68rem;"><kbd style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-bottom-width:2px; padding:1px 5px; border-radius:4px; font-family:inherit;">B</kbd> / <kbd style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-bottom-width:2px; padding:1px 5px; border-radius:4px; font-family:inherit;">BACKSPACE</kbd> back</span></div>
+        <div class="xmb-submenu-breadcrumb"><span class="mtt-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z"/></svg></span> Game Modes <span style="opacity:0.5">›</span> <strong>Dashboard</strong> <span style="opacity:0.35; margin-left:8px; letter-spacing:0.8px; text-transform:none; font-size:0.68rem;"><kbd style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-bottom-width:2px; padding:1px 5px; border-radius:4px; font-family:inherit;">B</kbd> / <kbd style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-bottom-width:2px; padding:1px 5px; border-radius:4px; font-family:inherit;">BACKSPACE</kbd> back</span></div>
         <div id="dashboard-xmb-row">
             <div class="category-group active" id="dash-cat">
                 <div class="category-icon-container">
-                    <i class="category-icon fas fa-table-columns"></i>
+                    <span class="mtt-icon category-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M520-600v-240h320v240H520ZM120-440v-400h320v400H120Zm400 320v-400h320v400H520Zm-400 0v-240h320v240H120Zm80-400h160v-240H200v240Zm400 320h160v-240H600v240Zm0-480h160v-80H600v80ZM200-200h160v-80H200v80Zm160-320Zm240-160Zm0 240ZM360-280Z"/></svg></span>
                     <div class="category-title">Dashboard</div>
                 </div>
                 <div class="items-column-wrapper" style="opacity:1; visibility:visible">
@@ -729,11 +739,11 @@
 
     <!-- XMB Settings XMB Submenu — proper XMB (not a modal) -->
     <div id="settings-xmb-layer" class="hidden" aria-hidden="true" onclick="if(event.target===this) hideSettingsXMB()">
-        <div class="xmb-submenu-breadcrumb"><i class="fas fa-chevron-left"></i> XMB Options <span style="opacity:0.5">›</span> <strong>Settings</strong> <span style="opacity:0.35; margin-left:8px; letter-spacing:0.8px; text-transform:none; font-size:0.68rem;"><kbd style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-bottom-width:2px; padding:1px 5px; border-radius:4px; font-family:inherit;">B</kbd> / <kbd style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-bottom-width:2px; padding:1px 5px; border-radius:4px; font-family:inherit;">BACKSPACE</kbd> back</span></div>
+        <div class="xmb-submenu-breadcrumb"><span class="mtt-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z"/></svg></span> XMB Options <span style="opacity:0.5">›</span> <strong>Settings</strong> <span style="opacity:0.35; margin-left:8px; letter-spacing:0.8px; text-transform:none; font-size:0.68rem;"><kbd style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-bottom-width:2px; padding:1px 5px; border-radius:4px; font-family:inherit;">B</kbd> / <kbd style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-bottom-width:2px; padding:1px 5px; border-radius:4px; font-family:inherit;">BACKSPACE</kbd> back</span></div>
         <div id="settings-xmb-row">
             <div class="category-group active" id="settings-cat">
                 <div class="category-icon-container">
-                    <i class="category-icon fas fa-sliders"></i>
+                    <span class="mtt-icon category-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M400-240v-80h160v80H400ZM240-440v-80h480v80H240ZM120-640v-80h720v80H120Z"/></svg></span>
                     <div class="category-title">XMB Options</div>
                 </div>
                 <div class="items-column-wrapper" style="opacity:1; visibility:visible">
@@ -947,7 +957,7 @@
             const overlay = document.getElementById('popup-overlay');
             const p = overlay.querySelector('p');
             if (msg) p.innerHTML = msg;
-            else p.innerHTML = 'This feature is not implemented yet.<br><strong>Try using the Dashboard</strong> for now — it\'s where all the real magic happens. <i class="fas fa-wand-magic-sparkles" style="color:#a78bfa"></i>';
+            else p.innerHTML = 'This feature is not implemented yet.<br><strong>Try using the Dashboard</strong> for now — it\'s where all the real magic happens. <span class="mtt-icon" aria-hidden="true" style="color:#a78bfa"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M852-212 732-332l56-56 120 120-56 56ZM708-692l-56-56 120-120 56 56-120 120Zm-456 0L132-812l56-56 120 120-56 56ZM108-212l-56-56 120-120 56 56-120 120Zm246-75 126-76 126 77-33-144 111-96-146-13-58-136-58 135-146 13 111 97-33 143ZM233-120l65-281L80-590l288-25 112-265 112 265 288 25-218 189 65 281-247-149-247 149Zm247-361Z"/></svg></span>';
             overlay.classList.remove('hidden');
             // popup has only one focusable button
             const btn = document.getElementById('popup-btn');
@@ -1010,13 +1020,13 @@
                 el.id = `settings-item-${idx}`;
                 let prefix = '';
                 if (it.swatch) prefix = `<span class="xmb-swatch" style="background:${it.swatch}"></span>`;
-                else if (it.icon) prefix = `<i class="fas ${it.icon}" style="margin-right:8px; opacity:0.7"></i>`;
+                else if (it.icon) prefix = `<span class="mtt-icon" data-fa="${it.icon}" style="margin-right:8px; opacity:0.7"></span>`;
                 const badge = it.badge ? `<span class="xmb-badge ${it.badgeCls}">${it.badge}</span>` : '';
                 el.innerHTML = `${prefix}${it.name}${badge}`;
                 el.onclick = () => { settingsXMBFocus = idx; updateSettingsXMBFocusUI(); activateSettingsXMBItem(idx); };
                 col.appendChild(el);
             });
-            noteEl.innerHTML = '<i class="fas fa-circle-info"></i> Saved to <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px; font-size:0.78rem;">xmbsettings.xml</code> — changes apply instantly.';
+            noteEl.innerHTML = '<span class="mtt-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M424-320q0-81 14.5-116.5T500-514q41-36 62.5-62.5T584-637q0-41-27.5-68T480-732q-51 0-77.5 31T365-638l-103-44q21-64 77-111t141-47q105 0 161.5 58.5T698-641q0 50-21.5 85.5T609-475q-49 47-59.5 71.5T539-320H424Zm56 240q-33 0-56.5-23.5T400-160q0-33 23.5-56.5T480-240q33 0 56.5 23.5T560-160q0 33-23.5 56.5T480-80Z"/></svg></span> Saved to <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px; font-size:0.78rem;">xmbsettings.xml</code> — changes apply instantly.';
             updateSettingsXMBInfoPanel();
         }
         function updateSettingsXMBFocusUI() {
@@ -1111,9 +1121,9 @@
             });
             // badge for note
             if (!devModeEnabled) {
-                noteEl.innerHTML = '<i class="fas fa-lock"></i> Dev Mode is <strong>off</strong> — only V2 is shown. Enable in <strong>XMB Options → General Config Settings</strong> to unlock all dashboards.';
+                noteEl.innerHTML = '<span class="mtt-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M240-80q-33 0-56.5-23.5T160-160v-400q0-33 23.5-56.5T240-640h40v-80q0-83 58.5-141.5T480-920q83 0 141.5 58.5T680-720v80h40q33 0 56.5 23.5T800-560v400q0 33-23.5 56.5T720-80H240Zm0-80h480v-400H240v400Zm296.5-143.5Q560-327 560-360t-23.5-56.5Q513-440 480-440t-56.5 23.5Q400-393 400-360t23.5 56.5Q447-280 480-280t56.5-23.5ZM360-640h240v-80q0-50-35-85t-85-35q-50 0-85 35t-35 85v80ZM240-160v-400 400Z"/></svg></span> Dev Mode is <strong>off</strong> — only V2 is shown. Enable in <strong>XMB Options → General Config Settings</strong> to unlock all dashboards.';
             } else {
-                noteEl.innerHTML = '<i class="fas fa-flask" style="color:#fde68a"></i> Dev Mode is <strong>on</strong> — all dashboards unlocked. <span style="opacity:0.6">Includes legacy/dev builds.</span>';
+                noteEl.innerHTML = '<span class="mtt-icon" aria-hidden="true" style="color:#fde68a"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M200-120q-51 0-72.5-45.5T138-250l222-270v-240h-40q-17 0-28.5-11.5T280-800q0-17 11.5-28.5T320-840h320q17 0 28.5 11.5T680-800q0 17-11.5 28.5T640-760h-40v240l222 270q32 39 10.5 84.5T760-120H200Zm0-80h560L520-492v-268h-80v268L200-200Zm280-280Z"/></svg></span> Dev Mode is <strong>on</strong> — all dashboards unlocked. <span style="opacity:0.6">Includes legacy/dev builds.</span>';
             }
             updateDashboardInfoPanel();
         }
@@ -1172,7 +1182,7 @@
             playTick('select');
             if (d.id === 'legacy') {
                 hideDashboardSubmenu();
-                showPopup(`<strong style=\"color:#fbbf24\"><i class=\"fas fa-triangle-exclamation\" style=\"margin-right:6px\"></i> Dashboard Outdated</strong><br>This dashboard is outdated. Please use Dashboard V2 Instead <i class=\"fas fa-arrow-right\" style=\"color:#60a5fa; margin-left:4px\"></i>`);
+                showPopup(`<strong style=\"color:#fbbf24\"><span class=\"mtt-icon\" aria-hidden=\"true\" style=\"margin-right:6px\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 -960 960 960\" width=\"24\" height=\"24\" fill=\"currentColor\"><path d=\"m40-120 440-760 440 760H40Zm138-80h604L480-720 178-200Zm330.5-51.5Q520-263 520-280t-11.5-28.5Q497-320 480-320t-28.5 11.5Q440-297 440-280t11.5 28.5Q463-240 480-240t28.5-11.5ZM440-360h80v-200h-80v200Zm40-100Z\"/></svg></span> Dashboard Outdated</strong><br>This dashboard is outdated. Please use Dashboard V2 Instead <span class=\"mtt-icon\" aria-hidden=\"true\" style=\"color:#60a5fa; margin-left:4px\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 -960 960 960\" width=\"24\" height=\"24\" fill=\"currentColor\"><path d=\"M647-440H160v-80h487L423-744l57-56 320 320-320 320-57-56 224-224Z\"/></svg></span>`);
                 return;
             }
             if (window.pywebview && window.pywebview.api && window.pywebview.api[d.api]) {
@@ -1181,7 +1191,7 @@
                     if (res && res.status === 'success') {
                         hideDashboardSubmenu();
                         const iconColor = d.id==='v2' ? '#60a5fa' : d.id==='v3' ? '#22c55e' : '#a78bfa';
-                        showPopup(`<strong>${d.name}</strong> launching...<br><span style=\"opacity:0.7\">${d.desc} XMB is closing — ${d.name} will appear. <i class=\"fas ${d.icon}\" style=\"color:${iconColor}\"></i></span>`);
+                        showPopup(`<strong>${d.name}</strong> launching...<br><span style=\"opacity:0.7\">${d.desc} XMB is closing — ${d.name} will appear. <span class=\"mtt-icon\" data-fa=\"${d.icon}\" style=\"color:${iconColor}\"></span></span>`);
                         setTimeout(()=>{ try{ window.close(); }catch(e){} }, 900);
                         return;
                     } else if (res && res.status === 'error') {
@@ -1191,7 +1201,7 @@
                 } catch(e){ console.error(e); }
                 showPopup(`Failed to launch ${d.name} — check console/py logs.<br><span style=\"opacity:0.7\">You can also run <code>${d.terminal}</code></span>`);
             } else {
-                showPopup(`${d.name} launch needs the desktop app (pywebview).<br>Preview: run <code style=\"background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;\">${d.terminal}</code> in your terminal. <i class=\"fas fa-terminal\" style=\"color:#34d399\"></i>`);
+                showPopup(`${d.name} launch needs the desktop app (pywebview).<br>Preview: run <code style=\"background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;\">${d.terminal}</code> in your terminal. <span class=\"mtt-icon\" aria-hidden=\"true\" style=\"color:#34d399\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 -960 960 960\" width=\"24\" height=\"24\" fill=\"currentColor\"><path d=\"M480-160v-80h320v80H480ZM220-320l-56-56 183-184-183-184 56-56 240 240-240 240Z\"/></svg></span>`);
             }
         }
         function handleDashboardKey(e) {
@@ -1456,7 +1466,7 @@
             const selectedItem = xmbData[activeCatIndex].items[itemIndex];
 
             // --- local UI actions that don't need pywebview ---
-            const notImplementedMsg = 'This feature is not implemented yet.<br><strong>Try using the Dashboard</strong> for now! <i class="fas fa-rocket" style="color:#60a5fa"></i>';
+            const notImplementedMsg = 'This feature is not implemented yet.<br><strong>Try using the Dashboard</strong> for now! <span class="mtt-icon" aria-hidden="true" style="color:#60a5fa"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M280-80v-100l120-84v-144L80-280v-120l320-224v-176q0-33 23.5-56.5T480-880q33 0 56.5 23.5T560-800v176l320 224v120L560-408v144l120 84v100l-200-60-200 60Z"/></svg></span>';
 
             // Game Modes -> Dashboard submenu (dev-mode filtered)
             if (catId === 'game_modes' && selectedItem.name === 'Dashboard') {
@@ -1528,7 +1538,7 @@
                     try {
                         const res = await window.pywebview.api.launch_dashboard_v2();
                         if (res && res.status === 'success') {
-                            showPopup(`<strong>Dashboard V2</strong> launching...<br><span style="opacity:0.7">Game System Debugger — XMB theme synced • fullscreen follows <code>xmbsettings.xml</code>. XMB is closing — V2 will appear. <i class="fas fa-rocket" style="color:#60a5fa"></i></span>`);
+                            showPopup(`<strong>Dashboard V2</strong> launching...<br><span style="opacity:0.7">Game System Debugger — XMB theme synced • fullscreen follows <code>xmbsettings.xml</code>. XMB is closing — V2 will appear. <span class="mtt-icon" aria-hidden="true" style="color:#60a5fa"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M280-80v-100l120-84v-144L80-280v-120l320-224v-176q0-33 23.5-56.5T480-880q33 0 56.5 23.5T560-800v176l320 224v120L560-408v144l120 84v100l-200-60-200 60Z"/></svg></span></span>`);
                             setTimeout(()=>{ try{ window.close(); }catch(e){} }, 900);
                             return;
                         } else if (res && res.status === 'error') {
@@ -1538,7 +1548,7 @@
                     } catch(e){ console.error(e); }
                     showPopup('Failed to launch Dashboard V2 — check console/py logs.<br><span style="opacity:0.7">You can also run <code>python -m core.renderer.dashboard_v2.dashboard_v2</code></span>');
                 } else {
-                    showPopup('Dashboard V2 launch needs the desktop app (pywebview).<br>Preview: run <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">python -m core.renderer.dashboard_v2.dashboard_v2</code> in your terminal. <i class="fas fa-terminal" style="color:#34d399"></i>');
+                    showPopup('Dashboard V2 launch needs the desktop app (pywebview).<br>Preview: run <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">python -m core.renderer.dashboard_v2.dashboard_v2</code> in your terminal. <span class="mtt-icon" aria-hidden="true" style="color:#34d399"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M480-160v-80h320v80H480ZM220-320l-56-56 183-184-183-184 56-56 240 240-240 240Z"/></svg></span>');
                 }
                 return;
             }
@@ -1548,7 +1558,7 @@
                     try {
                         const res = await window.pywebview.api.launch_dashboard_v3();
                         if (res && res.status === 'success') {
-                            showPopup(`<strong>Dashboard V3</strong> launching...<br><span style="opacity:0.7">Console Hub — controller-first, no commands. Big-screen friendly. XMB is closing — V3 will appear. <i class="fas fa-gamepad" style="color:#22c55e"></i></span>`);
+                            showPopup(`<strong>Dashboard V3</strong> launching...<br><span style="opacity:0.7">Console Hub — controller-first, no commands. Big-screen friendly. XMB is closing — V3 will appear. <span class="mtt-icon" aria-hidden="true" style="color:#22c55e"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M182-200q-51 0-79-35.5T82-322l42-300q9-60 53.5-99T282-760h396q60 0 104.5 39t53.5 99l42 300q7 51-21 86.5T778-200q-21 0-39-7.5T706-230l-90-90H344l-90 90q-15 15-33 22.5t-39 7.5Zm16-86 114-114h336l114 114q2 2 16 6 11 0 17.5-6.5T800-304l-44-308q-4-29-26-48.5T678-680H282q-30 0-52 19.5T204-612l-44 308q-2 11 4.5 17.5T182-280q2 0 16-6Zm510.5-165.5Q720-463 720-480t-11.5-28.5Q697-520 680-520t-28.5 11.5Q640-497 640-480t11.5 28.5Q663-440 680-440t28.5-11.5Zm-80-120Q640-583 640-600t-11.5-28.5Q617-640 600-640t-28.5 11.5Q560-617 560-600t11.5 28.5Q583-560 600-560t28.5-11.5ZM310-440h60v-70h70v-60h-70v-70h-60v70h-70v60h70v70Zm170-40Z"/></svg></span></span>`);
                             setTimeout(()=>{ try{ window.close(); }catch(e){} }, 900);
                             return;
                         } else if (res && res.status === 'error') {
@@ -1558,7 +1568,7 @@
                     } catch(e){ console.error(e); }
                     showPopup('Failed to launch Dashboard V3 — check console/py logs.<br><span style="opacity:0.7">You can also run <code>python -m core.renderer.dashboard_v3.dashboard_v3</code></span>');
                 } else {
-                    showPopup('Dashboard V3 launch needs the desktop app (pywebview).<br>Preview: run <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">python -m core.renderer.dashboard_v3.dashboard_v3</code> in your terminal. <i class="fas fa-terminal" style="color:#34d399"></i>');
+                    showPopup('Dashboard V3 launch needs the desktop app (pywebview).<br>Preview: run <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">python -m core.renderer.dashboard_v3.dashboard_v3</code> in your terminal. <span class="mtt-icon" aria-hidden="true" style="color:#34d399"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M480-160v-80h320v80H480ZM220-320l-56-56 183-184-183-184 56-56 240 240-240 240Z"/></svg></span>');
                 }
                 return;
             }
@@ -1568,7 +1578,7 @@
                     try {
                         const res = await window.pywebview.api.launch_dashboard_v4();
                         if (res && res.status === 'success') {
-                            showPopup(`<strong>Dashboard V4</strong> launching...<br><span style="opacity:0.7">PyQt6 Native Desktop Hub with dark console themes. XMB is closing — V4 will appear. <i class="fas fa-window-maximize" style="color:#38bdf8"></i></span>`);
+                            showPopup(`<strong>Dashboard V4</strong> launching...<br><span style="opacity:0.7">PyQt6 Native Desktop Hub with dark console themes. XMB is closing — V4 will appear. <span class="mtt-icon" aria-hidden="true" style="color:#38bdf8"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M120-120v-320h80v184l504-504H520v-80h320v320h-80v-184L256-200h184v80H120Z"/></svg></span></span>`);
                             setTimeout(()=>{ try{ window.close(); }catch(e){} }, 900);
                             return;
                         } else if (res && res.status === 'error') {
@@ -1578,13 +1588,13 @@
                     } catch(e){ console.error(e); }
                     showPopup('Failed to launch Dashboard V4 — check console/py logs.<br><span style="opacity:0.7">You can also run <code>python -m core.renderer.dashboard_v4.dashboard_v4</code> or <code>python dashboard_v4.py</code></span>');
                 } else {
-                    showPopup('Dashboard V4 launch needs the desktop app (pywebview).<br>Preview: run <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">python -m core.renderer.dashboard_v4.dashboard_v4</code> in your terminal. <i class="fas fa-terminal" style="color:#34d399"></i><br><span style="opacity:0.7">Requires <code>pip install -e .[dashboard_v4]</code> (imgui + pygame + PyOpenGL)</span>');
+                    showPopup('Dashboard V4 launch needs the desktop app (pywebview).<br>Preview: run <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">python -m core.renderer.dashboard_v4.dashboard_v4</code> in your terminal. <span class="mtt-icon" aria-hidden="true" style="color:#34d399"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M480-160v-80h320v80H480ZM220-320l-56-56 183-184-183-184 56-56 240 240-240 240Z"/></svg></span><br><span style="opacity:0.7">Requires <code>pip install -e .[dashboard_v4]</code> (imgui + pygame + PyOpenGL)</span>');
                 }
                 return;
             }
             // Dashboard (legacy) — blocked: outdated, redirect to Dashboard V2
             if (catId === 'misc' && (selectedItem.name === 'Launch MTT Dashboard' || selectedItem.name === 'Launch MTT Dashboard (Dev Mode)')) {
-                showPopup(`<strong style="color:#fbbf24"><i class="fas fa-triangle-exclamation" style="margin-right:6px"></i> Dashboard Outdated</strong><br>This dashboard is outdated. Please use Dashboard V2 Instead <i class="fas fa-arrow-right" style="color:#60a5fa; margin-left:4px"></i>`);
+                showPopup(`<strong style="color:#fbbf24"><span class="mtt-icon" aria-hidden="true" style="margin-right:6px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="m40-120 440-760 440 760H40Zm138-80h604L480-720 178-200Zm330.5-51.5Q520-263 520-280t-11.5-28.5Q497-320 480-320t-28.5 11.5Q440-297 440-280t11.5 28.5Q463-240 480-240t28.5-11.5ZM440-360h80v-200h-80v200Zm40-100Z"/></svg></span> Dashboard Outdated</strong><br>This dashboard is outdated. Please use Dashboard V2 Instead <span class="mtt-icon" aria-hidden="true" style="color:#60a5fa; margin-left:4px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M647-440H160v-80h487L423-744l57-56 320 320-320 320-57-56 224-224Z"/></svg></span>`);
                 return;
             }
             if (catId === 'misc' && selectedItem.name === 'Quit') {
@@ -1630,7 +1640,7 @@
                 const iconContainer = document.createElement('div');
                 iconContainer.className = 'category-icon-container';
                 iconContainer.innerHTML = `
-                    <i class="category-icon fas ${cat.icon}"></i>
+                    <span class="mtt-icon category-icon" data-fa="${cat.icon}"></span>
                     <div class="category-title">${cat.title}</div>
                 `;
                 catGroup.appendChild(iconContainer);
