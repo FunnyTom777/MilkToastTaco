@@ -1,5 +1,5 @@
 """
-Real Estate Tab for Dashboard V4.
+Real Estate Tab for Dashboard V4 — with friendly sub-tabs.
 """
 
 from __future__ import annotations
@@ -9,7 +9,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QTableWidget, QTableWidgetItem, QHeaderView, QGroupBox,
-    QComboBox, QMessageBox
+    QComboBox, QTabWidget, QMessageBox
 )
 
 
@@ -35,24 +35,38 @@ class RealEstateTab(QWidget):
 
     def _init_ui(self):
         main_layout = QVBoxLayout(self)
-        main_layout.setSpacing(14)
-        main_layout.setContentsMargins(16, 16, 16, 16)
+        main_layout.setSpacing(8)
+        main_layout.setContentsMargins(8, 8, 8, 8)
 
-        # Top Group: Owned / Rented Properties
+        desc = QLabel("Browse the property market and manage what you own. Like V2, this is split into My Properties and Market — pick a sub-tab.")
+        desc.setWordWrap(True)
+        main_layout.addWidget(desc)
+
+        self.sub_tabs = QTabWidget()
+
+        # --- Sub-tab: Owned / Rented ---
+        owned_page = QWidget()
+        owned_v = QVBoxLayout(owned_page)
+        owned_v.setContentsMargins(12, 12, 12, 12)
+        owned_v.setSpacing(10)
         owned_group = QGroupBox("My Properties (Owned & Rented)")
-        owned_layout = QVBoxLayout(owned_group)
-
+        owned_l = QVBoxLayout(owned_group)
         self.table_owned = QTableWidget(0, 6)
         self.table_owned.setHorizontalHeaderLabels(["ID", "Name", "Type", "Tenure", "Price/Rent", "Action"])
         self.table_owned.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table_owned.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        owned_layout.addWidget(self.table_owned)
+        owned_l.addWidget(self.table_owned)
+        owned_v.addWidget(owned_group)
+        owned_v.addWidget(QLabel("Rentals can be cancelled here; owned properties stay with you permanently."))
+        self.sub_tabs.addTab(owned_page, "My Properties")
 
-        main_layout.addWidget(owned_group)
-
-        # Bottom Group: Real Estate Catalog
+        # --- Sub-tab: Catalog / Market ---
+        cat_page = QWidget()
+        cat_v = QVBoxLayout(cat_page)
+        cat_v.setContentsMargins(12, 12, 12, 12)
+        cat_v.setSpacing(10)
         cat_group = QGroupBox("Property Market Catalog")
-        cat_layout = QVBoxLayout(cat_group)
+        cl = QVBoxLayout(cat_group)
 
         # Filter bar
         filter_layout = QHBoxLayout()
@@ -66,20 +80,22 @@ class RealEstateTab(QWidget):
         self.combo_type.addItem("Vacant Land", "vacant_land")
         self.combo_type.currentIndexChanged.connect(self._filter_catalog)
         filter_layout.addWidget(self.combo_type)
-
         filter_layout.addStretch()
-        cat_layout.addLayout(filter_layout)
+        cl.addLayout(filter_layout)
 
         # Catalog Table
         self.table_catalog = QTableWidget(0, 7)
         self.table_catalog.setHorizontalHeaderLabels(["ID", "Name", "Type", "Location", "Price", "Rent/mo", "Action"])
         self.table_catalog.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table_catalog.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        cat_layout.addWidget(self.table_catalog)
+        cl.addWidget(self.table_catalog)
+        cat_v.addWidget(cat_group)
+        cat_v.addWidget(QLabel("Tip: Houses and apartments are best for sleeping/waking; farms and businesses earn more long term."))
+        self.sub_tabs.addTab(cat_page, "Market")
 
-        main_layout.addWidget(cat_group)
-
+        # Future placeholder hint like V2 agents/garages
         self._all_catalog_properties: List[Dict[str, Any]] = []
+        main_layout.addWidget(self.sub_tabs)
 
     def refresh(self):
         # 1. Owned Properties via 'realestate.owned'

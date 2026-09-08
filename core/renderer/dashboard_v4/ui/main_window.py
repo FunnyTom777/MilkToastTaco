@@ -11,7 +11,6 @@ from PyQt6.QtWidgets import (
     QLabel, QPushButton, QComboBox, QTabWidget, QStatusBar
 )
 
-from core.renderer.dashboard_v4.theme import get_theme_qss
 from core.renderer.dashboard_v4.ui.tabs.home_tab import HomeTab
 from core.renderer.dashboard_v4.ui.tabs.bank_tab import BankTab
 from core.renderer.dashboard_v4.ui.tabs.inventory_tab import InventoryTab
@@ -29,14 +28,12 @@ class DashboardV4MainWindow(QMainWindow):
         super().__init__(parent)
         self.bridge = bridge
         self.current_player_id: int = player_id
-        self.current_theme: str = initial_theme
 
         self.setWindowTitle("Milk Toast Taco — Dashboard V4 (PyQt6)")
         self.resize(1280, 840)
         self.setMinimumSize(960, 640)
 
         self._init_ui()
-        self.apply_theme(self.current_theme)
 
         # Periodic timer to update Gametime in header (every 5 seconds)
         self._gametime_timer = QTimer(self)
@@ -57,7 +54,6 @@ class DashboardV4MainWindow(QMainWindow):
 
         # Header Bar
         header = QWidget()
-        header.setObjectName("panel")
         header_layout = QHBoxLayout(header)
         header_layout.setContentsMargins(16, 10, 16, 10)
         header_layout.setSpacing(12)
@@ -65,9 +61,7 @@ class DashboardV4MainWindow(QMainWindow):
         title_box = QVBoxLayout()
         title_box.setSpacing(2)
         lbl_title = QLabel("MILK TOAST TACO")
-        lbl_title.setStyleSheet("font-size: 17px; font-weight: 800; letter-spacing: 1px; color: #f1f5f9;")
         lbl_subtitle = QLabel("Console Dashboard V4 • Native Qt Hub")
-        lbl_subtitle.setStyleSheet("font-size: 11px; color: #94a3b8; font-weight: 500;")
         title_box.addWidget(lbl_title)
         title_box.addWidget(lbl_subtitle)
         header_layout.addLayout(title_box)
@@ -76,7 +70,6 @@ class DashboardV4MainWindow(QMainWindow):
 
         # Live Gametime in Header
         self.lbl_header_time = QLabel("Game Time: —")
-        self.lbl_header_time.setStyleSheet("font-weight: 600; color: #38bdf8; padding: 4px 10px; background: rgba(255,255,255,0.05); border-radius: 4px;")
         header_layout.addWidget(self.lbl_header_time)
 
         # Active Player Selector
@@ -112,7 +105,6 @@ class DashboardV4MainWindow(QMainWindow):
         self.settings_tab = SettingsTab(self.bridge, self)
 
         # Connect Settings Signals
-        self.settings_tab.theme_changed.connect(self.apply_theme)
         self.settings_tab.fullscreen_toggled.connect(self.toggle_fullscreen)
 
         # Add Tabs
@@ -135,10 +127,8 @@ class DashboardV4MainWindow(QMainWindow):
         self.statusBar.showMessage(f"Dashboard V4 Ready • Active: Player {self.current_player_id}")
 
     def apply_theme(self, theme_name: str):
-        self.current_theme = theme_name
-        qss = get_theme_qss(theme_name)
-        self.setStyleSheet(qss)
-        self.statusBar.showMessage(f"Theme switched to '{theme_name}' • Player {self.current_player_id}")
+        """No-op — kept for backwards compatibility. Uses default Qt styling."""
+        self.statusBar.showMessage(f"Dashboard V4 Ready • Player {self.current_player_id} (default Qt style)")
 
     def toggle_fullscreen(self, enabled: bool):
         if enabled:

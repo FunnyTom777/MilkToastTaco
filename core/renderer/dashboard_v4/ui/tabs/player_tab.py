@@ -35,7 +35,6 @@ class PlayerTab(QWidget):
         pos_layout = QVBoxLayout(pos_group)
 
         self.lbl_current_pos = QLabel("Current Position: X: 0.0, Y: 0.0, Z: 0.0")
-        self.lbl_current_pos.setStyleSheet("font-size: 18px; font-weight: 700; color: #38bdf8;")
         pos_layout.addWidget(self.lbl_current_pos)
 
         main_layout.addWidget(pos_group)

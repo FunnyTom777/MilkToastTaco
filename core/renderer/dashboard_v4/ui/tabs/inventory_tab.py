@@ -1,5 +1,5 @@
 """
-Inventory Tab for Dashboard V4.
+Inventory Tab for Dashboard V4 — with friendly sub-tabs.
 """
 
 from __future__ import annotations
@@ -9,7 +9,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QProgressBar, QTableWidget, QTableWidgetItem, QHeaderView,
-    QGroupBox, QSpinBox, QDoubleSpinBox
+    QGroupBox, QSpinBox, QDoubleSpinBox, QTabWidget
 )
 
 
@@ -27,83 +27,102 @@ class InventoryTab(QWidget):
 
     def _init_ui(self):
         main_layout = QVBoxLayout(self)
-        main_layout.setSpacing(14)
-        main_layout.setContentsMargins(16, 16, 16, 16)
+        main_layout.setSpacing(8)
+        main_layout.setContentsMargins(8, 8, 8, 8)
 
-        # Top Capacity Bar
+        desc = QLabel("Track carry weight and manage item stacks. Split into focused sub-tabs so it's not one crowded page.")
+        desc.setWordWrap(True)
+        main_layout.addWidget(desc)
+
+        self.sub_tabs = QTabWidget()
+
+        # --- Sub-tab: Capacity ---
+        cap_page = QWidget()
+        cap_v = QVBoxLayout(cap_page)
+        cap_v.setContentsMargins(12, 12, 12, 12)
+        cap_v.setSpacing(10)
         cap_group = QGroupBox("Carry Capacity")
-        cap_layout = QVBoxLayout(cap_group)
+        cap_l = QVBoxLayout(cap_group)
 
         cap_info_layout = QHBoxLayout()
         self.lbl_weight = QLabel("Load: 0.0 / 35.0 kg (0%)")
-        self.lbl_weight.setStyleSheet("font-weight: 600; color: #f1f5f9;")
         cap_info_layout.addWidget(self.lbl_weight)
         cap_info_layout.addStretch()
-
         cap_info_layout.addWidget(QLabel("Max Weight:"))
         self.spin_max_weight = QDoubleSpinBox()
         self.spin_max_weight.setRange(5, 500)
         self.spin_max_weight.setValue(35)
         self.spin_max_weight.setSuffix(" kg")
         cap_info_layout.addWidget(self.spin_max_weight)
-
         btn_set_cap = QPushButton("Update Max")
         btn_set_cap.clicked.connect(self._set_max_capacity)
         cap_info_layout.addWidget(btn_set_cap)
-
-        cap_layout.addLayout(cap_info_layout)
+        cap_l.addLayout(cap_info_layout)
 
         self.progress_weight = QProgressBar()
         self.progress_weight.setRange(0, 100)
         self.progress_weight.setValue(0)
-        cap_layout.addWidget(self.progress_weight)
+        cap_l.addWidget(self.progress_weight)
+        cap_l.addWidget(QLabel("Capacity limits how much you can carry. Increase max if you unlock perks / backpacks."))
+        cap_v.addWidget(cap_group)
+        cap_v.addStretch()
+        self.sub_tabs.addTab(cap_page, "Capacity")
 
-        main_layout.addWidget(cap_group)
-
-        # Inventory Items Table
+        # --- Sub-tab: Items ---
+        items_page = QWidget()
+        items_v = QVBoxLayout(items_page)
+        items_v.setContentsMargins(12, 12, 12, 12)
+        items_v.setSpacing(10)
         table_group = QGroupBox("Inventory Stacks")
-        table_layout = QVBoxLayout(table_group)
-
+        table_l = QVBoxLayout(table_group)
         self.table_items = QTableWidget(0, 4)
         self.table_items.setHorizontalHeaderLabels(["Item ID", "Quantity", "Acquired At", "Actions"])
         self.table_items.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table_items.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        table_layout.addWidget(self.table_items)
+        table_l.addWidget(self.table_items)
+        items_v.addWidget(table_group)
+        items_v.addWidget(QLabel("Each row is a stack. Use 'Drop 1' for quick removal or the Operations tab for bulk."))
+        self.sub_tabs.addTab(items_page, "Items")
 
-        main_layout.addWidget(table_group)
-
-        # Bottom Actions Bar
+        # --- Sub-tab: Operations ---
+        ops_page = QWidget()
+        ops_v = QVBoxLayout(ops_page)
+        ops_v.setContentsMargins(12, 12, 12, 12)
+        ops_v.setSpacing(10)
         act_group = QGroupBox("Item Operations")
-        act_layout = QHBoxLayout(act_group)
-
-        act_layout.addWidget(QLabel("Item ID:"))
+        act_l = QHBoxLayout(act_group)
+        act_l.addWidget(QLabel("Item ID:"))
         self.spin_item_id = QSpinBox()
         self.spin_item_id.setRange(1, 9999)
         self.spin_item_id.setValue(1)
-        act_layout.addWidget(self.spin_item_id)
-
-        act_layout.addWidget(QLabel("Qty:"))
+        act_l.addWidget(self.spin_item_id)
+        act_l.addWidget(QLabel("Qty:"))
         self.spin_item_qty = QSpinBox()
         self.spin_item_qty.setRange(1, 1000)
         self.spin_item_qty.setValue(1)
-        act_layout.addWidget(self.spin_item_qty)
-
+        act_l.addWidget(self.spin_item_qty)
         btn_add = QPushButton("Add Item")
         btn_add.clicked.connect(self._add_item)
-        act_layout.addWidget(btn_add)
-
+        act_l.addWidget(btn_add)
         btn_remove = QPushButton("Remove Item")
         btn_remove.clicked.connect(self._remove_item)
-        act_layout.addWidget(btn_remove)
+        act_l.addWidget(btn_remove)
+        act_l.addStretch()
+        ops_v.addWidget(act_group)
 
-        act_layout.addSpacing(20)
-
+        # Clear all row
+        clear_group = QGroupBox("Danger Zone")
+        clear_l = QHBoxLayout(clear_group)
+        clear_l.addWidget(QLabel("Remove everything from this player's inventory."))
+        clear_l.addStretch()
         btn_clear = QPushButton("Clear All Items")
         btn_clear.clicked.connect(self._clear_all)
-        act_layout.addWidget(btn_clear)
+        clear_l.addWidget(btn_clear)
+        ops_v.addWidget(clear_group)
+        ops_v.addStretch()
+        self.sub_tabs.addTab(ops_page, "Operations")
 
-        act_layout.addStretch()
-        main_layout.addWidget(act_group)
+        main_layout.addWidget(self.sub_tabs)
 
     def refresh(self):
         res = self.bridge.call_command("inventory.list", {"player_id": self.player_id})

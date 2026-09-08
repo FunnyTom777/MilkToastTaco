@@ -102,7 +102,7 @@ def run(
     theme: Optional[str] = None,
     player_id: int = 1,
 ):
-    """Initialize and run the PyQt6 Dashboard V4 Application."""
+    """Initialize and run the PyQt6 Dashboard V4 Application (default Qt style)."""
     try:
         from PyQt6.QtWidgets import QApplication
     except ImportError:
@@ -121,15 +121,13 @@ def run(
 
     api = DashboardV4API()
 
-    # Load settings for defaults
+    # Load settings for defaults (theme ignored — default Qt style)
     settings = api.get_xmb_settings().get("settings", {})
-    resolved_theme = theme or settings.get("theme", "default")
     resolved_fullscreen = fullscreen if fullscreen is not None else bool(settings.get("fullscreen", False))
 
     window = DashboardV4MainWindow(
         bridge=api,
         player_id=player_id,
-        initial_theme=resolved_theme
     )
     window.resize(width, height)
 
@@ -142,12 +140,12 @@ def run(
 
 
 if __name__ == "__main__":
-    p = argparse.ArgumentParser(description="MTT Dashboard V4 (PyQt6)")
+    p = argparse.ArgumentParser(description="MTT Dashboard V4 (PyQt6) — Default Qt Style")
     p.add_argument("--debug", action="store_true", help="Enable debug mode")
     p.add_argument("--width", type=int, default=1280, help="Window width")
     p.add_argument("--height", type=int, default=840, help="Window height")
     p.add_argument("--fullscreen", action="store_true", help="Fullscreen mode")
-    p.add_argument("--theme", type=str, default=None, help="Theme override")
+    p.add_argument("--theme", type=str, default=None, help="(Deprecated) Theme override — ignored, uses default Qt style")
     p.add_argument("--player-id", type=int, default=1, help="Active player ID")
     args = p.parse_args()
 

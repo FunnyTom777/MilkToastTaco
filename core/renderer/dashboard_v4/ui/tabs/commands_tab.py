@@ -79,12 +79,10 @@ class CommandsTab(QWidget):
 
         # Command Header Info
         self.lbl_cmd_name = QLabel("Select a command to execute")
-        self.lbl_cmd_name.setStyleSheet("font-size: 16px; font-weight: 700; color: #38bdf8;")
         right_layout.addWidget(self.lbl_cmd_name)
 
         self.lbl_cmd_help = QLabel("")
         self.lbl_cmd_help.setWordWrap(True)
-        self.lbl_cmd_help.setStyleSheet("color: #94a3b8; font-size: 12px;")
         right_layout.addWidget(self.lbl_cmd_help)
 
         # Form Scroll Area
@@ -103,7 +101,6 @@ class CommandsTab(QWidget):
         output_layout = QVBoxLayout(output_group)
         self.text_output = QTextEdit()
         self.text_output.setReadOnly(True)
-        self.text_output.setStyleSheet("font-family: 'Consolas', 'Courier New', monospace; font-size: 12px;")
         output_layout.addWidget(self.text_output)
         right_layout.addWidget(output_group)
 
@@ -173,7 +170,6 @@ class CommandsTab(QWidget):
 
         if not params:
             lbl_none = QLabel("No arguments required for this command.")
-            lbl_none.setStyleSheet("color: #64748b; font-style: italic;")
             self.form_layout.addRow(lbl_none)
             return
 

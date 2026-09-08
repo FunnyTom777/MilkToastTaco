@@ -1,5 +1,7 @@
 """
-Bank & Economy Tab for Dashboard V4.
+Bank & Economy Tab for Dashboard V4 — with sub-tabs for friendly navigation.
+Mirrors V2's Economy sub-menus (wallet, banks, transfers, loans) but uses
+default Qt styling and native QTabWidget nesting.
 """
 
 from __future__ import annotations
@@ -10,7 +12,7 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
     QLabel, QPushButton, QComboBox, QGroupBox, QSpinBox,
     QDoubleSpinBox, QTableWidget, QTableWidgetItem, QHeaderView,
-    QMessageBox
+    QTabWidget, QMessageBox
 )
 
 
@@ -36,137 +38,139 @@ class BankTab(QWidget):
 
     def _init_ui(self):
         main_layout = QVBoxLayout(self)
-        main_layout.setSpacing(14)
-        main_layout.setContentsMargins(16, 16, 16, 16)
+        main_layout.setSpacing(8)
+        main_layout.setContentsMargins(8, 8, 8, 8)
 
-        # Top Wallet Bar
+        desc = QLabel("Manage wallet, bank cards, memberships, transfers and loans. Each sub-tab focuses on one task — like V2's Economy menu.")
+        desc.setWordWrap(True)
+        main_layout.addWidget(desc)
+
+        self.sub_tabs = QTabWidget()
+
+        # --- Sub-tab: Wallet ---
+        wallet_page = QWidget()
+        wallet_layout = QVBoxLayout(wallet_page)
+        wallet_layout.setContentsMargins(12, 12, 12, 12)
+        wallet_layout.setSpacing(10)
+
         wallet_group = QGroupBox("Cash Wallet")
-        wallet_layout = QHBoxLayout(wallet_group)
-
+        wlay = QHBoxLayout(wallet_group)
         self.lbl_wallet = QLabel("Wallet Balance: $0")
-        self.lbl_wallet.setStyleSheet("font-size: 16px; font-weight: 700; color: #38bdf8;")
-        wallet_layout.addWidget(self.lbl_wallet)
-
-        wallet_layout.addStretch()
-
-        wallet_layout.addWidget(QLabel("Amount:"))
+        wlay.addWidget(self.lbl_wallet)
+        wlay.addStretch()
+        wlay.addWidget(QLabel("Amount:"))
         self.spin_funds = QDoubleSpinBox()
         self.spin_funds.setRange(1, 1000000)
         self.spin_funds.setValue(1000)
         self.spin_funds.setPrefix("$")
-        wallet_layout.addWidget(self.spin_funds)
-
+        wlay.addWidget(self.spin_funds)
         btn_add = QPushButton("Deposit Cash")
         btn_add.clicked.connect(self._add_cash)
-        wallet_layout.addWidget(btn_add)
-
+        wlay.addWidget(btn_add)
         btn_set = QPushButton("Set Balance")
         btn_set.clicked.connect(self._set_cash)
-        wallet_layout.addWidget(btn_set)
+        wlay.addWidget(btn_set)
+        wallet_layout.addWidget(wallet_group)
+        wallet_layout.addStretch()
+        wallet_layout.addWidget(QLabel("Tip: Deposit adds funds, Set overwrites the balance."))
+        self.sub_tabs.addTab(wallet_page, "Wallet")
 
-        main_layout.addWidget(wallet_group)
+        # --- Sub-tab: Cards & Banks ---
+        cards_page = QWidget()
+        cards_layout = QVBoxLayout(cards_page)
+        cards_layout.setContentsMargins(12, 12, 12, 12)
+        cards_layout.setSpacing(10)
 
-        # Middle Grid: Cards & Memberships
-        mid_layout = QHBoxLayout()
-
-        # Bank Cards Table
+        # Cards table
         cards_group = QGroupBox("Bank Accounts & Cards")
-        cards_layout = QVBoxLayout(cards_group)
-
+        cl = QVBoxLayout(cards_group)
         self.table_cards = QTableWidget(0, 4)
         self.table_cards.setHorizontalHeaderLabels(["Bank", "Card Number", "Balance", "Type"])
         self.table_cards.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table_cards.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        cards_layout.addWidget(self.table_cards)
+        cl.addWidget(self.table_cards)
+        cards_layout.addWidget(cards_group)
 
-        mid_layout.addWidget(cards_group)
-
-        # Bank Memberships Table
+        # Memberships + actions
         mems_group = QGroupBox("Bank Memberships")
-        mems_layout = QVBoxLayout(mems_group)
-
+        ml = QVBoxLayout(mems_group)
         self.table_mems = QTableWidget(0, 3)
         self.table_mems.setHorizontalHeaderLabels(["Bank ID", "Monthly Fee", "Status"])
         self.table_mems.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table_mems.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        mems_layout.addWidget(self.table_mems)
+        ml.addWidget(self.table_mems)
 
-        # Membership Actions
         mem_act_layout = QHBoxLayout()
         self.combo_banks = QComboBox()
         mem_act_layout.addWidget(self.combo_banks)
-
         btn_join = QPushButton("Join Bank")
         btn_join.clicked.connect(self._join_bank)
         mem_act_layout.addWidget(btn_join)
-
         btn_leave = QPushButton("Leave Bank")
         btn_leave.clicked.connect(self._leave_bank)
         mem_act_layout.addWidget(btn_leave)
+        mem_act_layout.addStretch()
+        ml.addLayout(mem_act_layout)
+        cards_layout.addWidget(mems_group)
+        self.sub_tabs.addTab(cards_page, "Cards & Banks")
 
-        mems_layout.addLayout(mem_act_layout)
-
-        mid_layout.addWidget(mems_group)
-        main_layout.addLayout(mid_layout)
-
-        # Bottom Grid: Transfers & Loans
-        bottom_layout = QHBoxLayout()
-
-        # Money Transfer Box
+        # --- Sub-tab: Transfers ---
+        trans_page = QWidget()
+        trans_layout_wrap = QVBoxLayout(trans_page)
+        trans_layout_wrap.setContentsMargins(12, 12, 12, 12)
         transfer_group = QGroupBox("Transfer Funds Between Cards")
-        trans_layout = QGridLayout(transfer_group)
-
-        trans_layout.addWidget(QLabel("From Card:"), 0, 0)
+        trans_l = QGridLayout(transfer_group)
+        trans_l.addWidget(QLabel("From Card:"), 0, 0)
         self.combo_from_card = QComboBox()
-        trans_layout.addWidget(self.combo_from_card, 0, 1)
-
-        trans_layout.addWidget(QLabel("To Card:"), 1, 0)
+        trans_l.addWidget(self.combo_from_card, 0, 1)
+        trans_l.addWidget(QLabel("To Card:"), 1, 0)
         self.combo_to_card = QComboBox()
-        trans_layout.addWidget(self.combo_to_card, 1, 1)
-
-        trans_layout.addWidget(QLabel("Amount:"), 2, 0)
+        trans_l.addWidget(self.combo_to_card, 1, 1)
+        trans_l.addWidget(QLabel("Amount:"), 2, 0)
         self.spin_trans_amt = QDoubleSpinBox()
         self.spin_trans_amt.setRange(1, 1000000)
         self.spin_trans_amt.setValue(500)
         self.spin_trans_amt.setPrefix("$")
-        trans_layout.addWidget(self.spin_trans_amt, 2, 1)
-
+        trans_l.addWidget(self.spin_trans_amt, 2, 1)
         btn_trans = QPushButton("Send Transfer")
         btn_trans.clicked.connect(self._transfer_funds)
-        trans_layout.addWidget(btn_trans, 3, 0, 1, 2)
+        trans_l.addWidget(btn_trans, 3, 0, 1, 2)
+        trans_layout_wrap.addWidget(transfer_group)
+        trans_layout_wrap.addWidget(QLabel("Transfers move money between your own cards at the same or different banks."))
+        trans_layout_wrap.addStretch()
+        self.sub_tabs.addTab(trans_page, "Transfers")
 
-        bottom_layout.addWidget(transfer_group)
-
-        # Auto Loans Box
+        # --- Sub-tab: Loans ---
+        loan_page = QWidget()
+        loan_wrap = QVBoxLayout(loan_page)
+        loan_wrap.setContentsMargins(12, 12, 12, 12)
         loan_group = QGroupBox("Apply for Bank Loan")
-        loan_layout = QGridLayout(loan_group)
-
-        loan_layout.addWidget(QLabel("Bank:"), 0, 0)
+        loan_l = QGridLayout(loan_group)
+        loan_l.addWidget(QLabel("Bank:"), 0, 0)
         self.combo_loan_bank = QComboBox()
-        loan_layout.addWidget(self.combo_loan_bank, 0, 1)
-
-        loan_layout.addWidget(QLabel("Loan Amount:"), 1, 0)
+        loan_l.addWidget(self.combo_loan_bank, 0, 1)
+        loan_l.addWidget(QLabel("Loan Amount:"), 1, 0)
         self.spin_loan_amt = QDoubleSpinBox()
         self.spin_loan_amt.setRange(100, 500000)
         self.spin_loan_amt.setValue(10000)
         self.spin_loan_amt.setPrefix("$")
-        loan_layout.addWidget(self.spin_loan_amt, 1, 1)
-
-        loan_layout.addWidget(QLabel("Term:"), 2, 0)
+        loan_l.addWidget(self.spin_loan_amt, 1, 1)
+        loan_l.addWidget(QLabel("Term:"), 2, 0)
         self.combo_loan_term = QComboBox()
         self.combo_loan_term.addItem("12 Months", 12)
         self.combo_loan_term.addItem("24 Months", 24)
         self.combo_loan_term.addItem("36 Months", 36)
         self.combo_loan_term.addItem("60 Months", 60)
-        loan_layout.addWidget(self.combo_loan_term, 2, 1)
-
+        loan_l.addWidget(self.combo_loan_term, 2, 1)
         btn_loan = QPushButton("Request Loan")
         btn_loan.clicked.connect(self._request_loan)
-        loan_layout.addWidget(btn_loan, 3, 0, 1, 2)
+        loan_l.addWidget(btn_loan, 3, 0, 1, 2)
+        loan_wrap.addWidget(loan_group)
+        loan_wrap.addWidget(QLabel("Loans are per-bank and add a monthly repayment. Check memberships for active loans/fees."))
+        loan_wrap.addStretch()
+        self.sub_tabs.addTab(loan_page, "Loans")
 
-        bottom_layout.addWidget(loan_group)
-
-        main_layout.addLayout(bottom_layout)
+        main_layout.addWidget(self.sub_tabs)
 
     def refresh(self):
         # 1. Wallet Balance via 'economy.balance'

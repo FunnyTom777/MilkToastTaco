@@ -25,14 +25,17 @@ class TestDashboardV4(unittest.TestCase):
         self.api = DashboardV4API()
 
     def test_theme_generator(self):
+        # Custom QSS removed — should use default Qt styling (empty QSS)
         for theme_name in THEME_PALETTES:
             palette = get_theme_palette(theme_name)
-            self.assertIn("bg_base", palette)
-            self.assertIn("accent", palette)
+            self.assertIn("name", palette)
 
             qss = get_theme_qss(theme_name)
-            self.assertIn(palette["bg_base"], qss)
-            self.assertIn(palette["accent"], qss)
+            self.assertEqual(qss, "", "Dashboard V4 should use default Qt style (empty QSS)")
+
+        # Also test unknown theme fallback
+        self.assertEqual(get_theme_qss("nonexistent"), "")
+        self.assertEqual(get_theme_qss(None), "")
 
     def test_bridge_command_dispatch(self):
         # 1. Gametime via bridge
@@ -93,9 +96,9 @@ class TestDashboardV4(unittest.TestCase):
         window.combo_player.setCurrentIndex(1)
         self.assertEqual(window.current_player_id, 2)
 
-        # Test theme switching
+        # Theme switching removed — apply_theme is no-op, stays default Qt style
         window.apply_theme("crimson_red")
-        self.assertEqual(window.current_theme, "crimson_red")
+        self.assertEqual(window.styleSheet(), "", "Should use default Qt style (no custom QSS)")
 
         # Test tab switching triggers refresh cleanly
         for i in range(window.tabs.count()):

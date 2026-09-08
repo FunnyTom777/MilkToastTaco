@@ -1,5 +1,5 @@
 """
-Garage & Vehicle Dealership Tab for Dashboard V4.
+Garage & Vehicle Dealership Tab for Dashboard V4 — with friendly sub-tabs.
 """
 
 from __future__ import annotations
@@ -9,7 +9,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QTableWidget, QTableWidgetItem, QHeaderView, QGroupBox,
-    QComboBox, QMessageBox
+    QComboBox, QTabWidget, QMessageBox
 )
 
 
@@ -35,24 +35,38 @@ class GarageTab(QWidget):
 
     def _init_ui(self):
         main_layout = QVBoxLayout(self)
-        main_layout.setSpacing(14)
-        main_layout.setContentsMargins(16, 16, 16, 16)
+        main_layout.setSpacing(8)
+        main_layout.setContentsMargins(8, 8, 8, 8)
 
-        # Top Group: Owned Vehicles
+        desc = QLabel("Manage your owned vehicles and browse the dealership. V2-style: garage on one side, shop on the other — now as two easy sub-tabs.")
+        desc.setWordWrap(True)
+        main_layout.addWidget(desc)
+
+        self.sub_tabs = QTabWidget()
+
+        # --- Sub-tab: Owned Vehicles ---
+        owned_page = QWidget()
+        owned_layout = QVBoxLayout(owned_page)
+        owned_layout.setContentsMargins(12, 12, 12, 12)
+        owned_layout.setSpacing(10)
         owned_group = QGroupBox("Player Garage (Owned Vehicles)")
-        owned_layout = QVBoxLayout(owned_group)
-
+        owned_v = QVBoxLayout(owned_group)
         self.table_owned = QTableWidget(0, 5)
         self.table_owned.setHorizontalHeaderLabels(["Vehicle ID", "Name", "Category", "Paid Price", "Actions"])
         self.table_owned.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table_owned.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        owned_layout.addWidget(self.table_owned)
+        owned_v.addWidget(self.table_owned)
+        owned_layout.addWidget(owned_group)
+        owned_layout.addWidget(QLabel("Sell a vehicle to free garage space and get cash back."))
+        self.sub_tabs.addTab(owned_page, "My Garage")
 
-        main_layout.addWidget(owned_group)
-
-        # Bottom Group: Dealership Catalog
+        # --- Sub-tab: Dealership Catalog ---
+        cat_page = QWidget()
+        cat_layout = QVBoxLayout(cat_page)
+        cat_layout.setContentsMargins(12, 12, 12, 12)
+        cat_layout.setSpacing(10)
         cat_group = QGroupBox("Vehicle Dealership Catalog")
-        cat_layout = QVBoxLayout(cat_group)
+        cat_v = QVBoxLayout(cat_group)
 
         # Filter bar
         filter_layout = QHBoxLayout()
@@ -61,20 +75,21 @@ class GarageTab(QWidget):
         self.combo_cat.addItem("All Categories", "all")
         self.combo_cat.currentIndexChanged.connect(self._filter_catalog)
         filter_layout.addWidget(self.combo_cat)
-
         filter_layout.addStretch()
-        cat_layout.addLayout(filter_layout)
+        cat_v.addLayout(filter_layout)
 
         # Catalog Table
         self.table_catalog = QTableWidget(0, 6)
         self.table_catalog.setHorizontalHeaderLabels(["ID", "Name", "Category", "Price", "Top Speed", "Action"])
         self.table_catalog.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table_catalog.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        cat_layout.addWidget(self.table_catalog)
-
-        main_layout.addWidget(cat_group)
+        cat_v.addWidget(self.table_catalog)
+        cat_layout.addWidget(cat_group)
+        cat_layout.addWidget(QLabel("Tip: Filter by category, then buy. Owned vehicles appear in My Garage."))
+        self.sub_tabs.addTab(cat_page, "Dealership")
 
         self._all_catalog_vehicles: List[Dict[str, Any]] = []
+        main_layout.addWidget(self.sub_tabs)
 
     def refresh(self):
         # 1. Owned Vehicles via 'vehicleshop.owned'

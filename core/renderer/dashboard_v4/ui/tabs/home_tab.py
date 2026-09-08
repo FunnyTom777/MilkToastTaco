@@ -44,9 +44,7 @@ class HomeTab(QWidget):
 
         # Metric 1: Cash Balance
         self.lbl_balance = QLabel("$0")
-        self.lbl_balance.setStyleSheet("font-size: 22px; font-weight: 700; color: #38bdf8;")
         lbl_bal_title = QLabel("Cash Balance")
-        lbl_bal_title.setStyleSheet("font-size: 11px; text-transform: uppercase; color: #94a3b8;")
         box1 = QVBoxLayout()
         box1.addWidget(lbl_bal_title)
         box1.addWidget(self.lbl_balance)
@@ -54,9 +52,7 @@ class HomeTab(QWidget):
 
         # Metric 2: Vehicles Owned
         self.lbl_vehicles = QLabel("0")
-        self.lbl_vehicles.setStyleSheet("font-size: 22px; font-weight: 700; color: #38bdf8;")
         lbl_veh_title = QLabel("Vehicles Owned")
-        lbl_veh_title.setStyleSheet("font-size: 11px; text-transform: uppercase; color: #94a3b8;")
         box2 = QVBoxLayout()
         box2.addWidget(lbl_veh_title)
         box2.addWidget(self.lbl_vehicles)
@@ -64,9 +60,7 @@ class HomeTab(QWidget):
 
         # Metric 3: Properties Owned
         self.lbl_properties = QLabel("0")
-        self.lbl_properties.setStyleSheet("font-size: 22px; font-weight: 700; color: #38bdf8;")
         lbl_prop_title = QLabel("Properties Owned")
-        lbl_prop_title.setStyleSheet("font-size: 11px; text-transform: uppercase; color: #94a3b8;")
         box3 = QVBoxLayout()
         box3.addWidget(lbl_prop_title)
         box3.addWidget(self.lbl_properties)
@@ -74,9 +68,7 @@ class HomeTab(QWidget):
 
         # Metric 4: Inventory Weight
         self.lbl_inventory = QLabel("0.0 / 0.0 kg")
-        self.lbl_inventory.setStyleSheet("font-size: 22px; font-weight: 700; color: #38bdf8;")
         lbl_inv_title = QLabel("Inventory Load")
-        lbl_inv_title.setStyleSheet("font-size: 11px; text-transform: uppercase; color: #94a3b8;")
         box4 = QVBoxLayout()
         box4.addWidget(lbl_inv_title)
         box4.addWidget(self.lbl_inventory)
@@ -92,7 +84,6 @@ class HomeTab(QWidget):
         # Current Time Display
         time_header_box = QHBoxLayout()
         self.lbl_gametime = QLabel("Game Time: —")
-        self.lbl_gametime.setStyleSheet("font-size: 18px; font-weight: 600; color: #f1f5f9;")
         time_header_box.addWidget(self.lbl_gametime)
         time_header_box.addStretch()
 

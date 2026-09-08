@@ -16,12 +16,12 @@ __all__ = ["DashboardV4API", "run"]
 if __name__ == "__main__":
     import argparse
 
-    p = argparse.ArgumentParser(description="MTT Dashboard V4 (PyQt6) — Native Desktop Hub")
+    p = argparse.ArgumentParser(description="MTT Dashboard V4 (PyQt6) — Native Desktop Hub (Default Qt Style)")
     p.add_argument("--debug", action="store_true", help="Enable debug logging")
     p.add_argument("--width", type=int, default=1280, help="Initial window width")
     p.add_argument("--height", type=int, default=800, help="Initial window height")
     p.add_argument("--fullscreen", action="store_true", help="Open fullscreen (default from settings)")
-    p.add_argument("--theme", type=str, default=None, help="Theme override (default, dark_purple, crimson_red, midnight_green, ocean_blue)")
+    p.add_argument("--theme", type=str, default=None, help="(Deprecated) Theme override — ignored, uses default Qt style")
     p.add_argument("--player-id", type=int, default=1, help="Active player ID (default: 1)")
     args = p.parse_args()
     run(
