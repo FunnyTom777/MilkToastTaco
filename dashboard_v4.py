@@ -16,12 +16,19 @@ __all__ = ["DashboardV4API", "run"]
 if __name__ == "__main__":
     import argparse
 
-    p = argparse.ArgumentParser(description="MTT Dashboard V4 (PyImGui) — Console Hub")
-    p.add_argument("--debug", action="store_true", help="Verbose + ImGui metrics")
-    p.add_argument("--width", type=int, default=1280, help="Window width")
-    p.add_argument("--height", type=int, default=800, help="Window height")
-    p.add_argument("--fullscreen", action="store_true", help="Open fullscreen (default windowed)")
-    p.add_argument("--no-fullscreen", action="store_true", help="Force windowed (default)")
+    p = argparse.ArgumentParser(description="MTT Dashboard V4 (PyQt6) — Native Desktop Hub")
+    p.add_argument("--debug", action="store_true", help="Enable debug logging")
+    p.add_argument("--width", type=int, default=1280, help="Initial window width")
+    p.add_argument("--height", type=int, default=800, help="Initial window height")
+    p.add_argument("--fullscreen", action="store_true", help="Open fullscreen (default from settings)")
+    p.add_argument("--theme", type=str, default=None, help="Theme override (default, dark_purple, crimson_red, midnight_green, ocean_blue)")
+    p.add_argument("--player-id", type=int, default=1, help="Active player ID (default: 1)")
     args = p.parse_args()
-    # run() inspects sys.argv for --fullscreen, so keep argv in sync
-    run(debug=args.debug, width=args.width, height=args.height)
+    run(
+        debug=args.debug,
+        width=args.width,
+        height=args.height,
+        fullscreen=True if args.fullscreen else None,
+        theme=args.theme,
+        player_id=args.player_id,
+    )

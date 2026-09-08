@@ -272,7 +272,7 @@ class XMBDashboardAPI:
         return self._spawn_dashboard_v3()
 
     def _spawn_dashboard_v4(self):
-        """Helper: spawn dashboard_v4 (PyImGui) as independent process and close XMB."""
+        """Helper: spawn dashboard_v4 (PyQt6) as independent process and close XMB."""
         try:
             project_root = Path(__file__).resolve().parents[3]
             cmd = [sys.executable, "-m", "core.renderer.dashboard_v4.dashboard_v4"]
@@ -289,10 +289,10 @@ class XMBDashboardAPI:
                         pass
         except Exception:
             pass
-        return {"status": "success", "message": "Dashboard V4 (ImGui) launched"}
+        return {"status": "success", "message": "Dashboard V4 (PyQt6) launched"}
 
     def launch_dashboard_v4(self):
-        """Launch Dashboard V4 (ImGui Console Hub). Kept for submenu API."""
+        """Launch Dashboard V4 (PyQt6 Console Hub). Kept for submenu API."""
         return self._spawn_dashboard_v4()
 
     @menu_option("misc", "Misc", "fa-ellipsis-h", "Quit",

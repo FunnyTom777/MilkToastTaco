@@ -768,7 +768,7 @@
             { id: "v2",      name: "MTT Dashboard V2",      badge: "Stable", icon: "fa-rocket",     desc: "Game System Debugger — XMB themes, fullscreen follows settings. Recommended.", api: "launch_dashboard_v2", terminal: "python -m core.renderer.dashboard_v2.dashboard_v2" },
             { id: "legacy",  name: "MTT Dashboard",         badge: "Legacy", icon: "fa-table-columns", desc: "Original dashboard — outdated, please use V2 instead.", api: "launch_dashboard",   terminal: "python -m core.renderer.dashboard.dashboard" },
             { id: "v3",      name: "Dashboard V3",          badge: "Dev",    icon: "fa-gamepad",    desc: "Console Hub — controller-first, no commands, pure UI.", api: "launch_dashboard_v3", terminal: "python -m core.renderer.dashboard_v3.dashboard_v3" },
-            { id: "v4",      name: "Dashboard V4",          badge: "Dev",    icon: "fa-cubes",      desc: "Dear ImGui hub — native PyImGui + OpenGL, controller + KBM.", api: "launch_dashboard_v4", terminal: "python -m core.renderer.dashboard_v4.dashboard_v4" },
+            { id: "v4",      name: "Dashboard V4",          badge: "New",      icon: "fa-window-maximize", desc: "Native Desktop Hub — PyQt6 with dark console themes, full command bridge.", api: "launch_dashboard_v4", terminal: "python -m core.renderer.dashboard_v4.dashboard_v4" },
         ];
         let dashboardFocusIndex = 0; // index into filtered list
         let generalFocusRow = 0; // 0=dev toggle, 1=done
@@ -1562,13 +1562,13 @@
                 }
                 return;
             }
-            // Dashboard V4 — Dear ImGui (pygame+OpenGL, controller+KBM)
+            // Dashboard V4 — Native Desktop Hub (PyQt6)
             if (catId === 'misc' && selectedItem.name === 'Dashboard V4') {
                 if (window.pywebview && window.pywebview.api && window.pywebview.api.launch_dashboard_v4) {
                     try {
                         const res = await window.pywebview.api.launch_dashboard_v4();
                         if (res && res.status === 'success') {
-                            showPopup(`<strong>Dashboard V4</strong> launching...<br><span style="opacity:0.7">Dear ImGui hub — pygame + OpenGL, controller + KBM + mouse. Replaces HTML dashboards. XMB is closing — V4 will appear. <i class="fas fa-cubes" style="color:#a78bfa"></i></span>`);
+                            showPopup(`<strong>Dashboard V4</strong> launching...<br><span style="opacity:0.7">PyQt6 Native Desktop Hub with dark console themes. XMB is closing — V4 will appear. <i class="fas fa-window-maximize" style="color:#38bdf8"></i></span>`);
                             setTimeout(()=>{ try{ window.close(); }catch(e){} }, 900);
                             return;
                         } else if (res && res.status === 'error') {
