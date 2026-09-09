@@ -4,6 +4,29 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 import pygame
 
+# Minimap + HUD — optional, graceful fallback if modules missing (tests / headless)
+try:
+    from .minimap import Minimap
+except ImportError:
+    try:
+        from core.renderer.Ascii1.minimap import Minimap
+    except ImportError:
+        try:
+            from minimap import Minimap
+        except ImportError:
+            Minimap = None  # type: ignore
+
+try:
+    from .hud import draw_hud
+except ImportError:
+    try:
+        from core.renderer.Ascii1.hud import draw_hud
+    except ImportError:
+        try:
+            from hud import draw_hud
+        except ImportError:
+            draw_hud = None  # type: ignore
+
 # --- TERRAIN GENERATION (data-driven via generation.xml) ---
 # All procedural logic now lives in terrain_generation.py.
 # Edit generation.xml to tweak biomes, noise, glyphs without touching code.
@@ -96,7 +119,33 @@ def _sync_from_tg():
 # --- RENDERER CONFIG (config.xml) ---
 # renderer_mode: 1 = ASCII, 2 = Sprites
 # zoom: camera multiplier (0.5..3.0)
-_RENDER_CONFIG = {"renderer_mode": 1, "tile_size": 32, "zoom": 1.0, "debug": True}
+# Extended with minimap / fog / hud blocks — all optional, backward compat.
+_DEFAULT_RENDER_CONFIG = {
+    "renderer_mode": 1,
+    "tile_size": 32,
+    "zoom": 1.0,
+    "debug": True,
+    # minimap (detail A = 2px/tile)
+    "minimap_enabled": True,
+    "minimap_size": 150,
+    "minimap_tile_px": 2,
+    "minimap_position": "top_right",
+    "minimap_border": True,
+    "minimap_show_view_rect": True,
+    # fog-of-war
+    "fog_enabled": True,
+    "fog_radius": 2,
+    "fog_persist": True,
+    "fog_dim_factor": 0.45,
+    "fog_save": True,
+    # hud
+    "hud_style": "transparent",  # solid / transparent / minimal
+    "hud_alpha": 180,
+    "hud_show_fps": True,
+    "hud_show_coords": True,
+    "hud_show_controls_hint": True,
+}
+_RENDER_CONFIG = dict(_DEFAULT_RENDER_CONFIG)
 RENDERER_MODE = 1
 TILE_SIZE = 32
 ZOOM = 1.0
@@ -124,48 +173,133 @@ def _find_config_xml(explicit=None):
             continue
     return None
 
+def _parse_bool(text, default=True):
+    if text is None:
+        return default
+    return text.strip().lower() in ("true", "1", "yes", "on")
+
 def load_renderer_config(path=None):
-    """Load config.xml — sets RENDERER_MODE, TILE_SIZE and ZOOM. Returns dict."""
+    """Load config.xml — sets RENDERER_MODE, TILE_SIZE, ZOOM + minimap/fog/hud. Returns dict."""
     global RENDERER_MODE, TILE_SIZE, ZOOM, _RENDER_CONFIG
     xml_path = _find_config_xml(path)
     if xml_path is None:
         if path is not None:
-            print(f"[ascii] config.xml not found at '{path}', using ASCII mode 1.")
-        _RENDER_CONFIG = {"renderer_mode": 1, "tile_size": 32, "zoom": 1.0, "debug": True}
-        RENDERER_MODE = 1
-        TILE_SIZE = 32
-        ZOOM = 1.0
-        return _RENDER_CONFIG
+            print(f"[ascii] config.xml not found at '{path}', using defaults.")
+        _RENDER_CONFIG = dict(_DEFAULT_RENDER_CONFIG)
+        RENDERER_MODE = _RENDER_CONFIG["renderer_mode"]
+        TILE_SIZE = _RENDER_CONFIG["tile_size"]
+        ZOOM = _RENDER_CONFIG["zoom"]
+        return dict(_RENDER_CONFIG)
     try:
         tree = ET.parse(xml_path)
         root = tree.getroot()
-        mode_el = root.find("renderer_mode")
-        size_el = root.find("tile_size")
-        zoom_el = root.find("zoom")
-        debug_el = root.find("debug")
-        mode = int(mode_el.text.strip()) if mode_el is not None and mode_el.text else 1
+
+        def _text(elem_name, default=""):
+            el = root.find(elem_name)
+            if el is not None and el.text is not None:
+                return el.text.strip()
+            return default
+
+        def _nested(parent_name, child_name, default=""):
+            parent = root.find(parent_name)
+            if parent is not None:
+                el = parent.find(child_name)
+                if el is not None and el.text is not None:
+                    return el.text.strip()
+            return default
+
+        mode = int(_text("renderer_mode", "1") or "1")
         if mode not in (1, 2):
             print(f"[ascii] Invalid renderer_mode {mode} in {xml_path}, fallback to 1")
             mode = 1
-        tile_size = int(size_el.text.strip()) if size_el is not None and size_el.text else 32
+        tile_size = int(_text("tile_size", "32") or "32")
         tile_size = max(8, min(128, tile_size))
-        zoom = float(zoom_el.text.strip()) if zoom_el is not None and zoom_el.text else 1.0
+        zoom = float(_text("zoom", "1.0") or "1.0")
         zoom = max(0.25, min(4.0, zoom))
-        debug = True
-        if debug_el is not None and debug_el.text:
-            debug = debug_el.text.strip().lower() in ("true", "1", "yes")
-        _RENDER_CONFIG = {"renderer_mode": mode, "tile_size": tile_size, "zoom": zoom, "debug": debug, "path": str(xml_path)}
+        debug_raw = root.find("debug")
+        debug = _parse_bool(debug_raw.text if debug_raw is not None and debug_raw.text else "true", True)
+
+        # --- minimap ---
+        minimap_enabled = _parse_bool(_nested("minimap", "enabled", "true"), True)
+        try:
+            minimap_size = int(_nested("minimap", "size", "150") or "150")
+        except Exception:
+            minimap_size = 150
+        minimap_size = max(80, min(400, minimap_size))
+        try:
+            minimap_tile_px = int(_nested("minimap", "tile_px", "2") or "2")
+        except Exception:
+            minimap_tile_px = 2
+        minimap_tile_px = max(1, min(6, minimap_tile_px))
+        minimap_position = _nested("minimap", "position", "top_right") or "top_right"
+        if minimap_position not in ("top_right", "top_left", "bottom_right", "bottom_left"):
+            minimap_position = "top_right"
+        minimap_border = _parse_bool(_nested("minimap", "border", "true"), True)
+        minimap_show_view_rect = _parse_bool(_nested("minimap", "show_view_rect", "true"), True)
+
+        # --- fog ---
+        fog_enabled = _parse_bool(_nested("fog", "enabled", "true"), True)
+        try:
+            fog_radius = int(_nested("fog", "radius", "2") or "2")
+        except Exception:
+            fog_radius = 2
+        fog_radius = max(0, min(10, fog_radius))
+        fog_persist = _parse_bool(_nested("fog", "persist", "true"), True)
+        try:
+            fog_dim_factor = float(_nested("fog", "dim_factor", "0.45") or "0.45")
+        except Exception:
+            fog_dim_factor = 0.45
+        fog_dim_factor = max(0.0, min(1.0, fog_dim_factor))
+        fog_save = _parse_bool(_nested("fog", "save", "true"), True)
+
+        # --- hud ---
+        hud_style = _nested("hud", "style", "transparent") or "transparent"
+        if hud_style not in ("solid", "transparent", "minimal"):
+            hud_style = "transparent"
+        try:
+            hud_alpha = int(_nested("hud", "alpha", "180") or "180")
+        except Exception:
+            hud_alpha = 180
+        hud_alpha = max(0, min(255, hud_alpha))
+        hud_show_fps = _parse_bool(_nested("hud", "show_fps", "true"), True)
+        hud_show_coords = _parse_bool(_nested("hud", "show_coords", "true"), True)
+        hud_show_controls_hint = _parse_bool(_nested("hud", "show_controls_hint", "true"), True)
+
+        _RENDER_CONFIG = {
+            "renderer_mode": mode,
+            "tile_size": tile_size,
+            "zoom": zoom,
+            "debug": debug,
+            "path": str(xml_path),
+            "minimap_enabled": minimap_enabled,
+            "minimap_size": minimap_size,
+            "minimap_tile_px": minimap_tile_px,
+            "minimap_position": minimap_position,
+            "minimap_border": minimap_border,
+            "minimap_show_view_rect": minimap_show_view_rect,
+            "fog_enabled": fog_enabled,
+            "fog_radius": fog_radius,
+            "fog_persist": fog_persist,
+            "fog_dim_factor": fog_dim_factor,
+            "fog_save": fog_save,
+            "hud_style": hud_style,
+            "hud_alpha": hud_alpha,
+            "hud_show_fps": hud_show_fps,
+            "hud_show_coords": hud_show_coords,
+            "hud_show_controls_hint": hud_show_controls_hint,
+        }
         RENDERER_MODE = mode
         TILE_SIZE = tile_size
         ZOOM = zoom
-        return _RENDER_CONFIG
+        return dict(_RENDER_CONFIG)
     except Exception as e:
-        print(f"[ascii] Failed parsing {xml_path}: {e} — using ASCII mode 1")
-        _RENDER_CONFIG = {"renderer_mode": 1, "tile_size": 32, "zoom": 1.0, "debug": True}
-        RENDERER_MODE = 1
-        TILE_SIZE = 32
-        ZOOM = 1.0
-        return _RENDER_CONFIG
+        print(f"[ascii] Failed parsing {xml_path}: {e} — using defaults")
+        _RENDER_CONFIG = dict(_DEFAULT_RENDER_CONFIG)
+        _RENDER_CONFIG["path"] = str(xml_path) if 'xml_path' in locals() and xml_path else ""
+        RENDERER_MODE = _RENDER_CONFIG["renderer_mode"]
+        TILE_SIZE = _RENDER_CONFIG["tile_size"]
+        ZOOM = _RENDER_CONFIG["zoom"]
+        return dict(_RENDER_CONFIG)
 
 def get_renderer_config():
     return dict(_RENDER_CONFIG)
@@ -490,9 +624,31 @@ except ImportError:
         from player import Player, PlayerController  # type: ignore  # direct script in Ascii1/
 
 # --- ENGINE ---
+def _rebuild_render_assets(mode, tile_size, zoom, font, sprites, debug):
+    """Rebuild font/sprites after zoom/mode change. Returns (font, sprites, tile_w, tile_h, caption_mode)."""
+    if mode == 1:
+        eff_font_size = max(8, int(FONT_SIZE * zoom))
+        font = pygame.font.SysFont("Courier", eff_font_size, bold=True)
+        tile_w, tile_h = font.size("@")
+        sprites = {}
+        caption_mode = "ASCII"
+        missing = []
+    else:
+        font = None
+        eff_tile = max(8, int(tile_size * zoom))
+        sprites, missing = load_sprites(eff_tile)
+        tile_w = tile_h = eff_tile
+        caption_mode = "Sprites"
+        if debug and missing:
+            print("[ascii] Missing sprites after rebuild:")
+            for m in missing:
+                print("  -", m)
+    return font, sprites, tile_w, tile_h, caption_mode, missing
+
+
 def main():
     pygame.init()
-    # Load renderer config (mode 1 ASCII, 2 Sprites, zoom)
+    # Load renderer config (mode 1 ASCII, 2 Sprites, zoom + minimap/fog/hud)
     cfg = load_renderer_config()
     mode = cfg["renderer_mode"]
     tile_size = cfg["tile_size"]
@@ -508,13 +664,12 @@ def main():
     font = None
     tile_w = tile_h = tile_size
     sprites = {}
-    missing_report = []
+    missing_report: list = []
     if mode == 1:
         eff_font_size = max(8, int(FONT_SIZE * zoom))
         font = pygame.font.SysFont("Courier", eff_font_size, bold=True)
         tile_w, tile_h = font.size("@")
     else:
-        # Sprite mode — load PNGs scaled to effective tile size (tile_size * zoom)
         eff_tile = max(8, int(tile_size * zoom))
         sprites, missing_report = load_sprites(eff_tile)
         tile_w = tile_h = eff_tile
@@ -532,18 +687,43 @@ def main():
     viewport_cols = SCREEN_WIDTH // tile_w
     viewport_rows = (SCREEN_HEIGHT - 30) // tile_h
 
+    # Minimap + fog (config-driven, detail A = 2px/tile)
+    minimap = None
+    if Minimap is not None:
+        try:
+            minimap = Minimap(cfg)
+            # Ensure save dir matches current SAVE_DIR
+            try:
+                minimap.set_save_dir(_tg.SAVE_DIR)
+            except Exception:
+                pass
+            if debug:
+                print(f"[ascii] Minimap {'ON' if minimap.enabled else 'OFF'} size={minimap.size} tile_px={minimap.tile_px} fog={'ON' if minimap.fog_enabled else 'OFF'} radius={minimap.fog_radius} persist={minimap.fog_persist} dim={minimap.fog_dim_factor}")
+                if minimap.discovered:
+                    print(f"[ascii] Fog discovered chunks loaded: {len(minimap.discovered)}")
+        except Exception as e:
+            print(f"[ascii] Minimap init failed: {e}")
+            minimap = None
+
+    hud_enabled = draw_hud is not None
+    show_debug = False
+
     world = World()
-    # Spawn at tile center (0.5,0.5) for smooth free movement; handles old int saves via load
     player = Player(player_id="local", x=0.5, y=0.5)
-    # Try to load old save — converts int 0,0 -> 0.5,0.5 if needed
     loaded = player.load_player_xml()
     if loaded:
-        # Old saves stored int tile origin; if player is exactly on integer, nudge to center for smooth mode
         import math as _math
         if float(player.x).is_integer() and float(player.y).is_integer():
             player.x = float(player.x) + 0.5
             player.y = float(player.y) + 0.5
     controller = PlayerController(player)
+
+    # Initial discovery
+    if minimap is not None:
+        try:
+            minimap.update_discovery(player.x, player.y, _tg.CHUNK_SIZE)
+        except Exception:
+            pass
 
     running = True
     while running:
@@ -555,8 +735,36 @@ def main():
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     running = False
+                elif event.key == pygame.K_F3:
+                    show_debug = not show_debug
+                    print(f"[ascii] Debug {'ON' if show_debug else 'OFF'}")
+                elif event.key == pygame.K_m:
+                    if minimap is not None:
+                        minimap.enabled = not minimap.enabled
+                        print(f"[ascii] Minimap {'ON' if minimap.enabled else 'OFF'} (M)")
+                elif event.key == pygame.K_f:
+                    if minimap is not None:
+                        minimap.fog_enabled = not minimap.fog_enabled
+                        print(f"[ascii] Fog {'ON' if minimap.fog_enabled else 'OFF'} (F) radius={minimap.fog_radius}")
+                elif event.key in (pygame.K_EQUALS, pygame.K_PLUS, pygame.K_KP_PLUS):
+                    new_zoom = min(4.0, round(zoom + 0.25, 2))
+                    if new_zoom != zoom:
+                        zoom = new_zoom
+                        font, sprites, tile_w, tile_h, caption_mode, missing_report = _rebuild_render_assets(mode, tile_size, zoom, font, sprites, debug)
+                        pygame.display.set_caption(f"Infinite ASCII Explorer ({caption_mode} x{zoom:.2f})")
+                        viewport_cols = SCREEN_WIDTH // tile_w
+                        viewport_rows = (SCREEN_HEIGHT - 30) // tile_h
+                        print(f"[ascii] Zoom -> {zoom:.2f}")
+                elif event.key in (pygame.K_MINUS, pygame.K_UNDERSCORE, pygame.K_KP_MINUS):
+                    new_zoom = max(0.25, round(zoom - 0.25, 2))
+                    if new_zoom != zoom:
+                        zoom = new_zoom
+                        font, sprites, tile_w, tile_h, caption_mode, missing_report = _rebuild_render_assets(mode, tile_size, zoom, font, sprites, debug)
+                        pygame.display.set_caption(f"Infinite ASCII Explorer ({caption_mode} x{zoom:.2f})")
+                        viewport_cols = SCREEN_WIDTH // tile_w
+                        viewport_rows = (SCREEN_HEIGHT - 30) // tile_h
+                        print(f"[ascii] Zoom -> {zoom:.2f}")
                 elif event.key == pygame.K_r:
-                    # Hot-reload both generation.xml and config.xml (including zoom)
                     reload_generation_config()
                     _sync_from_tg()
                     old_mode = mode
@@ -567,43 +775,36 @@ def main():
                     zoom = cfg.get("zoom", 1.0)
                     debug = cfg.get("debug", True)
                     print(f"[ascii] Reloaded generation.xml — {len(_tg.get_biomes())} biomes active. Config mode={mode} zoom={zoom:.2f}")
-                    # If mode/tile_size/zoom changed, rebuild font/sprites and viewport
+                    # Reapply minimap/hud config live
+                    if minimap is not None:
+                        try:
+                            minimap.apply_config(cfg)
+                            print(f"[ascii] Minimap config reloaded: enabled={minimap.enabled} fog={minimap.fog_enabled} radius={minimap.fog_radius} persist={minimap.fog_persist}")
+                        except Exception as e:
+                            print(f"[ascii] Minimap apply_config failed: {e}")
                     eff_tile_check = max(8, int(tile_size * zoom)) if mode == 2 else max(8, int(FONT_SIZE * zoom))
-                    cur_eff = tile_w  # tile_w already is effective size
+                    cur_eff = tile_w
                     if mode != old_mode or zoom != old_zoom or eff_tile_check != cur_eff:
-                        if mode == 1:
-                            eff_font_size = max(8, int(FONT_SIZE * zoom))
-                            font = pygame.font.SysFont("Courier", eff_font_size, bold=True)
-                            tile_w, tile_h = font.size("@")
-                            sprites = {}
-                            caption_mode = "ASCII"
-                        else:
-                            font = None
-                            eff_tile = max(8, int(tile_size * zoom))
-                            sprites, missing_report = load_sprites(eff_tile)
-                            tile_w = tile_h = eff_tile
-                            caption_mode = "Sprites"
-                            if debug and missing_report:
-                                print("[ascii] Missing sprites after reload:")
-                                for m in missing_report:
-                                    print("  -", m)
+                        font, sprites, tile_w, tile_h, caption_mode, missing_report = _rebuild_render_assets(mode, tile_size, zoom, font, sprites, debug)
                         pygame.display.set_caption(f"Infinite ASCII Explorer ({caption_mode} x{zoom:.2f})")
                         viewport_cols = SCREEN_WIDTH // tile_w
                         viewport_rows = (SCREEN_HEIGHT - 30) // tile_h
-                # Note: discrete KEYDOWN movement removed — free movement uses get_pressed() below
 
         # --- FREE MOVEMENT (smooth, not grid-locked) ---
-        # Uses PlayerController -> Player.set_input -> Player.update(dt, world)
-        # Supports WASD/arrows/numpad/vi keys; multiplayer-ready via input dict
         import pygame as _pygame
         keys = _pygame.key.get_pressed()
-        # Escape already handled via event, but check held state too
-        # Controller returns input dict for potential network send
         controller.handle_pygame_input(keys)
         player.update(dt, world)
 
         # --- UPDATE CHUNKS (float position) ---
         world.update_loaded_chunks(player.x, player.y)
+
+        # --- FOG DISCOVERY ---
+        if minimap is not None and minimap.fog_enabled:
+            try:
+                minimap.update_discovery(player.x, player.y, _tg.CHUNK_SIZE)
+            except Exception:
+                pass
 
         # --- CAMERA PLACEMENT (float, smooth) ---
         cam_x = player.x - viewport_cols / 2
@@ -618,9 +819,7 @@ def main():
         cam_frac_y = cam_y - cam_floor_y
 
         if mode == 1:
-            # ===== ASCII MODE (smooth) =====
-            # Draw tile underneath player too — player is overlayed afterwards
-            for r in range(viewport_rows + 1):  # +1 for fractional edge
+            for r in range(viewport_rows + 1):
                 wy = cam_floor_y + r
                 for c in range(viewport_cols + 1):
                     wx = cam_floor_x + c
@@ -628,18 +827,14 @@ def main():
                     if tile:
                         screen_x = (c - cam_frac_x) * tile_w
                         screen_y = (r - cam_frac_y) * tile_h
-                        # Cull off-screen
                         if -tile_w < screen_x < SCREEN_WIDTH and -tile_h < screen_y < SCREEN_HEIGHT:
                             char_surf = font.render(tile.char, True, tile.color)
                             screen.blit(char_surf, (screen_x, screen_y))
-            # Render Player centered (smooth, not grid)
             p_screen_x = (player.x - cam_x) * tile_w - tile_w / 2
             p_screen_y = (player.y - cam_y) * tile_h - tile_h / 2
             p_surf = font.render(GLYPHS['player'], True, COLOR_PLAYER)
             screen.blit(p_surf, (p_screen_x, p_screen_y))
         else:
-            # ===== SPRITE MODE (smooth) =====
-            # Draw tile underneath player too — player sprite is overlayed afterwards
             for r in range(viewport_rows + 1):
                 wy = cam_floor_y + r
                 for c in range(viewport_cols + 1):
@@ -658,36 +853,70 @@ def main():
                             screen_y = (r - cam_frac_y) * tile_h
                             if -tile_w < screen_x < SCREEN_WIDTH and -tile_h < screen_y < SCREEN_HEIGHT:
                                 screen.blit(surf, (screen_x, screen_y))
-            # Player sprite centered
             p_screen_x = (player.x - cam_x) * tile_w - tile_w / 2
             p_screen_y = (player.y - cam_y) * tile_h - tile_h / 2
             p_surf = sprites.get("player")
             if p_surf:
                 screen.blit(p_surf, (p_screen_x, p_screen_y))
-            else:
-                pass  # leave blank — see missing sprites report
 
-        # Status Bar (always ASCII font)
-        if font is None:
-            status_font = pygame.font.SysFont("Courier", FONT_SIZE, bold=True)
+        # --- MINIMAP (detail A) ---
+        if minimap is not None and minimap.enabled:
+            try:
+                minimap.draw(screen, world, player, viewport_cols, viewport_rows, cam_x, cam_y, _tg.CHUNK_SIZE, SCREEN_WIDTH, SCREEN_HEIGHT)
+            except Exception as e:
+                if debug:
+                    print(f"[minimap] draw failed: {e}")
+
+        # --- HUD (replaces old single-line status bar) ---
+        if hud_enabled and draw_hud is not None:
+            try:
+                # minimap fog flags for HUD
+                mm_on = minimap.enabled if minimap is not None else False
+                fog_on = minimap.fog_enabled if minimap is not None else False
+                draw_hud(screen, player, world, clock, tile_w, tile_h, viewport_cols, viewport_rows, font, mode, zoom, cfg, mm_on, fog_on, show_debug, dt, _tg.CHUNK_SIZE)
+            except Exception as e:
+                if debug:
+                    print(f"[hud] draw failed: {e}")
+                # Fallback old status bar
+                if font is None:
+                    status_font = pygame.font.SysFont("Courier", FONT_SIZE, bold=True)
+                else:
+                    status_font = font
+                cs = _tg.CHUNK_SIZE
+                import math as _math2
+                p_chunk_x = int(_math2.floor(player.x)) // cs
+                p_chunk_y = int(_math2.floor(player.y)) // cs
+                mode_name = "ASCII" if mode == 1 else "SPRITES"
+                status = f" World Pos: ({player.x:.2f}, {player.y:.2f}) | Chunk: ({p_chunk_x}, {p_chunk_y}) | Loaded: {len(world.loaded_chunks)} | Mode:{mode_name} R=Reload Esc=Save"
+                status_surf = status_font.render(status, True, COLOR_TEXT)
+                screen.blit(status_surf, (10, SCREEN_HEIGHT - 25))
         else:
-            status_font = font
-        cs = _tg.CHUNK_SIZE
-        import math as _math2
-        p_chunk_x = int(_math2.floor(player.x)) // cs
-        p_chunk_y = int(_math2.floor(player.y)) // cs
-        mode_name = "ASCII" if mode == 1 else "SPRITES"
-        status = f" World Pos: ({player.x:.2f}, {player.y:.2f}) | Chunk: ({p_chunk_x}, {p_chunk_y}) | Loaded: {len(world.loaded_chunks)} | Mode:{mode_name} R=Reload Esc=Save"
-        status_surf = status_font.render(status, True, COLOR_TEXT)
-        screen.blit(status_surf, (10, SCREEN_HEIGHT - 25))
+            # Legacy status bar
+            if font is None:
+                status_font = pygame.font.SysFont("Courier", FONT_SIZE, bold=True)
+            else:
+                status_font = font
+            cs = _tg.CHUNK_SIZE
+            import math as _math2
+            p_chunk_x = int(_math2.floor(player.x)) // cs
+            p_chunk_y = int(_math2.floor(player.y)) // cs
+            mode_name = "ASCII" if mode == 1 else "SPRITES"
+            status = f" World Pos: ({player.x:.2f}, {player.y:.2f}) | Chunk: ({p_chunk_x}, {p_chunk_y}) | Loaded: {len(world.loaded_chunks)} | Mode:{mode_name} R=Reload Esc=Save"
+            status_surf = status_font.render(status, True, COLOR_TEXT)
+            screen.blit(status_surf, (10, SCREEN_HEIGHT - 25))
 
         pygame.display.flip()
-        # dt already via clock.tick at top
 
     # Clean Exit & Save
     print("Saving world XMLs...")
     world.save_all()
     player.save_player_xml()
+    if minimap is not None:
+        try:
+            minimap.save(_tg.SAVE_DIR)
+            print(f"[minimap] Fog discovered: {len(minimap.discovered)} chunks saved")
+        except Exception as e:
+            print(f"[minimap] save failed: {e}")
     print("Save Complete!")
     pygame.quit()
     sys.exit()

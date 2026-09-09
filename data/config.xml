@@ -1,22 +1,37 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!--
-    config.xml — MTT ASCII Renderer Mode
-    Loaded by core/renderer/Ascii1/ascii.py
-
-    renderer_mode:
-      1 = ASCII  (font glyphs, Courier 20pt — original mode)
-      2 = Sprites (PNG tiles from assets/tiles/nature/)
-
-    tile_size: pixel size for sprites (square). Viewport is SCREEN / tile_size.
-    zoom: camera zoom multiplier (0.5 = zoomed out, 1.0 = normal, 2.0 = zoomed in).
-          Scales tile_size/font and viewport. Hot-reload with R.
-    Toggle via this file or hot-reload with R (re-reads config.xml).
-
-    Add <debug>true</debug> to print missing sprite report on startup.
+    config.xml — MTT ASCII Renderer Mode (data/ mirror, primary is core/renderer/Ascii1/config.xml)
+    Loaded by core/renderer/Ascii1/ascii.py (also checks here as fallback)
+    See core/renderer/Ascii1/config.xml for full documentation on minimap/fog/hud blocks.
 -->
 <config version="1">
     <renderer_mode>2</renderer_mode>
     <tile_size>16</tile_size>
     <zoom>1.0</zoom>
     <debug>true</debug>
+
+    <minimap>
+        <enabled>true</enabled>
+        <size>150</size>
+        <tile_px>2</tile_px>
+        <position>top_right</position>
+        <border>true</border>
+        <show_view_rect>true</show_view_rect>
+    </minimap>
+
+    <fog>
+        <enabled>true</enabled>
+        <radius>2</radius>
+        <persist>true</persist>
+        <dim_factor>0.45</dim_factor>
+        <save>true</save>
+    </fog>
+
+    <hud>
+        <style>transparent</style>
+        <alpha>180</alpha>
+        <show_fps>true</show_fps>
+        <show_coords>true</show_coords>
+        <show_controls_hint>true</show_controls_hint>
+    </hud>
 </config>
