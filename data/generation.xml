@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    generation.xml — MTT ASCII Terrain Generation Rules
+    Loaded by core/renderer/Ascii1/terrain_generation.py
+
+    Edit this file to tweak world generation WITHOUT touching code.
+    - Re-launch the renderer or delete saves_world1/ to see changes
+      on already-generated chunks (they are cached as chunk_*.xml).
+    - Values are hot-reloaded on import; call reload_generation_config()
+      for live reload (e.g. debug hotkey).
+
+    Structure:
+      <settings>   Global chunk/world knobs.
+      <noise>      Perlin noise parameters (requires `noise` lib, else fallback).
+      <fallback>   Simple sin/cos noise when `noise` is absent.
+      <terrain>    Ordered biome thresholds — first threshold_max >= noise wins.
+      <variants>   Optional weighted glyph variants per biome (deterministic).
+      <scatter>    Optional rare decor sprinkled over a biome (chance 0.0-1.0).
+
+    Add a new biome: insert a <biome> with a threshold_max between neighbours.
+    thresholds MUST be ascending; last should be 1.0 to catch all values.
+-->
+<generation version="1">
+
+    <!-- ================= GLOBAL SETTINGS ================= -->
+    <settings
+        chunk_size="16"
+        seed="0"
+        save_dir="saves_world1"
+    />
+
+    <!-- ================= NOISE ================= -->
+    <!-- scale = feature size (smaller = larger continents). octaves/persistence/lacunarity = detail -->
+    <noise
+        scale="0.05"
+        octaves="3"
+        persistence="0.5"
+        lacunarity="2.0"
+        seed_offset="0"
+    />
+
+    <!-- Used only when `noise` library is not installed -->
+    <fallback scale="0.1" />
+
+    <!-- ================= PALETTE (optional overrides) ================= -->
+    <!-- These mirror ascii.py defaults; edit here if you want XML-driven colours -->
+    <palette>
+        <color id="bg"         value="15,15,20"   />
+        <color id="dark_gray"  value="40,40,50"   />
+        <color id="player"     value="255,215,0"  />
+        <color id="text"       value="220,220,220"/>
+    </palette>
+
+    <!-- ================= TERRAIN BIOMES ================= -->
+    <!-- ORDER MATTERS: sorted by threshold_max ascending. noise val is ~ -1..1 -->
+    <terrain>
+        <biome id="water"    threshold_max="-0.15" char="~" color="65,105,225"  walkable="false" name="Water"    />
+        <biome id="ground"   threshold_max="0.20"  char="." color="34,139,34"   walkable="true"  name="Plains"   />
+        <biome id="forest"   threshold_max="0.35"  char="T" color="0,100,0"     walkable="false" name="Forest"   />
+        <biome id="mountain" threshold_max="1.0"   char="^" color="139,137,137" walkable="false" name="Mountain" />
+        <!-- Example: add more variation by splitting a range:
+        <biome id="beach"    threshold_max="-0.05" char="," color="238,221,130" walkable="true" name="Beach" />
+        <biome id="hills"    threshold_max="0.30"  char="n" color="107,142,35"  walkable="true" name="Hills" />
+        -->
+    </terrain>
+
+    <!-- ================= GLYPH VARIATION ================= -->
+    <!-- Weighted random char per biome, seeded by world coords (deterministic). -->
+    <variants>
+        <biome_variants biome="ground">
+            <variant char="." weight="70" />
+            <variant char="," weight="15" />
+            <variant char="`" weight="10" />
+            <variant char="'" weight="5"  />
+        </biome_variants>
+
+        <biome_variants biome="forest">
+            <variant char="T" weight="60" />
+            <variant char="t" weight="25" />
+            <variant char="*" weight="15" />
+        </biome_variants>
+
+        <biome_variants biome="mountain">
+            <variant char="^" weight="65" />
+            <variant char="M" weight="20" />
+            <variant char="A" weight="15" />
+        </biome_variants>
+
+        <biome_variants biome="water">
+            <variant char="~" weight="80" />
+            <variant char="-" weight="12" />
+            <variant char="=" weight="8"  />
+        </biome_variants>
+    </variants>
+
+    <!-- ================= SCATTER / DECOR ================= -->
+    <!-- Rare features sprinkled on top of a biome. chance is per-tile (0.0-1.0) -->
+    <scatter>
+        <!-- Flowers / bushes on plains -->
+        <feature biome="ground" char="*" color="50,205,50"   chance="0.015" walkable="true"  />
+        <feature biome="ground" char="o" color="139,69,19"   chance="0.008" walkable="true"  />
+        <feature biome="ground" char="%" color="255,215,0"   chance="0.005" walkable="true"  />
+        <!-- Rocks in mountains -->
+        <feature biome="mountain" char="#" color="105,105,105" chance="0.02" walkable="false" />
+        <!-- Lily pads / reeds on water edge (rare) -->
+        <feature biome="water" char="=" color="0,191,255"    chance="0.01"  walkable="false" />
+    </scatter>
+
+</generation>

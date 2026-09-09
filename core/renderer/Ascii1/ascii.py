@@ -1,66 +1,93 @@
 import os
 import sys
-import math
-import random
 import xml.etree.ElementTree as ET
 import pygame
 
-# --- NOISE FALLBACK ---
+# --- TERRAIN GENERATION (data-driven via generation.xml) ---
+# All procedural logic now lives in terrain_generation.py.
+# Edit generation.xml to tweak biomes, noise, glyphs without touching code.
+# Supports all run modes:
+#   python ascii.py                       (inside Ascii1/)
+#   python core/renderer/Ascii1/ascii.py  (from repo root)
+#   python -m core.renderer.Ascii1.ascii  (as module)
 try:
-    import noise
-    HAS_NOISE = True
+    from .terrain_generation import (
+        Tile,
+        get_terrain_type,
+        get_generation_config,
+        reload_generation_config,
+        load_generation_config,
+    )
+    from . import terrain_generation as _tg
 except ImportError:
-    HAS_NOISE = False
-    print("Warning: 'noise' library not found. Install via 'pip install noise' for smoother terrain. Using basic fallback.")
+    try:
+        from core.renderer.Ascii1.terrain_generation import (
+            Tile,
+            get_terrain_type,
+            get_generation_config,
+            reload_generation_config,
+            load_generation_config,
+        )
+        import core.renderer.Ascii1.terrain_generation as _tg
+    except ImportError:
+        # Fallback when executed as plain script inside Ascii1/ dir
+        import terrain_generation as _tg
+        from terrain_generation import (
+            Tile,
+            get_terrain_type,
+            get_generation_config,
+            reload_generation_config,
+            load_generation_config,
+        )
 
-# --- CONFIGURATION ---
-CHUNK_SIZE = 16          # 16x16 tiles per chunk
+# Pull live values — note: after a hot-reload these module attrs update,
+# but ascii's legacy names are refreshed via _sync_from_tg() below.
+CHUNK_SIZE = _tg.CHUNK_SIZE
+SAVE_DIR = _tg.SAVE_DIR
+GLYPHS = _tg.GLYPHS
+COLORS = _tg.COLORS
+PALETTE = _tg.PALETTE
+COLOR_BG = _tg.COLOR_BG
+COLOR_DARK_GRAY = _tg.COLOR_DARK_GRAY
+COLOR_GROUND = _tg.COLOR_GROUND
+COLOR_TREE = _tg.COLOR_TREE
+COLOR_MOUNTAIN = _tg.COLOR_MOUNTAIN
+COLOR_WATER = _tg.COLOR_WATER
+COLOR_PLAYER = _tg.COLOR_PLAYER
+COLOR_TEXT = _tg.COLOR_TEXT
+HAS_NOISE = _tg.HAS_NOISE
+
+
+def _sync_from_tg():
+    """Refresh ascii's legacy globals after generation.xml reload."""
+    global CHUNK_SIZE, SAVE_DIR, GLYPHS, COLORS, PALETTE
+    global COLOR_BG, COLOR_DARK_GRAY, COLOR_GROUND, COLOR_TREE, COLOR_MOUNTAIN, COLOR_WATER, COLOR_PLAYER, COLOR_TEXT, HAS_NOISE
+    CHUNK_SIZE = _tg.CHUNK_SIZE
+    SAVE_DIR = _tg.SAVE_DIR
+    GLYPHS = _tg.GLYPHS
+    COLORS = _tg.COLORS
+    PALETTE = _tg.PALETTE
+    COLOR_BG = _tg.COLOR_BG
+    COLOR_DARK_GRAY = _tg.COLOR_DARK_GRAY
+    COLOR_GROUND = _tg.COLOR_GROUND
+    COLOR_TREE = _tg.COLOR_TREE
+    COLOR_MOUNTAIN = _tg.COLOR_MOUNTAIN
+    COLOR_WATER = _tg.COLOR_WATER
+    COLOR_PLAYER = _tg.COLOR_PLAYER
+    COLOR_TEXT = _tg.COLOR_TEXT
+    HAS_NOISE = _tg.HAS_NOISE
+
+# --- CONFIGURATION (rendering only — terrain is in generation.xml) ---
 FONT_SIZE = 20
 SCREEN_WIDTH = 960
 SCREEN_HEIGHT = 720
-SAVE_DIR = "saves_world1"
 
 # Load/Render Radii (in Chunks)
 VIEW_RADIUS_CHUNKS = 2   # Visible range
 LOAD_RADIUS_CHUNKS = 4   # Buffer generation range (prevents visual pop-in)
 
-# Colors
-COLOR_BG = (15, 15, 20)
-COLOR_DARK_GRAY = (40, 40, 50)
-COLOR_GROUND = (34, 139, 34)
-COLOR_TREE = (0, 100, 0)
-COLOR_MOUNTAIN = (139, 137, 137)
-COLOR_WATER = (65, 105, 225)
-COLOR_PLAYER = (255, 215, 0)
-COLOR_TEXT = (220, 220, 220)
-
-# Glyphs
-GLYPHS = {'ground': '.', 'tree': 'T', 'mountain': '^', 'water': '~', 'player': '@'}
-
 # --- TILE & CHUNK CLASSES ---
-class Tile:
-    def __init__(self, char, color, walkable):
-        self.char = char
-        self.color = color
-        self.walkable = walkable
-
-def get_terrain_type(wx, wy):
-    """Procedural world terrain derived from coordinates."""
-    if HAS_NOISE:
-        # Scale controls feature density (mountains, oceans size)
-        val = noise.pnoise2(wx * 0.05, wy * 0.05, octaves=3, persistence=0.5, lacunarity=2.0)
-    else:
-        # Simple math noise fallback if module is missing
-        val = (math.sin(wx * 0.1) + math.cos(wy * 0.1)) / 2.0
-
-    if val < -0.15:
-        return GLYPHS['water'], COLOR_WATER, False
-    elif val < 0.2:
-        return GLYPHS['ground'], COLOR_GROUND, True
-    elif val < 0.35:
-        return GLYPHS['tree'], COLOR_TREE, False
-    else:
-        return GLYPHS['mountain'], COLOR_MOUNTAIN, False
+# Tile is imported from terrain_generation; re-exported above for compat.
 
 class Chunk:
     def __init__(self, cx, cy):
@@ -73,18 +100,21 @@ class Chunk:
             self.generate()
 
     def generate(self):
-        """Generates chunk terrain based on world coordinates."""
-        for y in range(CHUNK_SIZE):
-            for x in range(CHUNK_SIZE):
-                wx = self.cx * CHUNK_SIZE + x
-                wy = self.cy * CHUNK_SIZE + y
+        """Generates chunk terrain based on world coordinates (via terrain_generation)."""
+        # Use live CHUNK_SIZE from terrain_generation in case generation.xml changed it
+        cs = _tg.CHUNK_SIZE
+        for y in range(cs):
+            for x in range(cs):
+                wx = self.cx * cs + x
+                wy = self.cy * cs + y
                 char, color, walkable = get_terrain_type(wx, wy)
                 self.tiles[(x, y)] = Tile(char, color, walkable)
 
     def save_to_xml(self):
         """Saves chunk contents to an XML file."""
-        if not os.path.exists(SAVE_DIR):
-            os.makedirs(SAVE_DIR)
+        save_dir = _tg.SAVE_DIR
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
 
         root = ET.Element("Chunk", cx=str(self.cx), cy=str(self.cy))
         for (x, y), tile in self.tiles.items():
@@ -95,12 +125,13 @@ class Chunk:
             tile_elem.set("color", f"{tile.color[0]},{tile.color[1]},{tile.color[2]}")
 
         tree = ET.ElementTree(root)
-        filename = os.path.join(SAVE_DIR, f"chunk_{self.cx}_{self.cy}.xml")
+        filename = os.path.join(save_dir, f"chunk_{self.cx}_{self.cy}.xml")
         tree.write(filename)
 
     def load_from_xml(self):
         """Attempts to load chunk state from an existing XML file."""
-        filename = os.path.join(SAVE_DIR, f"chunk_{self.cx}_{self.cy}.xml")
+        save_dir = _tg.SAVE_DIR
+        filename = os.path.join(save_dir, f"chunk_{self.cx}_{self.cy}.xml")
         if not os.path.exists(filename):
             return False
 
@@ -125,8 +156,9 @@ class World:
         self.loaded_chunks = {}  # (cx, cy) -> Chunk
 
     def get_tile(self, wx, wy):
-        cx, cy = wx // CHUNK_SIZE, wy // CHUNK_SIZE
-        rx, ry = wx % CHUNK_SIZE, wy % CHUNK_SIZE
+        cs = _tg.CHUNK_SIZE
+        cx, cy = wx // cs, wy // cs
+        rx, ry = wx % cs, wy % cs
         chunk = self.get_chunk(cx, cy)
         return chunk.tiles.get((rx, ry))
 
@@ -137,8 +169,9 @@ class World:
 
     def update_loaded_chunks(self, player_wx, player_wy):
         """Loads chunks in advance and saves/unloads distant ones."""
-        p_cx = player_wx // CHUNK_SIZE
-        p_cy = player_wy // CHUNK_SIZE
+        cs = _tg.CHUNK_SIZE
+        p_cx = player_wx // cs
+        p_cy = player_wy // cs
 
         # 1. Load/Generate required buffer chunks
         for cy in range(p_cy - LOAD_RADIUS_CHUNKS, p_cy + LOAD_RADIUS_CHUNKS + 1):
@@ -173,12 +206,16 @@ class Player:
             self.y += dy
 
     def save_player_xml(self):
+        save_dir = _tg.SAVE_DIR
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
         root = ET.Element("Player", x=str(self.x), y=str(self.y))
         tree = ET.ElementTree(root)
-        tree.write(os.path.join(SAVE_DIR, "player.xml"))
+        tree.write(os.path.join(save_dir, "player.xml"))
 
     def load_player_xml(self):
-        filename = os.path.join(SAVE_DIR, "player.xml")
+        save_dir = _tg.SAVE_DIR
+        filename = os.path.join(save_dir, "player.xml")
         if os.path.exists(filename):
             try:
                 tree = ET.parse(filename)
@@ -214,6 +251,12 @@ def main():
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     running = False
+                elif event.key == pygame.K_r:
+                    # Hot-reload generation.xml — handy while tweaking variation without restart
+                    # Note: already-generated chunks stay cached until you delete saves_world1/
+                    reload_generation_config()
+                    _sync_from_tg()
+                    print(f"[ascii] Reloaded generation.xml — {len(_tg.get_biomes())} biomes active.")
 
                 dx, dy = 0, 0
                 if event.key in (pygame.K_LEFT, pygame.K_h, pygame.K_KP4):
@@ -270,9 +313,10 @@ def main():
         screen.blit(p_surf, (p_screen_x, p_screen_y))
 
         # Status Bar
-        p_chunk_x = player.x // CHUNK_SIZE
-        p_chunk_y = player.y // CHUNK_SIZE
-        status = f" World Pos: ({player.x}, {player.y}) | Chunk: ({p_chunk_x}, {p_chunk_y}) | Loaded Chunks: {len(world.loaded_chunks)} | Esc to Save & Exit"
+        cs = _tg.CHUNK_SIZE
+        p_chunk_x = player.x // cs
+        p_chunk_y = player.y // cs
+        status = f" World Pos: ({player.x}, {player.y}) | Chunk: ({p_chunk_x}, {p_chunk_y}) | Loaded Chunks: {len(world.loaded_chunks)} | Esc=Save R=Reload Gen"
         status_surf = font.render(status, True, COLOR_TEXT)
         screen.blit(status_surf, (10, SCREEN_HEIGHT - 25))
 
