@@ -210,7 +210,7 @@ def load_sprites(tile_size=None):
         "water":  base / "water1.png",
         "sand":   base / "sand1.png",
         "ground": base / "grass_plain1.png",
-        "forest": base / "tree1.png",
+        "forest": base / "forest_denser1.png",
         "mountain": base / "mountain1.png",
         "player": base / "player1.png",
         "wheat": base / "wheat1.png",
@@ -242,7 +242,8 @@ def load_sprites(tile_size=None):
             (base / "rocky_dirt1.png", 40),
         ],
         "forest": [
-            (base / "tree1.png", 100),
+            (base / "forest_denser1.png", 60),
+            (base / "tree1.png", 40),
         ],
         "sand": [
             (base / "sand1.png", 100),
