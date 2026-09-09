@@ -2,6 +2,8 @@ import os
 
 from rich import print
 
+from core.systems import orchestrator
+
 os.system("cls" if os.name == "nt" else "clear")
 
 # data
@@ -15,7 +17,7 @@ print(" ")
 
 
 def install_new_update():
-    pass
+    orchestrator.thisdoesnothing()
 
 
 def new_update():
