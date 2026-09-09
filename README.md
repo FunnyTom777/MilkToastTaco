@@ -5,7 +5,20 @@ Milk Toast Taco is a Simulation Game Developed by WoofWorks Inc, Western Austral
 Yes its ambitious, No im not downscaling! STOP TELLING ME ITS TOO BIG! ITS NOT! yes... :D
 
 
-# Feature Overview!:
+# Current Progress:
+- [x] Bank/Basic Economy systems (Needs Work)
+- [x] Vehicle Purchasing/ownership system (Needs Work)
+- [x] Basic Player ID system
+- [x] Vehicle License plate System (No idea why i made this...)
+- [x] Dashboard (4 Versions...)
+- [x] Real Estate System
+- [x] Game Time System (Needs Work)
+- [x] Command Registry with automatic scanning
+- [x] ASCII (And now Sprites!) Renderer!
+- [x] XML Save system
+
+
+# Feature Ideas (Future):
 
 ## Core Philosophy
 
