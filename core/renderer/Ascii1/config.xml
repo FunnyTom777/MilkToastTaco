@@ -8,6 +8,8 @@
       2 = Sprites (PNG tiles from assets/tiles/nature/)
 
     tile_size: pixel size for sprites (square). Viewport is SCREEN / tile_size.
+    zoom: camera zoom multiplier (0.5 = zoomed out, 1.0 = normal, 2.0 = zoomed in).
+          Scales tile_size/font and viewport. Hot-reload with R.
     Toggle via this file or hot-reload with R (re-reads config.xml).
 
     Add <debug>true</debug> to print missing sprite report on startup.
@@ -15,5 +17,6 @@
 <config version="1">
     <renderer_mode>2</renderer_mode>
     <tile_size>16</tile_size>
+    <zoom>1.0</zoom>
     <debug>true</debug>
 </config>

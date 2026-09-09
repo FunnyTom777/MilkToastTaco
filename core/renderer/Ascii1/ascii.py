@@ -95,9 +95,11 @@ def _sync_from_tg():
 
 # --- RENDERER CONFIG (config.xml) ---
 # renderer_mode: 1 = ASCII, 2 = Sprites
-_RENDER_CONFIG = {"renderer_mode": 1, "tile_size": 32, "debug": True}
+# zoom: camera multiplier (0.5..3.0)
+_RENDER_CONFIG = {"renderer_mode": 1, "tile_size": 32, "zoom": 1.0, "debug": True}
 RENDERER_MODE = 1
 TILE_SIZE = 32
+ZOOM = 1.0
 SPRITES = {}          # biome_id -> pygame.Surface
 MISSING_SPRITES = []  # list of strings for report
 
@@ -123,21 +125,23 @@ def _find_config_xml(explicit=None):
     return None
 
 def load_renderer_config(path=None):
-    """Load config.xml — sets RENDERER_MODE and TILE_SIZE. Returns dict."""
-    global RENDERER_MODE, TILE_SIZE, _RENDER_CONFIG
+    """Load config.xml — sets RENDERER_MODE, TILE_SIZE and ZOOM. Returns dict."""
+    global RENDERER_MODE, TILE_SIZE, ZOOM, _RENDER_CONFIG
     xml_path = _find_config_xml(path)
     if xml_path is None:
         if path is not None:
             print(f"[ascii] config.xml not found at '{path}', using ASCII mode 1.")
-        _RENDER_CONFIG = {"renderer_mode": 1, "tile_size": 32, "debug": True}
+        _RENDER_CONFIG = {"renderer_mode": 1, "tile_size": 32, "zoom": 1.0, "debug": True}
         RENDERER_MODE = 1
         TILE_SIZE = 32
+        ZOOM = 1.0
         return _RENDER_CONFIG
     try:
         tree = ET.parse(xml_path)
         root = tree.getroot()
         mode_el = root.find("renderer_mode")
         size_el = root.find("tile_size")
+        zoom_el = root.find("zoom")
         debug_el = root.find("debug")
         mode = int(mode_el.text.strip()) if mode_el is not None and mode_el.text else 1
         if mode not in (1, 2):
@@ -145,19 +149,22 @@ def load_renderer_config(path=None):
             mode = 1
         tile_size = int(size_el.text.strip()) if size_el is not None and size_el.text else 32
         tile_size = max(8, min(128, tile_size))
+        zoom = float(zoom_el.text.strip()) if zoom_el is not None and zoom_el.text else 1.0
+        zoom = max(0.25, min(4.0, zoom))
         debug = True
         if debug_el is not None and debug_el.text:
             debug = debug_el.text.strip().lower() in ("true", "1", "yes")
-        _RENDER_CONFIG = {"renderer_mode": mode, "tile_size": tile_size, "debug": debug, "path": str(xml_path)}
+        _RENDER_CONFIG = {"renderer_mode": mode, "tile_size": tile_size, "zoom": zoom, "debug": debug, "path": str(xml_path)}
         RENDERER_MODE = mode
         TILE_SIZE = tile_size
-        # print(f"[ascii] Loaded config.xml mode={mode} tile_size={tile_size} from {xml_path}")
+        ZOOM = zoom
         return _RENDER_CONFIG
     except Exception as e:
         print(f"[ascii] Failed parsing {xml_path}: {e} — using ASCII mode 1")
-        _RENDER_CONFIG = {"renderer_mode": 1, "tile_size": 32, "debug": True}
+        _RENDER_CONFIG = {"renderer_mode": 1, "tile_size": 32, "zoom": 1.0, "debug": True}
         RENDERER_MODE = 1
         TILE_SIZE = 32
+        ZOOM = 1.0
         return _RENDER_CONFIG
 
 def get_renderer_config():
@@ -477,16 +484,17 @@ except ImportError:
 # --- ENGINE ---
 def main():
     pygame.init()
-    # Load renderer config (mode 1 ASCII, 2 Sprites)
+    # Load renderer config (mode 1 ASCII, 2 Sprites, zoom)
     cfg = load_renderer_config()
     mode = cfg["renderer_mode"]
     tile_size = cfg["tile_size"]
+    zoom = cfg.get("zoom", 1.0)
     debug = cfg.get("debug", True)
 
     # Prepare display and font / sprites depending on mode
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     caption_mode = "ASCII" if mode == 1 else "Sprites"
-    pygame.display.set_caption(f"Infinite ASCII Explorer ({caption_mode})")
+    pygame.display.set_caption(f"Infinite ASCII Explorer ({caption_mode} x{zoom:.2f})")
     clock = pygame.time.Clock()
 
     font = None
@@ -494,15 +502,16 @@ def main():
     sprites = {}
     missing_report = []
     if mode == 1:
-        font = pygame.font.SysFont("Courier", FONT_SIZE, bold=True)
+        eff_font_size = max(8, int(FONT_SIZE * zoom))
+        font = pygame.font.SysFont("Courier", eff_font_size, bold=True)
         tile_w, tile_h = font.size("@")
     else:
-        # Sprite mode — load PNGs
-        # Need display already init for convert_alpha
-        sprites, missing_report = load_sprites(tile_size)
-        tile_w = tile_h = tile_size
+        # Sprite mode — load PNGs scaled to effective tile size (tile_size * zoom)
+        eff_tile = max(8, int(tile_size * zoom))
+        sprites, missing_report = load_sprites(eff_tile)
+        tile_w = tile_h = eff_tile
         if debug:
-            print(f"[ascii] Renderer mode 2 (Sprites) tile_size={tile_size}")
+            print(f"[ascii] Renderer mode 2 (Sprites) tile_size={tile_size} zoom={zoom:.2f} eff={eff_tile}")
             print(f"[ascii] Loaded sprites for biomes: {list(sprites.keys())}")
             if missing_report:
                 print("[ascii] Missing sprites (left blank):")
@@ -539,32 +548,38 @@ def main():
                 if event.key == pygame.K_ESCAPE:
                     running = False
                 elif event.key == pygame.K_r:
-                    # Hot-reload both generation.xml and config.xml
+                    # Hot-reload both generation.xml and config.xml (including zoom)
                     reload_generation_config()
                     _sync_from_tg()
                     old_mode = mode
+                    old_zoom = zoom
                     cfg = load_renderer_config()
                     mode = cfg["renderer_mode"]
                     tile_size = cfg["tile_size"]
+                    zoom = cfg.get("zoom", 1.0)
                     debug = cfg.get("debug", True)
-                    print(f"[ascii] Reloaded generation.xml — {len(_tg.get_biomes())} biomes active. Config mode={mode}")
-                    # If mode or tile_size changed, rebuild font/sprites and viewport
-                    if mode != old_mode or tile_size != tile_w:
+                    print(f"[ascii] Reloaded generation.xml — {len(_tg.get_biomes())} biomes active. Config mode={mode} zoom={zoom:.2f}")
+                    # If mode/tile_size/zoom changed, rebuild font/sprites and viewport
+                    eff_tile_check = max(8, int(tile_size * zoom)) if mode == 2 else max(8, int(FONT_SIZE * zoom))
+                    cur_eff = tile_w  # tile_w already is effective size
+                    if mode != old_mode or zoom != old_zoom or eff_tile_check != cur_eff:
                         if mode == 1:
-                            font = pygame.font.SysFont("Courier", FONT_SIZE, bold=True)
+                            eff_font_size = max(8, int(FONT_SIZE * zoom))
+                            font = pygame.font.SysFont("Courier", eff_font_size, bold=True)
                             tile_w, tile_h = font.size("@")
                             sprites = {}
                             caption_mode = "ASCII"
                         else:
                             font = None
-                            sprites, missing_report = load_sprites(tile_size)
-                            tile_w = tile_h = tile_size
+                            eff_tile = max(8, int(tile_size * zoom))
+                            sprites, missing_report = load_sprites(eff_tile)
+                            tile_w = tile_h = eff_tile
                             caption_mode = "Sprites"
                             if debug and missing_report:
                                 print("[ascii] Missing sprites after reload:")
                                 for m in missing_report:
                                     print("  -", m)
-                        pygame.display.set_caption(f"Infinite ASCII Explorer ({caption_mode})")
+                        pygame.display.set_caption(f"Infinite ASCII Explorer ({caption_mode} x{zoom:.2f})")
                         viewport_cols = SCREEN_WIDTH // tile_w
                         viewport_rows = (SCREEN_HEIGHT - 30) // tile_h
                 # Note: discrete KEYDOWN movement removed — free movement uses get_pressed() below
