@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    config.xml — MTT ASCII Renderer Mode
+    Loaded by core/renderer/Ascii1/ascii.py
+
+    renderer_mode:
+      1 = ASCII  (font glyphs, Courier 20pt — original mode)
+      2 = Sprites (PNG tiles from assets/tiles/nature/)
+
+    tile_size: pixel size for sprites (square). Viewport is SCREEN / tile_size.
+    Toggle via this file or hot-reload with R (re-reads config.xml).
+
+    Add <debug>true</debug> to print missing sprite report on startup.
+-->
+<config version="1">
+    <renderer_mode>1</renderer_mode>
+    <tile_size>32</tile_size>
+    <debug>true</debug>
+</config>

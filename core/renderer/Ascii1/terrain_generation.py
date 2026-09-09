@@ -41,12 +41,12 @@ except ImportError:
 
 @dataclass
 class NoiseConfig:
-    scale: float = 0.05
+    scale: float = 0.032
     octaves: int = 3
-    persistence: float = 0.5
+    persistence: float = 0.42
     lacunarity: float = 2.0
     seed_offset: int = 0
-    fallback_scale: float = 0.1
+    fallback_scale: float = 0.06
 
 @dataclass
 class BiomeRule:
@@ -87,7 +87,8 @@ class GenerationConfig:
 # ---------------------------------------------------------------------------
 
 _DEFAULT_BIOMES: List[BiomeRule] = [
-    BiomeRule("water",    -0.15, "~", (65, 105, 225), False, "Water"),
+    BiomeRule("water",    -0.20, "~", (65, 105, 225), False, "Water"),
+    BiomeRule("sand",     -0.14, ".", (210, 180, 140), True,  "Sand"),
     BiomeRule("ground",    0.20, ".", (34, 139, 34),  True,  "Plains"),
     BiomeRule("forest",    0.35, "T", (0, 100, 0),    False, "Forest"),
     BiomeRule("mountain",  1.0,  "^", (139, 137, 137), False, "Mountain"),
@@ -95,6 +96,7 @@ _DEFAULT_BIOMES: List[BiomeRule] = [
 
 _DEFAULT_VARIANTS: Dict[str, List[Variant]] = {
     "ground":   [Variant(".", 70), Variant(",", 15), Variant("`", 10), Variant("'", 5)],
+    "sand":     [Variant(".", 60), Variant(",", 20), Variant(":", 10), Variant("`", 10)],
     "forest":   [Variant("T", 60), Variant("t", 25), Variant("*", 15)],
     "mountain": [Variant("^", 65), Variant("M", 20), Variant("A", 15)],
     "water":    [Variant("~", 80), Variant("-", 12), Variant("=", 8)],
@@ -104,6 +106,8 @@ _DEFAULT_SCATTER: List[ScatterFeature] = [
     ScatterFeature("ground",   "*", (50, 205, 50),  0.015, True),
     ScatterFeature("ground",   "o", (139, 69, 19),  0.008, True),
     ScatterFeature("ground",   "%", (255, 215, 0),  0.005, True),
+    ScatterFeature("sand",     "o", (210, 180, 140), 0.012, True),  # shells/pebbles on beach
+    ScatterFeature("sand",     "*", (255, 228, 181), 0.006, True),
     ScatterFeature("mountain", "#", (105, 105, 105), 0.02, False),
     ScatterFeature("water",    "=", (0, 191, 255),  0.01,  False),
 ]
@@ -147,6 +151,7 @@ COLOR_PLAYER = PALETTE.get("player", (255, 215, 0))
 COLOR_TEXT = PALETTE.get("text", (220, 220, 220))
 # Per-biome colours
 COLOR_GROUND = COLORS.get("ground", (34, 139, 34))
+COLOR_SAND = COLORS.get("sand", (210, 180, 140))
 COLOR_TREE = COLORS.get("forest", (0, 100, 0))
 COLOR_MOUNTAIN = COLORS.get("mountain", (139, 137, 137))
 COLOR_WATER = COLORS.get("water", (65, 105, 225))
@@ -197,7 +202,7 @@ def _sync_module_globals():
     """Push _CONFIG into the legacy module-level constants."""
     global CHUNK_SIZE, SAVE_DIR, GLYPHS, COLORS, PALETTE
     global COLOR_BG, COLOR_DARK_GRAY, COLOR_PLAYER, COLOR_TEXT
-    global COLOR_GROUND, COLOR_TREE, COLOR_MOUNTAIN, COLOR_WATER
+    global COLOR_GROUND, COLOR_SAND, COLOR_TREE, COLOR_MOUNTAIN, COLOR_WATER
 
     CHUNK_SIZE = _CONFIG.chunk_size
     SAVE_DIR = _CONFIG.save_dir
@@ -211,6 +216,7 @@ def _sync_module_globals():
     COLOR_PLAYER = PALETTE.get("player", (255, 215, 0))
     COLOR_TEXT = PALETTE.get("text", (220, 220, 220))
     COLOR_GROUND = COLORS.get("ground", COLORS.get("plains", (34, 139, 34)))
+    COLOR_SAND = COLORS.get("sand", (210, 180, 140))
     # forest/tree alias
     COLOR_TREE = COLORS.get("forest", COLORS.get("tree", (0, 100, 0)))
     COLOR_MOUNTAIN = COLORS.get("mountain", (139, 137, 137))
@@ -477,20 +483,31 @@ def _maybe_scatter(biome_id: str, wx: int, wy: int) -> Optional[ScatterFeature]:
 
 class Tile:
     """Single world tile — kept here so Chunk can import it."""
-    def __init__(self, char: str, color: Tuple[int, int, int], walkable: bool):
+    def __init__(self, char: str, color: Tuple[int, int, int], walkable: bool, biome: str = ""):
         self.char = char
         self.color = color
         self.walkable = walkable
+        self.biome = biome  # e.g. "ground", "water", "sand" — used for sprite mapping
 
     def __repr__(self):
-        return f"Tile({self.char!r}, {self.color}, walkable={self.walkable})"
+        return f"Tile({self.char!r}, {self.color}, walkable={self.walkable}, biome={self.biome!r})"
 
 
-def get_terrain_type(wx: int, wy: int) -> Tuple[str, Tuple[int, int, int], bool]:
+def _is_adjacent_to_water(wx: int, wy: int, water_threshold: float) -> bool:
+    """Check 8 neighbors for water — used to keep sand only around water edges."""
+    for dy in (-1, 0, 1):
+        for dx in (-1, 0, 1):
+            if dx == 0 and dy == 0:
+                continue
+            if _sample_noise(wx + dx, wy + dy) <= water_threshold:
+                return True
+    return False
+
+
+def get_terrain_with_biome(wx: int, wy: int) -> Tuple[str, Tuple[int, int, int], bool, str]:
     """
-    Procedural terrain for world coord (wx, wy).
-    Returns (char, color, walkable).
-    Deterministic — same coords always give same result for same config.
+    Like get_terrain_type but also returns biome id.
+    Returns (char, color, walkable, biome_id). Deterministic.
     """
     val = _sample_noise(wx, wy)
 
@@ -503,24 +520,50 @@ def get_terrain_type(wx: int, wy: int) -> Tuple[str, Tuple[int, int, int], bool]
     if biome is None:
         biome = _CONFIG.biomes[-1]
 
+    # Sand adjacency enforcement: sand (tan '.') only appears around water.
+    if biome.id == "sand":
+        water_thresh = None
+        ground_biome = None
+        for b in _CONFIG.biomes:
+            if b.id == "water":
+                water_thresh = b.threshold_max
+            if b.id == "ground":
+                ground_biome = b
+        if water_thresh is not None and not _is_adjacent_to_water(wx, wy, water_thresh):
+            if ground_biome is not None:
+                biome = ground_biome
+
     # Base char/color/walkable from biome
     char = biome.char
     color = biome.color
     walkable = biome.walkable
+    biome_id = biome.id
 
-    # Variant glyph (keeps color/walkable)
-    var_char = _pick_variant(biome.id, wx, wy)
+    # Variant glyph (keeps color/walkable, not biome)
+    var_char = _pick_variant(biome_id, wx, wy)
     if var_char is not None:
         char = var_char
 
-    # Scatter override — may change char/color/walkable
-    scatter = _maybe_scatter(biome.id, wx, wy)
+    # Scatter override — may change char/color/walkable but keep base biome for sprite
+    scatter = _maybe_scatter(biome_id, wx, wy)
     if scatter is not None:
         char = scatter.char
         color = scatter.color
         if scatter.walkable is not None:
             walkable = scatter.walkable
+        # Note: biome_id stays as base biome so sprite still draws underlying terrain
 
+    return char, color, walkable, biome_id
+
+
+def get_terrain_type(wx: int, wy: int) -> Tuple[str, Tuple[int, int, int], bool]:
+    """
+    Procedural terrain for world coord (wx, wy).
+    Returns (char, color, walkable).
+    Deterministic — same coords always give same result for same config.
+    Kept for backwards compat — wraps get_terrain_with_biome.
+    """
+    char, color, walkable, _ = get_terrain_with_biome(wx, wy)
     return char, color, walkable
 
 
