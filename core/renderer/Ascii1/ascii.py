@@ -176,13 +176,25 @@ def _get_assets_base():
     except Exception:
         return Path.cwd() / "assets"
 
+SPRITE_VARIANTS = {}  # biome -> list[(Surface, weight)]
+
+def _load_img(path, tile_size):
+    img = pygame.image.load(str(path))
+    try:
+        img = img.convert_alpha()
+    except Exception:
+        img = img.convert()
+    return pygame.transform.scale(img, (tile_size, tile_size))
+
 def load_sprites(tile_size=None):
     """
     Load PNG sprites for each biome. Returns (sprites dict, missing list).
     - Sprites expected under assets/tiles/nature/
     - Missing entries are left blank per spec and reported.
+    - Variant sprites (grass_plain2, flowers, rocky_dirt, wheat) are auto-detected and
+      used for deterministic per-tile variation in sprite mode.
     """
-    global SPRITES, MISSING_SPRITES
+    global SPRITES, MISSING_SPRITES, SPRITE_VARIANTS
     if tile_size is None:
         tile_size = TILE_SIZE
     base = _get_assets_base() / "tiles" / "nature"
@@ -200,21 +212,61 @@ def load_sprites(tile_size=None):
     for biome, path in expected.items():
         if path.is_file():
             try:
-                img = pygame.image.load(str(path))
-                # keep alpha if present
-                try:
-                    img = img.convert_alpha()
-                except Exception:
-                    img = img.convert()
-                img = pygame.transform.scale(img, (tile_size, tile_size))
-                sprites[biome] = img
+                sprites[biome] = _load_img(path, tile_size)
             except Exception as e:
                 missing.append(f"{biome}: {path.name} (load failed: {e})")
         else:
             missing.append(f"{biome}: {path.name} (missing) -> {path}")
-    # Also check for extra nice-to-haves that would improve variation
+
+    # ---- Variant sprites — deterministic per-tile variation ----
+    # Each entry: biome -> list of (path, weight)
+    variant_defs = {
+        "ground": [
+            (base / "grass_plain1.png", 35),
+            (base / "grass_plain2.png", 25),
+            (base / "grass_plain_with_flowers1.png", 15),
+            (base / "grass_with_bush1.png", 12),
+            (base / "wheat1.png", 8),
+            (base / "wheat1_trampled.png", 5),
+        ],
+        "mountain": [
+            (base / "mountain1.png", 60),
+            (base / "rocky_dirt1.png", 40),
+        ],
+        "forest": [
+            (base / "tree1.png", 100),
+        ],
+        "sand": [
+            (base / "sand1.png", 100),
+        ],
+        "water": [
+            (base / "water1.png", 100),
+        ],
+    }
+    sprite_variants = {}
+    for biome, lst in variant_defs.items():
+        loaded = []
+        total_w = 0
+        for p, w in lst:
+            if p.is_file():
+                try:
+                    loaded.append((_load_img(p, tile_size), w))
+                    total_w += w
+                except Exception:
+                    pass
+            else:
+                # Only report as missing if it's an expected variant the user might want
+                if p.name not in ("grass_plain1.png", "tree1.png", "sand1.png", "water1.png", "mountain1.png"):
+                    # Don't clutter with every variant missing — only core expected already reported
+                    pass
+        if loaded:
+            sprite_variants[biome] = loaded
+            # Also ensure base sprites dict has at least one (for fallback)
+            if biome not in sprites and loaded:
+                sprites[biome] = loaded[0][0]
+
+    # Also check for extra nice-to-haves that would improve variation (truly missing)
     nice_to_have = [
-        ("ground", base / "grass_with_bush1.png", "grass with bush — used as ground scatter/variant"),
         ("sand", base / "sand2.png", "sand variant"),
         ("water", base / "water2.png", "water variant"),
         ("forest", base / "tree2.png", "tree variant"),
@@ -224,12 +276,33 @@ def load_sprites(tile_size=None):
             if any(p.name in m for m in missing):
                 continue
             missing.append(f"{biome}: {p.name} ({desc}) -> {p}")
-    # Deduplicate
-    # If sprites were loaded, remove ground plain suggestion if ground already has sprite
-    # (keep informative note separate)
+
     SPRITES = sprites
+    SPRITE_VARIANTS = sprite_variants
     MISSING_SPRITES = missing
     return sprites, missing
+
+def _pick_variant_sprite(biome, wx, wy):
+    """Deterministic variant pick for sprite mode (like terrain variants)."""
+    variants = SPRITE_VARIANTS.get(biome)
+    if not variants:
+        return SPRITES.get(biome)
+    # Use same hash as terrain_generation for determinism (needs _tg seed)
+    try:
+        seed = _tg.get_generation_config().seed if hasattr(_tg, "get_generation_config") else 0
+    except Exception:
+        seed = 0
+    import random as _rnd
+    h = (int(wx) * 73856093) ^ (int(wy) * 19349663) ^ (seed * 83492791) ^ (hash(biome) & 0xFFFF)
+    rng = _rnd.Random(h & 0xFFFFFFFF)
+    total = sum(w for _, w in variants)
+    r = rng.random() * total
+    acc = 0
+    for surf, w in variants:
+        acc += w
+        if r < acc:
+            return surf
+    return variants[-1][0]
 
 def get_missing_sprites_report():
     """Return list of missing sprite suggestions (call after load_sprites)."""
@@ -556,7 +629,7 @@ def main():
                                 if col == tile.color:
                                     biome = bid
                                     break
-                        surf = sprites.get(biome)
+                        surf = _pick_variant_sprite(biome, wx, wy)
                         if surf:
                             screen_x = (c - cam_frac_x) * tile_w
                             screen_y = (r - cam_frac_y) * tile_h
