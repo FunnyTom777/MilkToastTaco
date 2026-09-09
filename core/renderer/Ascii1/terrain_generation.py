@@ -49,6 +49,16 @@ class NoiseConfig:
     fallback_scale: float = 0.06
 
 @dataclass
+class WheatFieldConfig:
+    scale: float = 0.08
+    octaves: int = 2
+    persistence: float = 0.5
+    threshold: float = 0.38
+    trampled_chance: float = 0.65
+    seed_offset: int = 777
+    fallback_scale: float = 0.10
+
+@dataclass
 class BiomeRule:
     id: str
     threshold_max: float
@@ -76,9 +86,10 @@ class GenerationConfig:
     seed: int = 0
     save_dir: str = "saves_world1"
     noise: NoiseConfig = field(default_factory=NoiseConfig)
+    wheat: WheatFieldConfig = field(default_factory=WheatFieldConfig)
     biomes: List[BiomeRule] = field(default_factory=list)
     variants: Dict[str, List[Variant]] = field(default_factory=dict)
-    scatter: List[ScatterFeature] = field(default_factory=list)
+    scatter: List[ScatterFeature] = field(default_factory=dict)
     palette: Dict[str, Tuple[int, int, int]] = field(default_factory=dict)
 
 
@@ -130,6 +141,7 @@ _CONFIG: GenerationConfig = GenerationConfig(
     seed=0,
     save_dir="saves_world1",
     noise=NoiseConfig(),
+    wheat=WheatFieldConfig(),
     biomes=list(_DEFAULT_BIOMES),
     variants=dict(_DEFAULT_VARIANTS),
     scatter=list(_DEFAULT_SCATTER),
@@ -208,7 +220,12 @@ def _sync_module_globals():
     SAVE_DIR = _CONFIG.save_dir
     GLYPHS = {b.id: b.char for b in _CONFIG.biomes}
     GLYPHS["player"] = "@"
+    # Add wheat overlay biomes (not in threshold list) for sprite/ASCII mapping
+    GLYPHS["wheat"] = "w"
+    GLYPHS["wheat_trampled"] = "x"
     COLORS = {b.id: b.color for b in _CONFIG.biomes}
+    COLORS["wheat"] = (255, 215, 0)
+    COLORS["wheat_trampled"] = (184, 134, 11)
     PALETTE = dict(_CONFIG.palette)
 
     COLOR_BG = PALETTE.get("bg", (15, 15, 20))
@@ -285,6 +302,26 @@ def load_generation_config(path: Optional[str | Path] = None) -> GenerationConfi
         except Exception:
             pass
     cfg.noise = noise_cfg
+
+    # -- wheat fields (clumps with trampled ring) --
+    wheat_cfg = WheatFieldConfig()
+    w_elem = root.find("wheat_fields")
+    if w_elem is None:
+        w_elem = root.find("wheat")  # alias
+    if w_elem is not None:
+        try:
+            wheat_cfg.scale = float(w_elem.get("scale", wheat_cfg.scale))
+            wheat_cfg.octaves = int(w_elem.get("octaves", wheat_cfg.octaves))
+            wheat_cfg.threshold = float(w_elem.get("threshold", wheat_cfg.threshold))
+            wheat_cfg.trampled_chance = float(w_elem.get("trampled_chance", wheat_cfg.trampled_chance))
+            wheat_cfg.seed_offset = int(w_elem.get("seed_offset", wheat_cfg.seed_offset))
+            # fallback scale optional
+            fb = w_elem.get("fallback_scale")
+            if fb is not None:
+                wheat_cfg.fallback_scale = float(fb)
+        except Exception as e:
+            print(f"[terrain_generation] wheat_fields parse warning: {e}")
+    cfg.wheat = wheat_cfg
 
     # -- palette --
     palette: Dict[str, Tuple[int, int, int]] = dict(_DEFAULT_PALETTE)
@@ -504,6 +541,39 @@ def _is_adjacent_to_water(wx: int, wy: int, water_threshold: float) -> bool:
     return False
 
 
+def _sample_wheat_noise(wx: int, wy: int) -> float:
+    cfg = _CONFIG.wheat
+    if HAS_NOISE:
+        off = cfg.seed_offset + _CONFIG.seed
+        return noise.pnoise2(
+            (wx + off * 1000) * cfg.scale,
+            (wy + off * 1000) * cfg.scale,
+            octaves=cfg.octaves,
+            persistence=cfg.persistence,
+            lacunarity=2.0,
+        )
+    else:
+        s = cfg.fallback_scale
+        return (math.sin((wx + _CONFIG.seed + cfg.seed_offset) * s) + math.cos((wy + _CONFIG.seed + cfg.seed_offset) * s)) / 2.0
+
+
+def _is_inside_wheat_field(wx: int, wy: int) -> bool:
+    return _sample_wheat_noise(wx, wy) > _CONFIG.wheat.threshold
+
+
+def _is_wheat_edge(wx: int, wy: int) -> bool:
+    """Edge if any 8-neighbor is outside wheat field."""
+    if not _is_inside_wheat_field(wx, wy):
+        return False
+    for dy in (-1, 0, 1):
+        for dx in (-1, 0, 1):
+            if dx == 0 and dy == 0:
+                continue
+            if not _is_inside_wheat_field(wx + dx, wy + dy):
+                return True
+    return False
+
+
 def get_terrain_with_biome(wx: int, wy: int) -> Tuple[str, Tuple[int, int, int], bool, str]:
     """
     Like get_terrain_type but also returns biome id.
@@ -538,6 +608,23 @@ def get_terrain_with_biome(wx: int, wy: int) -> Tuple[str, Tuple[int, int, int],
     color = biome.color
     walkable = biome.walkable
     biome_id = biome.id
+
+    # --- Wheat field clumps (only on ground) ---
+    # Center = normal wheat "w" gold, edge ring = trampled "x" brown with chance
+    if biome_id == "ground" and _is_inside_wheat_field(wx, wy):
+        is_edge = _is_wheat_edge(wx, wy)
+        if is_edge and _deterministic_rng(wx, wy, salt=77).random() < _CONFIG.wheat.trampled_chance:
+            # Sometimes keep normal wheat on edge too — chance to be trampled
+            char = "x"
+            color = (184, 134, 11)  # trampled wheat / dry
+            biome_id = "wheat_trampled"
+            walkable = True
+        else:
+            char = "w"
+            color = (255, 215, 0)  # wheat gold
+            biome_id = "wheat"
+            walkable = True
+        return char, color, walkable, biome_id
 
     # Variant glyph (keeps color/walkable, not biome)
     var_char = _pick_variant(biome_id, wx, wy)

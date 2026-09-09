@@ -43,6 +43,18 @@
     <!-- Used only when `noise` library is not installed -->
     <fallback scale="0.06" />
 
+    <!-- ================= WHEAT FIELDS (clumps) ================= -->
+    <!-- Wheat only spawns on ground plains. threshold = sparsity (higher = rarer, larger blobs need lower threshold).
+         scale 0.08 = field size ~10 tiles; trampled_chance 0.65 = 65% of edge tiles become trampled ring (else normal wheat). -->
+    <wheat_fields
+        scale="0.08"
+        octaves="2"
+        threshold="0.38"
+        trampled_chance="0.65"
+        seed_offset="777"
+        fallback_scale="0.10"
+    />
+
     <!-- ================= PALETTE (optional overrides) ================= -->
     <!-- These mirror ascii.py defaults; edit here if you want XML-driven colours -->
     <palette>

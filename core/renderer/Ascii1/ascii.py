@@ -213,6 +213,8 @@ def load_sprites(tile_size=None):
         "forest": base / "tree1.png",
         "mountain": base / "mountain1.png",
         "player": base / "player1.png",
+        "wheat": base / "wheat1.png",
+        "wheat_trampled": base / "wheat1_trampled.png",
     }
     sprites = {}
     missing = []
@@ -227,14 +229,13 @@ def load_sprites(tile_size=None):
 
     # ---- Variant sprites — deterministic per-tile variation ----
     # Each entry: biome -> list of (path, weight)
+    # Wheat is now a field clump, not a random ground variant — separated biomes
     variant_defs = {
         "ground": [
-            (base / "grass_plain1.png", 35),
-            (base / "grass_plain2.png", 25),
-            (base / "grass_plain_with_flowers1.png", 15),
+            (base / "grass_plain1.png", 40),
+            (base / "grass_plain2.png", 30),
+            (base / "grass_plain_with_flowers1.png", 18),
             (base / "grass_with_bush1.png", 12),
-            (base / "wheat1.png", 8),
-            (base / "wheat1_trampled.png", 5),
         ],
         "mountain": [
             (base / "mountain1.png", 60),
@@ -248,6 +249,12 @@ def load_sprites(tile_size=None):
         ],
         "water": [
             (base / "water1.png", 100),
+        ],
+        "wheat": [
+            (base / "wheat1.png", 100),
+        ],
+        "wheat_trampled": [
+            (base / "wheat1_trampled.png", 100),
         ],
     }
     sprite_variants = {}
