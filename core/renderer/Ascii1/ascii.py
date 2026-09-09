@@ -348,9 +348,13 @@ class World:
         self.loaded_chunks = {}  # (cx, cy) -> Chunk
 
     def get_tile(self, wx, wy):
+        # wx/wy are int tile coords; also handles float by flooring (for free movement)
+        import math as _math
+        wx_i = int(_math.floor(wx))
+        wy_i = int(_math.floor(wy))
         cs = _tg.CHUNK_SIZE
-        cx, cy = wx // cs, wy // cs
-        rx, ry = wx % cs, wy % cs
+        cx, cy = wx_i // cs, wy_i // cs
+        rx, ry = wx_i % cs, wy_i % cs
         chunk = self.get_chunk(cx, cy)
         return chunk.tiles.get((rx, ry))
 
@@ -361,9 +365,10 @@ class World:
 
     def update_loaded_chunks(self, player_wx, player_wy):
         """Loads chunks in advance and saves/unloads distant ones."""
+        import math as _math
         cs = _tg.CHUNK_SIZE
-        p_cx = player_wx // cs
-        p_cy = player_wy // cs
+        p_cx = int(_math.floor(player_wx)) // cs
+        p_cy = int(_math.floor(player_wy)) // cs
 
         # 1. Load/Generate required buffer chunks
         for cy in range(p_cy - LOAD_RADIUS_CHUNKS, p_cy + LOAD_RADIUS_CHUNKS + 1):
@@ -385,37 +390,16 @@ class World:
         for chunk in self.loaded_chunks.values():
             chunk.save_to_xml()
 
-# --- PLAYER SYSTEM ---
-class Player:
-    def __init__(self, x=0, y=0):
-        self.x = x
-        self.y = y
-
-    def move(self, dx, dy, world):
-        target_tile = world.get_tile(self.x + dx, self.y + dy)
-        if target_tile and target_tile.walkable:
-            self.x += dx
-            self.y += dy
-
-    def save_player_xml(self):
-        save_dir = _tg.SAVE_DIR
-        if not os.path.exists(save_dir):
-            os.makedirs(save_dir)
-        root = ET.Element("Player", x=str(self.x), y=str(self.y))
-        tree = ET.ElementTree(root)
-        tree.write(os.path.join(save_dir, "player.xml"))
-
-    def load_player_xml(self):
-        save_dir = _tg.SAVE_DIR
-        filename = os.path.join(save_dir, "player.xml")
-        if os.path.exists(filename):
-            try:
-                tree = ET.parse(filename)
-                root = tree.getroot()
-                self.x = int(root.attrib["x"])
-                self.y = int(root.attrib["y"])
-            except Exception:
-                pass
+# --- PLAYER SYSTEM (separate module, multiplayer-ready) ---
+# Player is now free-moving (float) with smooth velocity; see player.py
+# Import with fallback for all run modes (module / script inside Ascii1)
+try:
+    from .player import Player, PlayerController  # type: ignore
+except ImportError:
+    try:
+        from core.renderer.Ascii1.player import Player, PlayerController  # type: ignore
+    except ImportError:
+        from player import Player, PlayerController  # type: ignore  # direct script in Ascii1/
 
 # --- ENGINE ---
 def main():
@@ -459,12 +443,22 @@ def main():
     viewport_rows = (SCREEN_HEIGHT - 30) // tile_h
 
     world = World()
-    player = Player(0, 0)
-    player.load_player_xml()
+    # Spawn at tile center (0.5,0.5) for smooth free movement; handles old int saves via load
+    player = Player(player_id="local", x=0.5, y=0.5)
+    # Try to load old save — converts int 0,0 -> 0.5,0.5 if needed
+    loaded = player.load_player_xml()
+    if loaded:
+        # Old saves stored int tile origin; if player is exactly on integer, nudge to center for smooth mode
+        import math as _math
+        if float(player.x).is_integer() and float(player.y).is_integer():
+            player.x = float(player.x) + 0.5
+            player.y = float(player.y) + 0.5
+    controller = PlayerController(player)
 
     running = True
     while running:
-        # --- INPUT ---
+        dt = clock.tick(30) / 1000.0
+        # --- INPUT (events) ---
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -500,73 +494,63 @@ def main():
                         pygame.display.set_caption(f"Infinite ASCII Explorer ({caption_mode})")
                         viewport_cols = SCREEN_WIDTH // tile_w
                         viewport_rows = (SCREEN_HEIGHT - 30) // tile_h
+                # Note: discrete KEYDOWN movement removed — free movement uses get_pressed() below
 
-                dx, dy = 0, 0
-                if event.key in (pygame.K_LEFT, pygame.K_h, pygame.K_KP4):
-                    dx = -1
-                elif event.key in (pygame.K_RIGHT, pygame.K_l, pygame.K_KP6):
-                    dx = 1
-                elif event.key in (pygame.K_UP, pygame.K_k, pygame.K_KP8):
-                    dy = -1
-                elif event.key in (pygame.K_DOWN, pygame.K_j, pygame.K_KP2):
-                    dy = 1
-                elif event.key in (pygame.K_y, pygame.K_KP7):
-                    dx, dy = -1, -1
-                elif event.key in (pygame.K_u, pygame.K_KP9):
-                    dx, dy = 1, -1
-                elif event.key in (pygame.K_b, pygame.K_KP1):
-                    dx, dy = -1, 1
-                elif event.key in (pygame.K_n, pygame.K_KP3):
-                    dx, dy = 1, 1
+        # --- FREE MOVEMENT (smooth, not grid-locked) ---
+        # Uses PlayerController -> Player.set_input -> Player.update(dt, world)
+        # Supports WASD/arrows/numpad/vi keys; multiplayer-ready via input dict
+        import pygame as _pygame
+        keys = _pygame.key.get_pressed()
+        # Escape already handled via event, but check held state too
+        # Controller returns input dict for potential network send
+        controller.handle_pygame_input(keys)
+        player.update(dt, world)
 
-                if dx != 0 or dy != 0:
-                    player.move(dx, dy, world)
-
-        # --- UPDATE CHUNKS ---
+        # --- UPDATE CHUNKS (float position) ---
         world.update_loaded_chunks(player.x, player.y)
 
-        # --- CAMERA PLACEMENT ---
-        cam_x = player.x - viewport_cols // 2
-        cam_y = player.y - viewport_rows // 2
+        # --- CAMERA PLACEMENT (float, smooth) ---
+        cam_x = player.x - viewport_cols / 2
+        cam_y = player.y - viewport_rows / 2
 
-        # --- RENDER ---
+        # --- RENDER (sub-pixel smooth) ---
         screen.fill(COLOR_BG)
+        import math as _math
+        cam_floor_x = _math.floor(cam_x)
+        cam_floor_y = _math.floor(cam_y)
+        cam_frac_x = cam_x - cam_floor_x
+        cam_frac_y = cam_y - cam_floor_y
 
         if mode == 1:
-            # ===== ASCII MODE =====
-            for r in range(viewport_rows):
-                wy = cam_y + r
-                for c in range(viewport_cols):
-                    wx = cam_x + c
-                    
-                    # Player render position override
-                    if wx == player.x and wy == player.y:
-                        continue
-
+            # ===== ASCII MODE (smooth) =====
+            # Draw tile underneath player too — player is overlayed afterwards
+            for r in range(viewport_rows + 1):  # +1 for fractional edge
+                wy = cam_floor_y + r
+                for c in range(viewport_cols + 1):
+                    wx = cam_floor_x + c
                     tile = world.get_tile(wx, wy)
                     if tile:
-                        screen_x = c * tile_w
-                        screen_y = r * tile_h
-                        char_surf = font.render(tile.char, True, tile.color)
-                        screen.blit(char_surf, (screen_x, screen_y))
-
-            # Render Player centered
-            p_screen_x = (player.x - cam_x) * tile_w
-            p_screen_y = (player.y - cam_y) * tile_h
+                        screen_x = (c - cam_frac_x) * tile_w
+                        screen_y = (r - cam_frac_y) * tile_h
+                        # Cull off-screen
+                        if -tile_w < screen_x < SCREEN_WIDTH and -tile_h < screen_y < SCREEN_HEIGHT:
+                            char_surf = font.render(tile.char, True, tile.color)
+                            screen.blit(char_surf, (screen_x, screen_y))
+            # Render Player centered (smooth, not grid)
+            p_screen_x = (player.x - cam_x) * tile_w - tile_w / 2
+            p_screen_y = (player.y - cam_y) * tile_h - tile_h / 2
             p_surf = font.render(GLYPHS['player'], True, COLOR_PLAYER)
             screen.blit(p_surf, (p_screen_x, p_screen_y))
         else:
-            # ===== SPRITE MODE =====
-            for r in range(viewport_rows):
-                wy = cam_y + r
-                for c in range(viewport_cols):
-                    wx = cam_x + c
-                    if wx == player.x and wy == player.y:
-                        continue
+            # ===== SPRITE MODE (smooth) =====
+            # Draw tile underneath player too — player sprite is overlayed afterwards
+            for r in range(viewport_rows + 1):
+                wy = cam_floor_y + r
+                for c in range(viewport_cols + 1):
+                    wx = cam_floor_x + c
                     tile = world.get_tile(wx, wy)
                     if tile:
                         biome = getattr(tile, "biome", "")
-                        # Fallback: infer from color if biome missing (old saves)
                         if not biome:
                             for bid, col in _tg.COLORS.items():
                                 if col == tile.color:
@@ -574,15 +558,13 @@ def main():
                                     break
                         surf = sprites.get(biome)
                         if surf:
-                            screen_x = c * tile_w
-                            screen_y = r * tile_h
-                            screen.blit(surf, (screen_x, screen_y))
-                        else:
-                            # Leave blank per spec — just background
-                            pass
-            # Player sprite (blank if missing per spec)
-            p_screen_x = (player.x - cam_x) * tile_w
-            p_screen_y = (player.y - cam_y) * tile_h
+                            screen_x = (c - cam_frac_x) * tile_w
+                            screen_y = (r - cam_frac_y) * tile_h
+                            if -tile_w < screen_x < SCREEN_WIDTH and -tile_h < screen_y < SCREEN_HEIGHT:
+                                screen.blit(surf, (screen_x, screen_y))
+            # Player sprite centered
+            p_screen_x = (player.x - cam_x) * tile_w - tile_w / 2
+            p_screen_y = (player.y - cam_y) * tile_h - tile_h / 2
             p_surf = sprites.get("player")
             if p_surf:
                 screen.blit(p_surf, (p_screen_x, p_screen_y))
@@ -591,20 +573,20 @@ def main():
 
         # Status Bar (always ASCII font)
         if font is None:
-            # need font for status even in sprite mode
             status_font = pygame.font.SysFont("Courier", FONT_SIZE, bold=True)
         else:
             status_font = font
         cs = _tg.CHUNK_SIZE
-        p_chunk_x = player.x // cs
-        p_chunk_y = player.y // cs
+        import math as _math2
+        p_chunk_x = int(_math2.floor(player.x)) // cs
+        p_chunk_y = int(_math2.floor(player.y)) // cs
         mode_name = "ASCII" if mode == 1 else "SPRITES"
-        status = f" World Pos: ({player.x}, {player.y}) | Chunk: ({p_chunk_x}, {p_chunk_y}) | Loaded: {len(world.loaded_chunks)} | Mode:{mode_name} R=Reload Esc=Save"
+        status = f" World Pos: ({player.x:.2f}, {player.y:.2f}) | Chunk: ({p_chunk_x}, {p_chunk_y}) | Loaded: {len(world.loaded_chunks)} | Mode:{mode_name} R=Reload Esc=Save"
         status_surf = status_font.render(status, True, COLOR_TEXT)
         screen.blit(status_surf, (10, SCREEN_HEIGHT - 25))
 
         pygame.display.flip()
-        clock.tick(30)
+        # dt already via clock.tick at top
 
     # Clean Exit & Save
     print("Saving world XMLs...")
