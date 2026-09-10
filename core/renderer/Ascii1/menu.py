@@ -86,9 +86,55 @@ class MTTMenu:
     # Event handling
     # ------------------------------------------------------------------
     def handle_event(self, event) -> bool:
-        """Return True if event consumed (when menu open)."""
+        """Return True if event consumed (when menu open). Handles KB/Mouse + Xbox controller (D-Pad + A/B)."""
         if pygame is None:
             return False
+        # --- Xbox controller handling (always check, alongside KB/Mouse) ---
+        # Menu navigation via D-Pad (hat) and A/B buttons
+        try:
+            if event.type == pygame.JOYHATMOTION and self.is_open:
+                # DPAD: hat y 1=up, -1=down; x ignored for vertical menu but support left/right as well
+                if self.editing_name:
+                    return True  # block nav while editing
+                hx, hy = event.value if hasattr(event, 'value') else (0, 0)
+                # pygame hat: only hat 0 matters for Xbox
+                if getattr(event, 'hat', 0) == 0:
+                    if hy == 1:
+                        self._nav(-1)
+                        return True
+                    elif hy == -1:
+                        self._nav(1)
+                        return True
+                    elif hx == 1 or hx == -1:
+                        # horizontal nudge? ignore or also nav
+                        pass
+            elif event.type == pygame.JOYBUTTONDOWN:
+                # Xbox: 0=A(South), 1=B(East), 7=Start/Menu, 6=Back/View
+                btn = getattr(event, 'button', -1)
+                if btn == 0 and self.is_open:  # A -> activate
+                    if self.editing_name:
+                        self.editing_name = False
+                        return True
+                    self._activate()
+                    return True
+                elif btn == 1 and self.is_open:  # B -> back / close (like ESC)
+                    if self.editing_name:
+                        self.editing_name = False
+                        return True
+                    if self.state == "multiplayer":
+                        self.state = "main"
+                        self.selected = 1
+                    else:
+                        self.close()
+                    return True
+                elif btn in (7, 6):  # Start or Back toggles menu (handled in ascii main too, but allow here)
+                    # let ascii main toggle; consume if menu open
+                    if self.is_open and self.editing_name:
+                        self.editing_name = False
+                    # don't consume here, let main toggle - but prevent double
+                    pass
+        except Exception:
+            pass
         # Tab toggles open/close from ascii main - but also handle here
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_TAB:
@@ -284,9 +330,17 @@ class MTTMenu:
             ts = title_font.render(title, True, _ACCENT)
             screen.blit(ts, (panel_x + 20, panel_y + 14))
 
-        # subtitle hint
+        # subtitle hint - KB/Mouse + Xbox controller
         if small_font:
-            hint = "W/S or Up/Down, Enter to select • ESC / TAB to close"
+            # Show controller hints alongside KB
+            try:
+                has_pad = pygame.joystick.get_count() > 0
+            except Exception:
+                has_pad = False
+            if has_pad:
+                hint = "W/S/↑↓/D-Pad, Enter/A select • ESC/B, TAB/Start close"
+            else:
+                hint = "W/S or Up/Down, Enter to select • ESC / TAB to close (Xbox pad supported)"
             hs = small_font.render(hint, True, _TEXT_DIM)
             screen.blit(hs, (panel_x + 20, panel_y + 44))
 

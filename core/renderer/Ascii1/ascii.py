@@ -815,6 +815,24 @@ def main():
     tile_size = cfg["tile_size"]
     zoom = cfg.get("zoom", 1.0)
     debug = cfg.get("debug", True)
+    # --- Xbox controller init (alongside KB/Mouse) ---
+    try:
+        pygame.joystick.init()
+        _joy_count = pygame.joystick.get_count()
+        if _joy_count > 0:
+            for _jid in range(_joy_count):
+                try:
+                    _js = pygame.joystick.Joystick(_jid)
+                    _js.init()
+                    print(f"[input] Joystick { _jid }: {_js.get_name()}  axes={_js.get_numaxes()} hats={_js.get_numhats()} buttons={_js.get_numbuttons()}")
+                except Exception as _je:
+                    print(f"[input] Joystick {_jid} init failed: {_je}")
+            print(f"[input] Controller support ON - Stick+DPAD moves player, DPAD+A/B navigates menus (Start toggles menu)")
+        else:
+            if debug:
+                print("[input] No joystick detected - KB/Mouse only (plug Xbox pad and hotplug works)")
+    except Exception as _je:
+        print(f"[input] Joystick init failed: {_je}")
 
     # Prepare display and font / sprites depending on mode
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -955,11 +973,40 @@ def main():
     while running:
         dt = clock.tick(30) / 1000.0
         # --- INPUT (events) ---
-        # Handle menu first (it may consume events)
+        # Handle menu first (it may consume events) - KB/Mouse + Xbox controller
         for event in pygame.event.get():
-            # let menu handle Tab/ESC/mouse when open
+            # let menu handle Tab/ESC/mouse + Xbox DPAD/A/B when open
             if menu is not None and menu.handle_event(event):
                 continue
+            # --- Xbox controller hotplug ---
+            if event.type == getattr(pygame, 'JOYDEVICEADDED', 1540):
+                try:
+                    jid = getattr(event, 'device_index', 0)
+                    js = pygame.joystick.Joystick(jid)
+                    js.init()
+                    print(f"[input] Joystick connected: {js.get_name()} (id {jid})")
+                except Exception as _e:
+                    print(f"[input] Joystick connect failed: {_e}")
+                continue
+            if event.type == getattr(pygame, 'JOYDEVICEREMOVED', 1541):
+                print(f"[input] Joystick disconnected (instance {getattr(event, 'instance_id', '?')})")
+                continue
+            # --- Xbox Start / Back toggles menu like TAB (alongside KB) ---
+            if event.type == pygame.JOYBUTTONDOWN:
+                # 7=Menu/Start, 6=View/Back on Xbox
+                if getattr(event, 'button', -1) in (7, 6):
+                    if menu is not None:
+                        menu.toggle()
+                        if menu:
+                            menu.set_sessions(host_session, client_session)
+                            if menu.editing_name:
+                                menu.editing_name = False
+                        print(f"[input] Menu {'opened' if menu.is_open else 'closed'} via controller")
+                    continue
+                # When menu is open, other controller buttons are handled by menu.handle_event above
+                # When menu closed, ignore A/B etc for now (future: A to interact)
+                if menu is not None and menu.is_open:
+                    continue
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.KEYDOWN:

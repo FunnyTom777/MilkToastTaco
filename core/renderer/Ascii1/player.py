@@ -272,8 +272,11 @@ class PlayerController:
     def handle_pygame_input(self, keys) -> Dict[str, float]:
         """
         Read pygame key state (from pygame.key.get_pressed() or event keys).
+        Also merges Xbox controller input (Left Stick + D-Pad) when a joystick is present.
+        Keyboard/Mouse remains active alongside controller.
+
         Returns input dict {"dx": float, "dy": float} for networking.
-        Supports WASD + arrows + numpad + vi keys.
+        Supports WASD + arrows + numpad + vi keys + Xbox Left Stick / D-Pad.
         """
         # keys may be sequence (get_pressed) or dict
         def is_down(k):
@@ -303,6 +306,65 @@ class PlayerController:
 
         dx = (1 if right else 0) - (1 if left else 0)
         dy = (1 if down else 0) - (1 if up else 0)
+
+        # --- Xbox controller: Left Stick + D-Pad (alongside keyboard) ---
+        try:
+            import pygame as _pg
+            if _pg.joystick.get_count() > 0:
+                try:
+                    js = _pg.joystick.Joystick(0)
+                    # stick
+                    sx = 0.0
+                    sy = 0.0
+                    try:
+                        sx = float(js.get_axis(0))  # LX: -1 left, +1 right
+                        sy = float(js.get_axis(1))  # LY: -1 up, +1 down (matches dy)
+                    except Exception:
+                        pass
+                    # deadzone
+                    try:
+                        mag = (sx * sx + sy * sy) ** 0.5
+                        if mag < 0.22:
+                            sx = 0.0
+                            sy = 0.0
+                        elif mag > 1.0:
+                            # normalize just in case
+                            sx /= mag
+                            sy /= mag
+                    except Exception:
+                        pass
+                    # D-Pad via hat
+                    hx = 0
+                    hy = 0
+                    try:
+                        if js.get_numhats() > 0:
+                            hx, hy = js.get_hat(0)  # hat y: 1=up -> dy -1
+                    except Exception:
+                        hx, hy = 0, 0
+                    # Also support D-Pad as buttons 11-14 on some drivers (fallback)
+                    # Buttons are not needed if hat works, but keep for compat
+                    # Merge: keyboard digital + stick analog + hat digital
+                    # Stick is analog, hat is digital (-1/0/1)
+                    # Note hat up is y=1 -> dy should be -1
+                    jdx = sx + float(hx)
+                    jdy = sy + float(-hy)
+                    # Combine with keyboard: sum then clamp to -1..1 preserving analog granularity
+                    dx = float(dx) + jdx
+                    dy = float(dy) + jdy
+                    # clamp
+                    if dx > 1.0:
+                        dx = 1.0
+                    if dx < -1.0:
+                        dx = -1.0
+                    if dy > 1.0:
+                        dy = 1.0
+                    if dy < -1.0:
+                        dy = -1.0
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
         self.player.set_input(float(dx), float(dy))
         return {"dx": float(dx), "dy": float(dy)}
 
