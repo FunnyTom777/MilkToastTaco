@@ -1251,13 +1251,13 @@ def main():
                         if -tile_w <= rx <= SCREEN_WIDTH and -tile_h <= ry <= SCREEN_HEIGHT:
                             rs = sprites.get("player")
                             if rs:
-                                # tint red for remote
-                                tint = rs.copy()
+                                # Remote player — keep fully opaque (was BLEND_RGBA_MULT with alpha 90 → see-through)
+                                screen.blit(rs, (rx, ry))
+                                # Small red outline so you can tell it apart from local player
                                 try:
-                                    tint.fill((255, 80, 80, 90), special_flags=pygame.BLEND_RGBA_MULT)
+                                    pygame.draw.rect(screen, (255, 80, 80), (rx, ry, tile_w, tile_h), 2)
                                 except Exception:
                                     pass
-                                screen.blit(tint, (rx, ry))
                             else:
                                 pygame.draw.rect(screen, (255,80,80), (rx, ry, tile_w, tile_h))
                 except Exception:
