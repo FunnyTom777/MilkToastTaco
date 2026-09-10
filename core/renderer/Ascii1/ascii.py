@@ -2,6 +2,7 @@ import os
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
+import zlib
 import pygame
 
 # Minimap + HUD + Fog — optional, graceful fallback if modules missing (tests / headless)
@@ -500,7 +501,12 @@ def _pick_variant_sprite(biome, wx, wy):
     except Exception:
         seed = 0
     import random as _rnd
-    h = (int(wx) * 73856093) ^ (int(wy) * 19349663) ^ (seed * 83492791) ^ (hash(biome) & 0xFFFF)
+    # Use stable crc32 for biome (hash() is randomized per process → inconsistent across LAN)
+    try:
+        biome_h = zlib.crc32(str(biome).encode("utf-8")) & 0xFFFF
+    except Exception:
+        biome_h = 0
+    h = (int(wx) * 73856093) ^ (int(wy) * 19349663) ^ (seed * 83492791) ^ biome_h
     rng = _rnd.Random(h & 0xFFFFFFFF)
     total = sum(w for _, w in variants)
     r = rng.random() * total
@@ -515,29 +521,57 @@ def get_missing_sprites_report():
     """Return list of missing sprite suggestions (call after load_sprites)."""
     return list(MISSING_SPRITES)
 
-def _get_player_sprite(pid: str):
-    """Deterministic skin per player_id from PLAYER_SKINS. Falls back to SPRITES['player']."""
+def _get_player_sprite(pid: str, registry=None):
+    """Deterministic skin per player_id. Uses sorted registry for distinct sequential assignment."""
     if PLAYER_SKINS:
         order = ["player1", "player2_red", "player3_blue", "player_old"]
         available = [k for k in order if k in PLAYER_SKINS]
         if not available:
             available = list(PLAYER_SKINS.keys())
+        # Prefer sequential based on sorted pids (consistent across peers, distinct for first N)
+        if registry is not None:
+            try:
+                sorted_pids = sorted(registry.players.keys())
+                if pid in sorted_pids:
+                    idx = sorted_pids.index(pid) % len(available)
+                    return PLAYER_SKINS[available[idx]]
+            except Exception:
+                pass
+        # Fallback stable crc32 (hash() is randomized per process)
         try:
-            h = hash(str(pid)) & 0xFFFFFFFF
+            h = zlib.crc32(str(pid).encode("utf-8")) & 0xFFFFFFFF
+            idx = h % len(available)
+            return PLAYER_SKINS[available[idx]]
         except Exception:
-            h = 0
-        # stable: ensure same pid always maps to same index, but distribute distinct ids
-        idx = h % len(available)
-        return PLAYER_SKINS[available[idx]]
+            return PLAYER_SKINS[available[0]]
     return SPRITES.get("player")
+
+# nametag font cache (tile_h -> font) to avoid per-frame SysFont creation
+_NAMETAG_FONTS = {}
+
+def _get_nametag_font(tile_h: int):
+    key = max(10, tile_h // 2)
+    f = _NAMETAG_FONTS.get(key)
+    if f is None:
+        try:
+            f = pygame.font.SysFont("Courier", key, bold=True)
+            _NAMETAG_FONTS[key] = f
+        except Exception:
+            try:
+                f = pygame.font.Font(None, key)
+                _NAMETAG_FONTS[key] = f
+            except Exception:
+                return None
+    return f
 
 def _draw_nametag(screen, x: float, y: float, name: str, tile_h: int):
     """Draw name tag just above player position (x,y = screen top-left of sprite). Centered."""
     if not name or not screen:
         return
     try:
-        # Use small font for nametag
-        font = pygame.font.SysFont("Courier", max(10, tile_h // 2), bold=True)
+        font = _get_nametag_font(tile_h)
+        if font is None:
+            return
         # truncate
         name = str(name)[:16]
         surf = font.render(name, True, (255, 255, 255))
@@ -686,28 +720,52 @@ class World:
         return self.loaded_chunks[(cx, cy)]
 
     def update_loaded_chunks(self, player_wx, player_wy):
-        """Loads chunks in advance and saves/unloads distant ones."""
+        """Loads chunks in advance and saves/unloads distant ones (single focus)."""
+        self.update_loaded_chunks_multi([(player_wx, player_wy)])
+
+    def update_loaded_chunks_multi(self, points):
+        """
+        Load/unload for multiple focus points (e.g. all MP players).
+        Loads union of buffers, unloads only chunks far from ALL points.
+        Avoids thrashing when players are far apart (was calling update per-player).
+        """
         import math as _math
         cs = _tg.CHUNK_SIZE
-        p_cx = int(_math.floor(player_wx)) // cs
-        p_cy = int(_math.floor(player_wy)) // cs
+        if not points:
+            return
+        # 1. Compute chunk centers for each point
+        centers = []
+        required = set()
+        for (px, py) in points:
+            p_cx = int(_math.floor(px)) // cs
+            p_cy = int(_math.floor(py)) // cs
+            centers.append((p_cx, p_cy))
+            for dy in range(-LOAD_RADIUS_CHUNKS, LOAD_RADIUS_CHUNKS + 1):
+                for dx in range(-LOAD_RADIUS_CHUNKS, LOAD_RADIUS_CHUNKS + 1):
+                    required.add((p_cx + dx, p_cy + dy))
+        # 1b. Load union
+        for (cx, cy) in required:
+            if (cx, cy) not in self.loaded_chunks:
+                self.loaded_chunks[(cx, cy)] = Chunk(cx, cy)
 
-        # 1. Load/Generate required buffer chunks
-        for cy in range(p_cy - LOAD_RADIUS_CHUNKS, p_cy + LOAD_RADIUS_CHUNKS + 1):
-            for cx in range(p_cx - LOAD_RADIUS_CHUNKS, p_cx + LOAD_RADIUS_CHUNKS + 1):
-                if (cx, cy) not in self.loaded_chunks:
-                    self.loaded_chunks[(cx, cy)] = Chunk(cx, cy)
-
-        # 2. Unload & Save chunks far out of range (host only saves)
+        # 2. Unload only if far from ALL centers (host only saves)
+        limit = LOAD_RADIUS_CHUNKS + 1
         to_unload = []
-        for (cx, cy), chunk in self.loaded_chunks.items():
-            if abs(cx - p_cx) > LOAD_RADIUS_CHUNKS + 1 or abs(cy - p_cy) > LOAD_RADIUS_CHUNKS + 1:
+        for (cx, cy), chunk in list(self.loaded_chunks.items()):
+            far_from_all = True
+            for (p_cx, p_cy) in centers:
+                if abs(cx - p_cx) <= limit and abs(cy - p_cy) <= limit:
+                    far_from_all = False
+                    break
+            if far_from_all:
                 if self.save_enabled:
-                    chunk.save_to_xml()
+                    try:
+                        chunk.save_to_xml()
+                    except Exception:
+                        pass
                 to_unload.append((cx, cy))
-
         for key in to_unload:
-            del self.loaded_chunks[key]
+            self.loaded_chunks.pop(key, None)
 
     def save_all(self):
         if not self.save_enabled:
@@ -1215,21 +1273,23 @@ def main():
             world.save_enabled = not _is_client()
         except Exception:
             pass
-        # Host: cover all players; client/single: local + remotes for visibility
+        # Use multi-point update to avoid thrashing when players far apart
         try:
-            # always around local
-            world.update_loaded_chunks(player.x, player.y)
-            # also around remotes when in MP
+            pts = [(player.x, player.y)]
             if _is_multiplayer():
-                for pid, rp in list(mp_registry.players.items()):
-                    if pid == player.player_id:
+                for pid2, rp2 in list(mp_registry.players.items()):
+                    if pid2 == player.player_id:
                         continue
                     try:
-                        world.update_loaded_chunks(float(rp.x), float(rp.y))
+                        pts.append((float(rp2.x), float(rp2.y)))
                     except Exception:
                         pass
+            world.update_loaded_chunks_multi(pts)
         except Exception:
-            world.update_loaded_chunks(player.x, player.y)
+            try:
+                world.update_loaded_chunks(player.x, player.y)
+            except Exception:
+                pass
 
         # Player fog memory is updated during render via get_display(); no separate discovery step needed.
         # Keep this hook in case PlayerFog needs periodic priming (currently handled lazily).
@@ -1350,7 +1410,7 @@ def main():
                                     screen.blit(fog_overlay, (screen_x, screen_y))
             p_screen_x = (player.x - cam_x) * tile_w - tile_w / 2
             p_screen_y = (player.y - cam_y) * tile_h - tile_h / 2
-            p_surf = _get_player_sprite(player.player_id)
+            p_surf = _get_player_sprite(player.player_id, mp_registry)
             if p_surf is None:
                 p_surf = sprites.get("player")
             if p_surf:
@@ -1369,7 +1429,7 @@ def main():
                         rx = (rp.x - cam_x) * tile_w - tile_w / 2
                         ry = (rp.y - cam_y) * tile_h - tile_h / 2
                         if -tile_w <= rx <= SCREEN_WIDTH and -tile_h <= ry <= SCREEN_HEIGHT:
-                            rs = _get_player_sprite(pid)
+                            rs = _get_player_sprite(pid, mp_registry)
                             if rs is None:
                                 rs = sprites.get("player")
                             if rs:

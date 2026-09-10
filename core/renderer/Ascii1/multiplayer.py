@@ -55,7 +55,7 @@ def find_free_tcp_port(start=DEFAULT_TCP_PORT) -> int:
     for p in range(start, start + 20):
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            # No REUSEADDR for TCP — need exclusive bind to avoid duplicate hosts on same port
             s.bind(("", p))
             s.close()
             return p
@@ -279,9 +279,8 @@ class HostSession:
     def start(self):
         if self._running:
             return
-        # bind TCP
+        # bind TCP — exclusive, no REUSEADDR to prevent duplicate hosts on same port
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         try:
             s.bind(("", self.tcp_port))
         except Exception as e:
@@ -351,8 +350,8 @@ class HostSession:
                     self.clients[pid] = client_sock
                 with self._inbox_lock:
                     self.inbox[pid] = {"dx": 0, "dy": 0, "name": req_name, "player_obj": p}
-                # Send welcome
-                _send_packet(client_sock, {"t": "welcome", "your_id": pid, "host_id": self.host_player.player_id, "seed": self._get_seed()})
+                # Send welcome with assigned spawn position
+                _send_packet(client_sock, {"t": "welcome", "your_id": pid, "host_id": self.host_player.player_id, "seed": self._get_seed(), "x": float(p.x), "y": float(p.y)})
                 print(f"[mp] Client {req_name} ({addr}) assigned {pid}")
                 # Spawn reader thread for this client
                 threading.Thread(target=self._client_reader, args=(pid, client_sock), daemon=True, name=f"MTT-Reader-{pid}").start()
@@ -465,6 +464,16 @@ class ClientSession:
             self.host_id = welcome.get("host_id", "host")
             if self.my_id:
                 self.local_player.player_id = self.my_id
+            # Apply assigned spawn position from host (fixes same-PC same-copy spawn same spot)
+            if "x" in welcome and "y" in welcome:
+                try:
+                    self.local_player.x = float(welcome["x"])
+                    self.local_player.y = float(welcome["y"])
+                    # also update name if provided
+                    if "name" in welcome:
+                        self.local_player.name = str(welcome["name"])[:16]
+                except Exception:
+                    pass
             s.settimeout(10.0)
             self.sock = s
             self._running = True
