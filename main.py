@@ -1,3 +1,4 @@
+import subprocess
 import sys
 import time
 
@@ -45,11 +46,44 @@ def launch_ascii_renderer():
     with console.status(
         "[bold green]Loading environment maps and shader buffers...", spinner="dots"
     ):
-        time.sleep(2)
+        time.sleep(0.6)
 
-    console.print(
-        "[bold cyan]>>> ASCII Renderer actively running.[/bold cyan] (Press Enter to stop)\n"
-    )
+    console.print("[bold cyan]>>> Launching ASCII Renderer...[/bold cyan]")
+    console.print("[dim]Close the pygame window or press Esc to return to the launcher.[/dim]\n")
+
+    # Prefer subprocess so the pygame main loop + sys.exit() doesn't kill the launcher.
+    # Falls back to direct import if subprocess fails (e.g. in embedded test harnesses).
+    try:
+        result = subprocess.run([sys.executable, "-m", "core.renderer.Ascii1.ascii"])
+        if result.returncode == 0:
+            console.print("[green]Renderer closed cleanly.[/green]")
+        else:
+            console.print(
+                f"[yellow]Renderer exited with code {result.returncode}.[/yellow]"
+            )
+    except KeyboardInterrupt:
+        console.print("\n[yellow]Renderer interrupted by user.[/yellow]")
+    except Exception as exc:
+        console.print(f"[red]Subprocess launch failed ({exc}), trying direct import...[/red]")
+        try:
+            from core.renderer.Ascii1.ascii import main as ascii_main
+
+            try:
+                ascii_main()
+            except SystemExit as se:
+                # ascii.py calls sys.exit() on clean quit — treat 0/None as success
+                code = se.code if se.code is not None else 0
+                if code == 0:
+                    console.print("[green]Renderer closed cleanly.[/green]")
+                else:
+                    console.print(f"[yellow]Renderer exited with code {code}.[/yellow]")
+        except SystemExit:
+            pass
+        except Exception as exc2:
+            console.print(f"[red]Failed to launch ASCII renderer: {exc2}[/red]")
+            console.print("[dim]Tip: run manually with: python -m core.renderer.Ascii1.ascii[/dim]")
+
+    console.print()
     Prompt.ask("[dim]Press Enter to return to main menu[/dim]", default="")
 
 
