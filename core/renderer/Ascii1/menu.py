@@ -179,6 +179,14 @@ class MTTMenu:
             return ["save", "multiplayer", "quit", "resume"]
         else:
             acts = ["host"]
+            # Disconnect option when hosting or connected as client
+            try:
+                hosting = self.host_session is not None and getattr(self.host_session, "is_running", lambda: False)()
+                connected = self.client_session is not None and getattr(self.client_session, "is_connected", lambda: False)()
+                if hosting or connected:
+                    acts.append("disconnect")
+            except Exception:
+                pass
             # add dynamic hosts
             for h in self._hosts_cache:
                 acts.append(f"join:{h.ip}:{h.port}")
@@ -205,6 +213,8 @@ class MTTMenu:
             self._poll_discovery(force=True)
         elif act == "host":
             self.pending_action = "host"
+        elif act == "disconnect":
+            self.pending_action = "disconnect"
         elif act == "back":
             self.state = "main"
             self.selected = 1
@@ -344,6 +354,8 @@ class MTTMenu:
             self._btn_rects.append((host_rect, "host"))
             # If already hosting, show different label
             hosting = self.host_session is not None and getattr(self.host_session, "is_running", lambda: False)()
+            connected = self.client_session is not None and getattr(self.client_session, "is_connected", lambda: False)()
+            has_disconnect = hosting or connected
             label = "Hosting — Stop" if hosting else "Host New LAN Game"
             color = _BTN_ACTIVE if hover else (40, 90, 50) if not hosting else (80, 70, 40)
             try:
@@ -355,8 +367,27 @@ class MTTMenu:
                 ls = btn_font.render(label, True, _TEXT)
                 screen.blit(ls, (host_rect.x + 16, host_rect.y + (btn_h - ls.get_height()) // 2))
 
-            # Status line if hosting/client
-            status_y = hy + btn_h + 8
+            # Disconnect button (only when hosting or connected)
+            disconnect_rect = None
+            if has_disconnect:
+                dh = 38
+                disconnect_rect = pygame.Rect(hx, hy + btn_h + 6, btn_w, dh)
+                disc_sel_idx = 1
+                hover_disc = (self.selected == disc_sel_idx)
+                self._btn_rects.append((disconnect_rect, "disconnect"))
+                dcol = (110, 40, 40) if hover_disc else (70, 30, 30)
+                try:
+                    pygame.draw.rect(screen, dcol, disconnect_rect, border_radius=8)
+                    pygame.draw.rect(screen, _BORDER, disconnect_rect, 1, border_radius=8)
+                except Exception:
+                    pygame.draw.rect(screen, dcol, disconnect_rect)
+                if btn_font:
+                    dlabel = "Disconnect" + (" (Stop Host)" if hosting else " (Leave Game)")
+                    dls = btn_font.render(dlabel, True, _TEXT)
+                    screen.blit(dls, (disconnect_rect.x + 16, disconnect_rect.y + (dh - dls.get_height()) // 2))
+                status_y = disconnect_rect.bottom + 8
+            else:
+                status_y = hy + btn_h + 8
             if small_font:
                 if hosting:
                     try:
@@ -375,10 +406,9 @@ class MTTMenu:
                     st = small_font.render(f"Hosting on {lip}:{self.host_session.tcp_port}  players={1+len(self.host_session.clients)}", True, _TEXT_DIM)
                     screen.blit(st, (hx, status_y))
                     status_y += 16
-                elif self.client_session is not None and getattr(self.client_session, "is_connected", lambda: False)():
+                elif connected:
                     st = small_font.render(f"Connected to {self.client_session.host_ip}:{self.client_session.host_port} as {self.client_session.my_id}", True, _TEXT_DIM)
                     screen.blit(st, (hx, status_y))
-                    # also add disconnect button as part of main btns? Instead treat Back as disconnect
                     status_y += 16
                 else:
                     st = small_font.render("Scanning LAN for active games … (UDP broadcast)", True, _TEXT_DIM)
@@ -399,11 +429,12 @@ class MTTMenu:
             except Exception:
                 pygame.draw.rect(screen, (22, 22, 28), list_rect)
 
-            # Host entries
-            self._btn_rects = [(host_rect, "host")]  # reset but keep host
-            # We'll add host entries after; selected index interpretation:
-            # selected 0 = Host button, 1..N = hosts, last = Back
-            # Need to map selection correctly
+            # Host entries — rebuild _btn_rects correctly with disconnect offset
+            # Preserve host + disconnect rects already added
+            base_btns = list(self._btn_rects)
+            self._host_rects = []
+            # offset for hosts selection index
+            host_offset = 1 + (1 if has_disconnect else 0)
             hosts = self._hosts_cache
             if not hosts:
                 if tiny_font:
@@ -417,8 +448,7 @@ class MTTMenu:
                         break
                     erect = pygame.Rect(hx + 6, ey, btn_w - 12, entry_h)
                     act = f"join:{h.ip}:{h.port}"
-                    # selection index: host button is 0, so hosts start at 1
-                    sel_idx = idx + 1
+                    sel_idx = host_offset + idx
                     hover = (self.selected == sel_idx)
                     self._host_rects.append((erect, act))
                     col = _BTN_HOVER if hover else (35, 35, 50)
@@ -440,8 +470,7 @@ class MTTMenu:
             back_h = 38
             back_y = panel_y + panel_h - back_h - 18
             back_rect = pygame.Rect(panel_x + 30, back_y, back_w, back_h)
-            # Back is last in actions: index = 1+len(hosts)
-            back_sel_idx = 1 + len(hosts)
+            back_sel_idx = host_offset + len(hosts)
             hover_back = (self.selected == back_sel_idx)
             self._btn_rects.append((back_rect, "back"))
             bcol = _BTN_HOVER if hover_back else _BTN_BG

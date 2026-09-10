@@ -1098,6 +1098,33 @@ def main():
                             host_session = None
                     if menu:
                         menu.set_sessions(host_session, client_session)
+                elif act == "disconnect":
+                    if _is_host():
+                        try:
+                            host_session.stop()
+                        except Exception:
+                            pass
+                        host_session = None
+                        try:
+                            mp_registry.players = {player.player_id: player}
+                        except Exception:
+                            pass
+                        print("[mp] Disconnected — stopped hosting, cleared remote players")
+                    elif _is_client():
+                        try:
+                            client_session.disconnect()
+                        except Exception:
+                            pass
+                        client_session = None
+                        try:
+                            mp_registry.players = {player.player_id: player}
+                        except Exception:
+                            pass
+                        print("[mp] Disconnected — left game, cleared remote players")
+                    else:
+                        print("[mp] Not connected")
+                    if menu:
+                        menu.set_sessions(host_session, client_session)
                 elif act.startswith("join:"):
                     # act is join:ip:port
                     try:
@@ -1107,13 +1134,17 @@ def main():
                         jip, jport = None, None
                     if jip:
                         if _is_host():
-                            print("[mp] Stop host before joining as client")
+                            print("[mp] Stop host before joining as client — disconnect first")
                         elif _is_client():
                             try:
                                 client_session.disconnect()
                             except Exception:
                                 pass
                             client_session = None
+                            try:
+                                mp_registry.players = {player.player_id: player}
+                            except Exception:
+                                pass
                         try:
                             if ClientSession is None:
                                 raise ImportError("ClientSession not available")
@@ -1186,6 +1217,15 @@ def main():
         if _is_host() and host_session is not None:
             try:
                 inputs = host_session.consume_inputs()
+                # Prune ghost players that disconnected (removed from inbox but still in registry)
+                try:
+                    ghost_pids = [pid for pid in list(mp_registry.players.keys()) if pid != player.player_id and pid not in inputs]
+                    for gid in ghost_pids:
+                        mp_registry.players.pop(gid, None)
+                        if debug:
+                            print(f"[mp] Removed ghost player {gid}")
+                except Exception:
+                    pass
                 for pid, info in inputs.items():
                     p = info.get("player_obj")
                     if p is None:
@@ -1213,59 +1253,96 @@ def main():
                 if debug:
                     print(f"[mp] host tick error: {e}")
         elif _is_client() and client_session is not None:
-            # Client: poll authoritative state
+            # Client: poll authoritative state + auto-disconnect on timeout/ghost cleanup
             try:
-                st = client_session.poll_state()
-                if st and "players" in st:
-                    # apply to registry
-                    for pid, pdata in st["players"].items():
-                        if pid == player.player_id:
-                            # authoritative correction for local (interpolate lightly)
-                            try:
-                                player.x = float(pdata.get("x", player.x))
-                                player.y = float(pdata.get("y", player.y))
-                                player.vx = float(pdata.get("vx", player.vx))
-                                player.vy = float(pdata.get("vy", player.vy))
-                            except Exception:
-                                pass
-                        else:
-                            # remote (including host)
-                            if pid not in mp_registry.players:
+                # Auto-disconnect if no state for >6s (ghost host gone)
+                try:
+                    if hasattr(client_session, "has_timed_out") and client_session.has_timed_out(timeout=6.0):
+                        print("[mp] Auto-disconnect: host timed out (no state)")
+                        try:
+                            client_session.disconnect()
+                        except Exception:
+                            pass
+                        client_session = None
+                        if menu:
+                            menu.set_sessions(host_session, client_session)
+                        try:
+                            mp_registry.players = {player.player_id: player}
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+                if client_session is not None:
+                    st = client_session.poll_state()
+                    if st and "players" in st:
+                        # apply to registry
+                        for pid, pdata in st["players"].items():
+                            if pid == player.player_id:
+                                # authoritative correction for local (interpolate lightly)
                                 try:
-                                    from player import Player as _P
-                                except Exception:
-                                    try:
-                                        from core.renderer.Ascii1.player import Player as _P
-                                    except Exception:
-                                        _P = None
-                                if _P:
-                                    np = _P(player_id=pid, x=float(pdata.get("x", 0)), y=float(pdata.get("y", 0)))
-                                    mp_registry.players[pid] = np
-                            if pid in mp_registry.players:
-                                try:
-                                    mp_registry.players[pid].apply_network_state(pdata)
+                                    player.x = float(pdata.get("x", player.x))
+                                    player.y = float(pdata.get("y", player.y))
+                                    player.vx = float(pdata.get("vx", player.vx))
+                                    player.vy = float(pdata.get("vy", player.vy))
                                 except Exception:
                                     pass
-                    # remove disconnected players
-                    state_ids = set(st["players"].keys())
-                    for pid in list(mp_registry.players.keys()):
-                        if pid not in state_ids and pid != player.player_id:
-                            # keep for now? Remove if not in state for a while - simple immediate
+                            else:
+                                # remote (including host)
+                                if pid not in mp_registry.players:
+                                    try:
+                                        from player import Player as _P
+                                    except Exception:
+                                        try:
+                                            from core.renderer.Ascii1.player import Player as _P
+                                        except Exception:
+                                            _P = None
+                                    if _P:
+                                        np = _P(player_id=pid, x=float(pdata.get("x", 0)), y=float(pdata.get("y", 0)))
+                                        mp_registry.players[pid] = np
+                                if pid in mp_registry.players:
+                                    try:
+                                        mp_registry.players[pid].apply_network_state(pdata)
+                                    except Exception:
+                                        pass
+                        # remove ghost players no longer in authoritative state
+                        state_ids = set(st["players"].keys())
+                        for pid in list(mp_registry.players.keys()):
+                            if pid not in state_ids and pid != player.player_id:
+                                try:
+                                    mp_registry.players.pop(pid, None)
+                                    if debug:
+                                        print(f"[mp] Removed ghost remote {pid}")
+                                except Exception:
+                                    pass
+                    # Detect disconnect (socket closed or read error)
+                    if not client_session.is_connected():
+                        print("[mp] Disconnected from host")
+                        try:
+                            reason = client_session.get_disconnect_reason() if hasattr(client_session, "get_disconnect_reason") else ""
+                            if reason:
+                                print(f"[mp] Reason: {reason}")
+                        except Exception:
                             pass
-                # Detect disconnect
-                if not client_session.is_connected():
-                    print("[mp] Disconnected from host")
-                    client_session = None
-                    if menu:
-                        menu.set_sessions(host_session, client_session)
-                    # keep only local in registry
-                    try:
-                        mp_registry.players = {player.player_id: player}
-                    except Exception:
-                        pass
+                        client_session = None
+                        if menu:
+                            menu.set_sessions(host_session, client_session)
+                        # keep only local in registry
+                        try:
+                            mp_registry.players = {player.player_id: player}
+                        except Exception:
+                            pass
             except Exception as e:
                 if debug:
                     print(f"[mp] client tick error: {e}")
+                # On any client tick exception, force disconnect cleanup if socket dead
+                try:
+                    if client_session is not None and not client_session.is_connected():
+                        client_session = None
+                        mp_registry.players = {player.player_id: player}
+                        if menu:
+                            menu.set_sessions(host_session, client_session)
+                except Exception:
+                    pass
 
         # --- UPDATE CHUNKS (float position) ---
         # Clients don't save (host authoritative)

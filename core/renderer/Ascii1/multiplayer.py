@@ -63,6 +63,93 @@ def find_free_tcp_port(start=DEFAULT_TCP_PORT) -> int:
             continue
     return start
 
+def find_safe_spawn_pos(world, base_x: float, base_y: float, max_radius: int = 12, player_radius: float = 0.30, existing_players=None):
+    """
+    Find a walkable spawn position near (base_x, base_y) using expanding ring search.
+    Uses world.get_tile walkability + Player.can_move_to (radius check) to avoid Trees/Water/corners.
+    Also avoids overlapping existing_players by > 0.8 tiles.
+    Returns (x, y) float centered on tile. If no safe found, returns base_x+0.5 offset fallback.
+    """
+    import math as _math
+    # Lazy import Player for radius check; fallback to tile walkable only
+    PlayerCls = None
+    try:
+        from .player import Player as _P
+        PlayerCls = _P
+    except Exception:
+        try:
+            from core.renderer.Ascii1.player import Player as _P2  # type: ignore
+            PlayerCls = _P2
+        except Exception:
+            try:
+                from player import Player as _P3  # type: ignore
+                PlayerCls = _P3
+            except Exception:
+                PlayerCls = None
+
+    def _is_safe(nx: float, ny: float) -> bool:
+        # Avoid too close to existing players
+        if existing_players:
+            try:
+                for _pid, _pl in existing_players.items():
+                    try:
+                        if _math.hypot(float(getattr(_pl, 'x', 0)) - nx, float(getattr(_pl, 'y', 0)) - ny) < 1.0:
+                            return False
+                    except Exception:
+                        continue
+            except Exception:
+                pass
+        # Tile walkability + radius check
+        if PlayerCls is not None:
+            try:
+                tmp = PlayerCls(player_id="__spawn_probe__", x=nx, y=ny, radius=player_radius)
+                if not tmp.can_move_to(world, nx, ny):
+                    return False
+                # Also ensure center tile itself walkable (can_move_to may pass if radius still clips)
+                return True
+            except Exception:
+                pass
+        # Fallback: check center tile walkable only
+        try:
+            tile = world.get_tile(nx, ny)
+            return bool(tile and getattr(tile, 'walkable', False))
+        except Exception:
+            return False
+
+    # Candidate ordering: expanding squares, sorted by Euclidean distance
+    # Center snap to tile center
+    try:
+        base_tx = int(_math.floor(base_x))
+        base_ty = int(_math.floor(base_y))
+    except Exception:
+        return float(base_x) + 1.0, float(base_y) + 1.0
+
+    # First try base tile itself (host position may be safe but offset to avoid overlap)
+    # Prefer host+1 offset if safe, else spiral
+    candidates = []
+    for r in range(0, max_radius + 1):
+        for dy in range(-r, r + 1):
+            for dx in range(-r, r + 1):
+                if r != 0 and abs(dx) != r and abs(dy) != r:
+                    continue  # only ring
+                wx = base_tx + dx
+                wy = base_ty + dy
+                cx = float(wx) + 0.5
+                cy = float(wy) + 0.5
+                # distance for sorting within ring
+                dist = _math.hypot(cx - base_x, cy - base_y)
+                candidates.append((dist, cx, cy))
+        # check ring in order of distance
+        candidates.sort(key=lambda t: t[0])
+        for _, cx, cy in candidates:
+            if _is_safe(cx, cy):
+                return cx, cy
+        candidates = []  # reset for next ring; actually we already checked sorted batch per ring, but to avoid rechecking
+        # Instead collect per ring and check immediately; above does.
+
+    # Fallback
+    return float(base_x) + 1.0, float(base_y) + 1.0
+
 def _send_packet(sock: socket.socket, obj: dict):
     try:
         data = json.dumps(obj).encode("utf-8")
@@ -336,12 +423,28 @@ class HostSession:
                 # Assign id
                 pid = f"p{self._next_client_id}"
                 self._next_client_id += 1
-                # Create remote player on server side
+                # Create remote player on server side — find safe spawn near host (collision-checked)
                 try:
                     from .player import Player
                 except Exception:
                     from core.renderer.Ascii1.player import Player
-                p = Player(player_id=pid, x=float(self.host_player.x) + 1, y=float(self.host_player.y) + 1, name=req_name)
+                # Gather existing player positions to avoid overlapping spawns
+                try:
+                    existing = {}
+                    # host player
+                    try:
+                        existing[self.host_player.player_id] = self.host_player
+                    except Exception:
+                        pass
+                    with self._inbox_lock:
+                        for _k, _v in self.inbox.items():
+                            _po = _v.get("player_obj")
+                            if _po is not None:
+                                existing[_k] = _po
+                except Exception:
+                    existing = None
+                sx, sy = find_safe_spawn_pos(self.world, float(self.host_player.x), float(self.host_player.y), existing_players=existing)
+                p = Player(player_id=pid, x=float(sx), y=float(sy), name=req_name)
                 # Register in world? Use registry via HostSession.players dict (ascii will hold registry)
                 # We'll store in a simple dict and let ascii's main loop integrate.
                 # For now keep reference; ascii will poll get_all_players
@@ -447,6 +550,8 @@ class ClientSession:
         self.my_id: Optional[str] = None
         self.host_id: Optional[str] = None
         self._seq = 0
+        self._last_state_time: float = 0.0
+        self._disconnect_reason: Optional[str] = None
 
     def connect(self, timeout=5.0) -> bool:
         try:
@@ -477,6 +582,7 @@ class ClientSession:
             s.settimeout(10.0)
             self.sock = s
             self._running = True
+            self._last_state_time = time.time()
             self._reader_thread = threading.Thread(target=self._read_loop, daemon=True, name="MTT-ClientReader")
             self._reader_thread.start()
             print(f"[mp] Client connected as {self.my_id} to {self.host_ip}:{self.host_port}")
@@ -503,6 +609,18 @@ class ClientSession:
     def is_connected(self):
         return self._running and self.sock is not None
 
+    def has_timed_out(self, timeout: float = 6.0) -> bool:
+        """True if no state received for `timeout` seconds (auto-disconnect ghost detection)."""
+        if not self._running:
+            return False
+        try:
+            return (time.time() - self._last_state_time) > timeout
+        except Exception:
+            return False
+
+    def get_disconnect_reason(self) -> Optional[str]:
+        return self._disconnect_reason
+
     def _read_loop(self):
         assert self.sock is not None
         while self._running:
@@ -511,10 +629,12 @@ class ClientSession:
                 if pkt.get("t") == "state":
                     with self._lock:
                         self.latest_state = pkt
+                    self._last_state_time = time.time()
                 elif pkt.get("t") == "pong":
                     pass
             except Exception as e:
                 print(f"[mp] Client read error: {e}")
+                self._disconnect_reason = str(e)
                 self._running = False
                 break
 
