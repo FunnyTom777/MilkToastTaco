@@ -342,7 +342,7 @@ class HostSession:
                     from .player import Player
                 except Exception:
                     from core.renderer.Ascii1.player import Player
-                p = Player(player_id=pid, x=float(self.host_player.x) + 1, y=float(self.host_player.y) + 1)
+                p = Player(player_id=pid, x=float(self.host_player.x) + 1, y=float(self.host_player.y) + 1, name=req_name)
                 # Register in world? Use registry via HostSession.players dict (ascii will hold registry)
                 # We'll store in a simple dict and let ascii's main loop integrate.
                 # For now keep reference; ascii will poll get_all_players

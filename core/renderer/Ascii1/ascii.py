@@ -352,6 +352,7 @@ def _get_assets_base():
         return Path.cwd() / "assets"
 
 SPRITE_VARIANTS = {}  # biome -> list[(Surface, weight)]
+PLAYER_SKINS = {}  # player skin name -> Surface (e.g. player1, player2_red, player3_blue, player_old)
 
 def _load_img(path, tile_size):
     img = pygame.image.load(str(path))
@@ -369,7 +370,7 @@ def load_sprites(tile_size=None):
     - Variant sprites (grass_plain2, flowers, rocky_dirt, wheat) are auto-detected and
       used for deterministic per-tile variation in sprite mode.
     """
-    global SPRITES, MISSING_SPRITES, SPRITE_VARIANTS
+    global SPRITES, MISSING_SPRITES, SPRITE_VARIANTS, PLAYER_SKINS
     if tile_size is None:
         tile_size = TILE_SIZE
     base = _get_assets_base() / "tiles" / "nature"
@@ -394,6 +395,29 @@ def load_sprites(tile_size=None):
                 missing.append(f"{biome}: {path.name} (load failed: {e})")
         else:
             missing.append(f"{biome}: {path.name} (missing) -> {path}")
+
+    # ---- Player skins for multiplayer (player1, player2_red, player3_blue, playerold) ----
+    PLAYER_SKINS.clear()
+    skin_files = {
+        "player1": base / "player1.png",
+        "player2_red": base / "player2_red.png",
+        "player3_blue": base / "player3_blue.png",
+        "player_old": base / "playerold.png",
+    }
+    for skin_name, path in skin_files.items():
+        if path.is_file():
+            try:
+                PLAYER_SKINS[skin_name] = _load_img(path, tile_size)
+            except Exception as e:
+                missing.append(f"player_skin {skin_name}: {path.name} (load failed: {e})")
+        else:
+            # only report if not the optional old/red/blue skins
+            if skin_name == "player1":
+                missing.append(f"player_skin {skin_name}: {path.name} (missing) -> {path}")
+    # ensure fallback: if we have any skin, make sure 'player' key exists in sprites (already)
+    if "player" not in sprites and PLAYER_SKINS:
+        # use first available
+        sprites["player"] = next(iter(PLAYER_SKINS.values()))
 
     # ---- Variant sprites — deterministic per-tile variation ----
     # Each entry: biome -> list of (path, weight)
@@ -490,6 +514,47 @@ def _pick_variant_sprite(biome, wx, wy):
 def get_missing_sprites_report():
     """Return list of missing sprite suggestions (call after load_sprites)."""
     return list(MISSING_SPRITES)
+
+def _get_player_sprite(pid: str):
+    """Deterministic skin per player_id from PLAYER_SKINS. Falls back to SPRITES['player']."""
+    if PLAYER_SKINS:
+        order = ["player1", "player2_red", "player3_blue", "player_old"]
+        available = [k for k in order if k in PLAYER_SKINS]
+        if not available:
+            available = list(PLAYER_SKINS.keys())
+        try:
+            h = hash(str(pid)) & 0xFFFFFFFF
+        except Exception:
+            h = 0
+        # stable: ensure same pid always maps to same index, but distribute distinct ids
+        idx = h % len(available)
+        return PLAYER_SKINS[available[idx]]
+    return SPRITES.get("player")
+
+def _draw_nametag(screen, x: float, y: float, name: str, tile_h: int):
+    """Draw name tag just above player position (x,y = screen top-left of sprite). Centered."""
+    if not name or not screen:
+        return
+    try:
+        # Use small font for nametag
+        font = pygame.font.SysFont("Courier", max(10, tile_h // 2), bold=True)
+        # truncate
+        name = str(name)[:16]
+        surf = font.render(name, True, (255, 255, 255))
+        # background pill
+        pad_x, pad_y = 4, 2
+        bg_w = surf.get_width() + pad_x * 2
+        bg_h = surf.get_height() + pad_y * 2
+        bg_x = int(x + tile_h // 2 - bg_w // 2)  # center over sprite (assume square tile)
+        bg_y = int(y - bg_h - 2)
+        # clamp to screen
+        bg = pygame.Surface((bg_w, bg_h), pygame.SRCALPHA)
+        bg.fill((0, 0, 0, 160))
+        screen.blit(bg, (bg_x, bg_y))
+        pygame.draw.rect(screen, (80, 80, 100), (bg_x, bg_y, bg_w, bg_h), 1)
+        screen.blit(surf, (bg_x + pad_x, bg_y + pad_y))
+    except Exception:
+        pass
 
 # --- CONFIGURATION (rendering only — terrain is in generation.xml) ---
 FONT_SIZE = 20
@@ -768,6 +833,16 @@ def main():
         if float(player.x).is_integer() and float(player.y).is_integer():
             player.x = float(player.x) + 0.5
             player.y = float(player.y) + 0.5
+    # Load persistent MP display name (host-authoritative saves handle world, but name is personal per install)
+    try:
+        import pathlib
+        npath = pathlib.Path(_tg.SAVE_DIR) / "player_name.txt"
+        if npath.is_file():
+            txt = npath.read_text(encoding='utf-8').strip()[:16]
+            if txt:
+                player.name = txt
+    except Exception:
+        pass
     controller = PlayerController(player)
 
     # --- Multiplayer + Pause Menu (Tab) ---
@@ -799,6 +874,11 @@ def main():
             menu = MTTMenu(SCREEN_WIDTH, SCREEN_HEIGHT)
             if discovery:
                 menu.set_discovery(discovery)
+            # sync player name to menu
+            try:
+                menu.player_name = str(getattr(player, 'name', 'Player'))[:16]
+            except Exception:
+                pass
             print("[mp] Menu (TAB) ready — Save / Multiplayer / Quit")
         except Exception as e:
             print(f"[mp] Menu init failed: {e}")
@@ -950,11 +1030,11 @@ def main():
                         try:
                             if HostSession is None:
                                 raise ImportError("HostSession not available")
-                            host_session = HostSession(world, player)
+                            host_session = HostSession(world, player, host_name=getattr(player, 'name', 'Host'))
                             host_session.start()
                             # registry already has host
                             lip = get_local_ip() if get_local_ip else "?"
-                            print(f"[mp] Hosting on {lip}:{host_session.tcp_port}")
+                            print(f"[mp] Hosting on {lip}:{host_session.tcp_port} as {getattr(player, 'name', player.player_id)}")
                         except Exception as e:
                             print(f"[mp] Host start failed: {e}")
                             host_session = None
@@ -979,7 +1059,7 @@ def main():
                         try:
                             if ClientSession is None:
                                 raise ImportError("ClientSession not available")
-                            cs = ClientSession(jip, jport, player, player_name="Player")
+                            cs = ClientSession(jip, jport, player, player_name=getattr(player, 'name', 'Player'))
                             ok = cs.connect(timeout=4.0)
                             if ok:
                                 client_session = cs
@@ -997,6 +1077,32 @@ def main():
                             client_session = None
                         if menu:
                             menu.set_sessions(host_session, client_session)
+
+            # Sync MP display name from menu to player (editable in multiplayer menu)
+            if menu is not None:
+                try:
+                    mname = str(getattr(menu, 'player_name', '') or '').strip()[:16]
+                    if mname and mname != getattr(player, 'name', ''):
+                        player.name = mname
+                        if player.player_id in mp_registry.players:
+                            mp_registry.players[player.player_id].name = mname
+                        # keep host beacon name in sync
+                        if host_session is not None:
+                            try:
+                                host_session.host_name = mname
+                                host_session.beacon.host_name = mname
+                            except Exception:
+                                pass
+                        # persist locally (personal, not world-save)
+                        try:
+                            import pathlib
+                            npath = pathlib.Path(_tg.SAVE_DIR) / "player_name.txt"
+                            npath.parent.mkdir(parents=True, exist_ok=True)
+                            npath.write_text(mname, encoding='utf-8')
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
 
         # --- FREE MOVEMENT + MULTIPLAYER TICK ---
         import pygame as _pygame
@@ -1037,11 +1143,11 @@ def main():
                     # simulate remote players
                     if not is_paused:
                         p.update(dt, world)
-                # Now build authoritative state snapshot for all players
+                # Now build authoritative state snapshot for all players (include name for nametag)
                 all_state = {}
                 for pid, p in mp_registry.players.items():
                     try:
-                        all_state[pid] = {"x": float(p.x), "y": float(p.y), "vx": float(p.vx), "vy": float(p.vy)}
+                        all_state[pid] = {"x": float(p.x), "y": float(p.y), "vx": float(p.vx), "vy": float(p.vy), "name": str(getattr(p, 'name', pid))}
                     except Exception:
                         pass
                 host_session.broadcast_state(all_state)
@@ -1175,6 +1281,11 @@ def main():
             p_screen_y = (player.y - cam_y) * tile_h - tile_h / 2
             p_surf = font.render(GLYPHS['player'], True, COLOR_PLAYER)
             screen.blit(p_surf, (p_screen_x, p_screen_y))
+            if _is_multiplayer():
+                try:
+                    _draw_nametag(screen, p_screen_x, p_screen_y, getattr(player, 'name', player.player_id), tile_h)
+                except Exception:
+                    pass
             # remote players (MP)
             if _is_multiplayer():
                 try:
@@ -1185,10 +1296,12 @@ def main():
                         ry = (rp.y - cam_y) * tile_h - tile_h / 2
                         # cull off-screen
                         if -tile_w <= rx <= SCREEN_WIDTH and -tile_h <= ry <= SCREEN_HEIGHT:
-                            # simple fog cull: don't draw remote if outside local fog radius and no memory? Keep visible always for MP fairness (see others even in fog?)
-                            # We'll draw but dim if fogged? For now always draw
                             rsurf = font.render(GLYPHS.get('player','@'), True, (255, 100, 100))
                             screen.blit(rsurf, (rx, ry))
+                            try:
+                                _draw_nametag(screen, rx, ry, getattr(rp, 'name', pid), tile_h)
+                            except Exception:
+                                pass
                 except Exception:
                     pass
         else:
@@ -1237,9 +1350,16 @@ def main():
                                     screen.blit(fog_overlay, (screen_x, screen_y))
             p_screen_x = (player.x - cam_x) * tile_w - tile_w / 2
             p_screen_y = (player.y - cam_y) * tile_h - tile_h / 2
-            p_surf = sprites.get("player")
+            p_surf = _get_player_sprite(player.player_id)
+            if p_surf is None:
+                p_surf = sprites.get("player")
             if p_surf:
                 screen.blit(p_surf, (p_screen_x, p_screen_y))
+            if _is_multiplayer():
+                try:
+                    _draw_nametag(screen, p_screen_x, p_screen_y, getattr(player, 'name', player.player_id), tile_h)
+                except Exception:
+                    pass
             # remote players sprites
             if _is_multiplayer():
                 try:
@@ -1249,17 +1369,17 @@ def main():
                         rx = (rp.x - cam_x) * tile_w - tile_w / 2
                         ry = (rp.y - cam_y) * tile_h - tile_h / 2
                         if -tile_w <= rx <= SCREEN_WIDTH and -tile_h <= ry <= SCREEN_HEIGHT:
-                            rs = sprites.get("player")
+                            rs = _get_player_sprite(pid)
+                            if rs is None:
+                                rs = sprites.get("player")
                             if rs:
-                                # Remote player — keep fully opaque (was BLEND_RGBA_MULT with alpha 90 → see-through)
                                 screen.blit(rs, (rx, ry))
-                                # Small red outline so you can tell it apart from local player
-                                try:
-                                    pygame.draw.rect(screen, (255, 80, 80), (rx, ry, tile_w, tile_h), 2)
-                                except Exception:
-                                    pass
                             else:
                                 pygame.draw.rect(screen, (255,80,80), (rx, ry, tile_w, tile_h))
+                            try:
+                                _draw_nametag(screen, rx, ry, getattr(rp, 'name', pid), tile_h)
+                            except Exception:
+                                pass
                 except Exception:
                     pass
 

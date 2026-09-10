@@ -51,6 +51,10 @@ class MTTMenu:
         self._btn_rects: List[Tuple[pygame.Rect, str]] = []
         # host list rects
         self._host_rects: List[Tuple[pygame.Rect, str]] = []
+        # MP player name editing (visible in multiplayer menu)
+        self.player_name: str = "Player"
+        self.editing_name: bool = False
+        self.name_rect: Optional[pygame.Rect] = None
 
     def set_discovery(self, disc):
         self.discovery = disc
@@ -88,18 +92,36 @@ class MTTMenu:
         # Tab toggles open/close from ascii main - but also handle here
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_TAB:
-                # ascii will handle toggle, but if menu closed we open here? Let ascii handle.
-                # If open, toggle via menu: consume
                 if self.is_open:
-                    # allow Tab to close
+                    if self.editing_name:
+                        self.editing_name = False
                     self.close()
                     return True
                 else:
-                    # will be handled by ascii to open
                     return False
             if not self.is_open:
                 return False
-            # Menu is open: handle nav
+            # If editing name, handle text input first (modal)
+            if self.editing_name:
+                if event.key == pygame.K_ESCAPE:
+                    self.editing_name = False
+                    return True
+                elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+                    self.editing_name = False
+                    return True
+                elif event.key == pygame.K_BACKSPACE:
+                    self.player_name = self.player_name[:-1]
+                    return True
+                else:
+                    ch = getattr(event, 'unicode', '')
+                    if ch and ch.isprintable() and len(self.player_name) < 16:
+                        # filter control chars
+                        if ch not in ('\n', '\r', '\t'):
+                            self.player_name += ch
+                        return True
+                    # allow navigation keys to be ignored while editing? consume others
+                    return True
+            # Menu is open: handle nav (not editing)
             if event.key in (pygame.K_ESCAPE,):
                 if self.state == "multiplayer":
                     self.state = "main"
@@ -118,6 +140,14 @@ class MTTMenu:
                 return True
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and self.is_open:
             pos = event.pos
+            # Name field has priority when in multiplayer state
+            if self.state == "multiplayer" and self.name_rect is not None and self.name_rect.collidepoint(pos):
+                self.editing_name = True
+                return True
+            # if editing and click elsewhere, exit editing
+            if self.editing_name:
+                self.editing_name = False
+                # fall through to allow clicking buttons after exiting edit
             # check btn rects
             for rect, act in self._btn_rects:
                 if rect.collidepoint(pos):
@@ -128,6 +158,8 @@ class MTTMenu:
                     self.pending_action = act  # e.g. "join:ip:port"
                     return True
         elif event.type == pygame.MOUSEMOTION and self.is_open:
+            if self.editing_name:
+                return True
             # hover update for keyboard selection
             pos = event.pos
             for i, (rect, _) in enumerate(self._btn_rects):
@@ -212,9 +244,9 @@ class MTTMenu:
         except Exception:
             pass
 
-        # panel
+        # panel (taller for name field)
         panel_w = 520
-        panel_h = 460
+        panel_h = 500
         panel_x = (self.screen_w - panel_w) // 2
         panel_y = (self.screen_h - panel_h) // 2
         panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
@@ -277,11 +309,36 @@ class MTTMenu:
                         arrow = btn_font.render(">", True, _ACCENT)
                         screen.blit(arrow, (rect.right - 20, rect.y + (btn_h - arrow.get_height()) // 2))
         else:  # multiplayer
-            # Host button
+            # ---- Player name edit (new option) ----
             btn_w = panel_w - 60
-            btn_h = 46
             hx = panel_x + 30
-            hy = panel_y + 80
+            name_y = panel_y + 72
+            name_rect = pygame.Rect(hx, name_y, btn_w, 30)
+            self.name_rect = name_rect
+            # background for name field
+            name_bg = (60, 60, 80) if self.editing_name else (40, 40, 60)
+            border_col = _ACCENT if self.editing_name else _BORDER
+            try:
+                pygame.draw.rect(screen, name_bg, name_rect, border_radius=6)
+                pygame.draw.rect(screen, border_col, name_rect, 2, border_radius=6)
+            except Exception:
+                pygame.draw.rect(screen, name_bg, name_rect)
+            if small_font:
+                # label + value + cursor
+                val = self.player_name if self.player_name else " "
+                # blink cursor when editing
+                if self.editing_name and int(time.time() * 2) % 2 == 0:
+                    val = val + "_"
+                txt = f"Your Name: {val}"
+                if self.editing_name:
+                    txt += "  (typing… Enter to confirm)"
+                else:
+                    txt += "  (click to edit)"
+                ts = small_font.render(txt, True, _TEXT if not self.editing_name else _ACCENT)
+                screen.blit(ts, (name_rect.x + 8, name_rect.y + (name_rect.height - ts.get_height()) // 2))
+            # Host button below name field
+            btn_h = 46
+            hy = name_y + 34 + 6
             host_rect = pygame.Rect(hx, hy, btn_w, btn_h)
             hover = (self.selected == 0)
             self._btn_rects.append((host_rect, "host"))

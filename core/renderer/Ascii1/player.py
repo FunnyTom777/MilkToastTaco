@@ -61,8 +61,9 @@ class Player:
         walkable check samples 5 points (center + 4 cardinal offsets) to prevent clipping corners.
     """
 
-    def __init__(self, player_id: str = "local", x: float = 0.0, y: float = 0.0, speed: float = 4.5, radius: float = 0.30):
+    def __init__(self, player_id: str = "local", x: float = 0.0, y: float = 0.0, speed: float = 4.5, radius: float = 0.30, name: str = ""):
         self.player_id: str = str(player_id)
+        self.name: str = str(name) if name else str(player_id)  # display name for MP nametag
         self.x: float = float(x)
         self.y: float = float(y)
         self.vx: float = 0.0
@@ -178,7 +179,7 @@ class Player:
 
     # ---- serialization (multiplayer) ----
     def to_dict(self) -> Dict:
-        return {"player_id": self.player_id, "x": self.x, "y": self.y, "vx": self.vx, "vy": self.vy, "speed": self.speed}
+        return {"player_id": self.player_id, "name": self.name, "x": self.x, "y": self.y, "vx": self.vx, "vy": self.vy, "speed": self.speed}
 
     def apply_network_state(self, state: Dict):
         """Apply authoritative state from server (interpolate in real client)."""
@@ -190,10 +191,15 @@ class Player:
             self.vx = float(state["vx"])
         if "vy" in state:
             self.vy = float(state["vy"])
+        if "name" in state:
+            try:
+                self.name = str(state["name"])[:16]
+            except Exception:
+                pass
 
     @classmethod
     def from_dict(cls, data: Dict) -> "Player":
-        p = cls(player_id=data.get("player_id", "local"), x=float(data.get("x", 0)), y=float(data.get("y", 0)))
+        p = cls(player_id=data.get("player_id", "local"), x=float(data.get("x", 0)), y=float(data.get("y", 0)), name=str(data.get("name", data.get("player_id", "local"))))
         p.vx = float(data.get("vx", 0))
         p.vy = float(data.get("vy", 0))
         if "speed" in data:
@@ -210,6 +216,7 @@ class Player:
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
         root = ET.Element("Player", x=str(self.x), y=str(self.y), player_id=str(self.player_id))
+        root.set("name", str(self.name))
         # also store velocity for completeness (not required)
         root.set("vx", str(self.vx))
         root.set("vy", str(self.vy))
@@ -232,6 +239,7 @@ class Player:
             self.x = float(root.attrib.get("x", self.x))
             self.y = float(root.attrib.get("y", self.y))
             self.player_id = root.attrib.get("player_id", self.player_id)
+            self.name = root.attrib.get("name", root.attrib.get("player_id", self.name))
             if "vx" in root.attrib:
                 try:
                     self.vx = float(root.attrib["vx"])
@@ -247,7 +255,7 @@ class Player:
             return False
 
     def __repr__(self):
-        return f"Player(id={self.player_id!r}, x={self.x:.2f}, y={self.y:.2f}, vx={self.vx:.2f}, vy={self.vy:.2f})"
+        return f"Player(id={self.player_id!r}, name={self.name!r}, x={self.x:.2f}, y={self.y:.2f}, vx={self.vx:.2f}, vy={self.vy:.2f})"
 
 
 class PlayerController:
