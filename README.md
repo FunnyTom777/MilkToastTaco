@@ -2,6 +2,10 @@
 
 Welcome to Milk Toast Taco!
 
+
+**We have a Discord now! because nobody asked, but here you go!**
+[Milk Toast Taco Discord](https://discord.gg/vtwvmmF9EW)
+
 I honestly don't know how you found this... But your obviously here if your reading this!
 So i might as well tell you about Milk Toast Taco!
 
