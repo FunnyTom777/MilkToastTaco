@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 import pygame
 
-# Minimap + HUD — optional, graceful fallback if modules missing (tests / headless)
+# Minimap + HUD + Fog — optional, graceful fallback if modules missing (tests / headless)
 try:
     from .minimap import Minimap
 except ImportError:
@@ -17,6 +17,17 @@ except ImportError:
             Minimap = None  # type: ignore
 
 try:
+    from .fog import PlayerFog
+except ImportError:
+    try:
+        from core.renderer.Ascii1.fog import PlayerFog
+    except ImportError:
+        try:
+            from fog import PlayerFog
+        except ImportError:
+            PlayerFog = None  # type: ignore
+
+try:
     from .hud import draw_hud
 except ImportError:
     try:
@@ -26,6 +37,29 @@ except ImportError:
             from hud import draw_hud
         except ImportError:
             draw_hud = None  # type: ignore
+
+# Multiplayer + Menu — optional (LAN)
+try:
+    from .multiplayer import Discovery, HostSession, ClientSession, get_local_ip
+except ImportError:
+    try:
+        from core.renderer.Ascii1.multiplayer import Discovery, HostSession, ClientSession, get_local_ip
+    except ImportError:
+        try:
+            from multiplayer import Discovery, HostSession, ClientSession, get_local_ip
+        except ImportError:
+            Discovery = HostSession = ClientSession = get_local_ip = None  # type: ignore
+
+try:
+    from .menu import MTTMenu
+except ImportError:
+    try:
+        from core.renderer.Ascii1.menu import MTTMenu
+    except ImportError:
+        try:
+            from menu import MTTMenu
+        except ImportError:
+            MTTMenu = None  # type: ignore
 
 # --- TERRAIN GENERATION (data-driven via generation.xml) ---
 # All procedural logic now lives in terrain_generation.py.
@@ -132,9 +166,9 @@ _DEFAULT_RENDER_CONFIG = {
     "minimap_position": "top_right",
     "minimap_border": True,
     "minimap_show_view_rect": True,
-    # fog-of-war
+    # fog-of-war (player-centered, tile radius, memory dim)
     "fog_enabled": True,
-    "fog_radius": 2,
+    "fog_radius": 8,
     "fog_persist": True,
     "fog_dim_factor": 0.45,
     "fog_save": True,
@@ -237,13 +271,13 @@ def load_renderer_config(path=None):
         minimap_border = _parse_bool(_nested("minimap", "border", "true"), True)
         minimap_show_view_rect = _parse_bool(_nested("minimap", "show_view_rect", "true"), True)
 
-        # --- fog ---
+        # --- fog (player-centered, tile radius 8) ---
         fog_enabled = _parse_bool(_nested("fog", "enabled", "true"), True)
         try:
-            fog_radius = int(_nested("fog", "radius", "2") or "2")
+            fog_radius = int(_nested("fog", "radius", "8") or "8")
         except Exception:
-            fog_radius = 2
-        fog_radius = max(0, min(10, fog_radius))
+            fog_radius = 8
+        fog_radius = max(0, min(32, fog_radius))
         fog_persist = _parse_bool(_nested("fog", "persist", "true"), True)
         try:
             fog_dim_factor = float(_nested("fog", "dim_factor", "0.45") or "0.45")
@@ -566,8 +600,9 @@ class Chunk:
 
 # --- WORLD MANAGER ---
 class World:
-    def __init__(self):
+    def __init__(self, save_enabled: bool = True):
         self.loaded_chunks = {}  # (cx, cy) -> Chunk
+        self.save_enabled = save_enabled  # false for clients (host-authoritative)
 
     def get_tile(self, wx, wy):
         # wx/wy are int tile coords; also handles float by flooring (for free movement)
@@ -598,17 +633,20 @@ class World:
                 if (cx, cy) not in self.loaded_chunks:
                     self.loaded_chunks[(cx, cy)] = Chunk(cx, cy)
 
-        # 2. Unload & Save chunks far out of range
+        # 2. Unload & Save chunks far out of range (host only saves)
         to_unload = []
         for (cx, cy), chunk in self.loaded_chunks.items():
             if abs(cx - p_cx) > LOAD_RADIUS_CHUNKS + 1 or abs(cy - p_cy) > LOAD_RADIUS_CHUNKS + 1:
-                chunk.save_to_xml()
+                if self.save_enabled:
+                    chunk.save_to_xml()
                 to_unload.append((cx, cy))
 
         for key in to_unload:
             del self.loaded_chunks[key]
 
     def save_all(self):
+        if not self.save_enabled:
+            return
         for chunk in self.loaded_chunks.values():
             chunk.save_to_xml()
 
@@ -687,23 +725,37 @@ def main():
     viewport_cols = SCREEN_WIDTH // tile_w
     viewport_rows = (SCREEN_HEIGHT - 30) // tile_h
 
-    # Minimap + fog (config-driven, detail A = 2px/tile)
+    # Minimap (detail A = 2px/tile) — no fog
     minimap = None
     if Minimap is not None:
         try:
             minimap = Minimap(cfg)
-            # Ensure save dir matches current SAVE_DIR
             try:
                 minimap.set_save_dir(_tg.SAVE_DIR)
             except Exception:
                 pass
             if debug:
-                print(f"[ascii] Minimap {'ON' if minimap.enabled else 'OFF'} size={minimap.size} tile_px={minimap.tile_px} fog={'ON' if minimap.fog_enabled else 'OFF'} radius={minimap.fog_radius} persist={minimap.fog_persist} dim={minimap.fog_dim_factor}")
-                if minimap.discovered:
-                    print(f"[ascii] Fog discovered chunks loaded: {len(minimap.discovered)}")
+                print(f"[ascii] Minimap {'ON' if minimap.enabled else 'OFF'} size={minimap.size} tile_px={minimap.tile_px}")
         except Exception as e:
             print(f"[ascii] Minimap init failed: {e}")
             minimap = None
+
+    # Player fog (tile-based memory, radius 8, dimmed outside)
+    player_fog = None
+    if PlayerFog is not None:
+        try:
+            player_fog = PlayerFog(cfg)
+            try:
+                player_fog.set_save_dir(_tg.SAVE_DIR)
+            except Exception:
+                pass
+            if debug:
+                print(f"[ascii] PlayerFog {'ON' if player_fog.enabled else 'OFF'} radius={player_fog.radius} dim={player_fog.dim_factor} persist={player_fog.fog_persist}")
+                if player_fog.memory:
+                    print(f"[ascii] Fog memory loaded: {len(player_fog.memory)} tiles")
+        except Exception as e:
+            print(f"[ascii] PlayerFog init failed: {e}")
+            player_fog = None
 
     hud_enabled = draw_hud is not None
     show_debug = False
@@ -718,22 +770,72 @@ def main():
             player.y = float(player.y) + 0.5
     controller = PlayerController(player)
 
-    # Initial discovery
-    if minimap is not None:
+    # --- Multiplayer + Pause Menu (Tab) ---
+    # PlayerRegistry for remote players
+    try:
+        from .player import PlayerRegistry as _PlayerRegistry
+    except ImportError:
         try:
-            minimap.update_discovery(player.x, player.y, _tg.CHUNK_SIZE)
-        except Exception:
-            pass
+            from core.renderer.Ascii1.player import PlayerRegistry as _PlayerRegistry
+        except ImportError:
+            from player import PlayerRegistry as _PlayerRegistry  # type: ignore
+    mp_registry = _PlayerRegistry()
+    mp_registry.players[player.player_id] = player
+
+    discovery = None
+    host_session = None
+    client_session = None
+    menu = None
+    if Discovery is not None:
+        try:
+            discovery = Discovery()
+            discovery.start()
+            print(f"[mp] Discovery listening on UDP {discovery.listen_port}")
+        except Exception as e:
+            print(f"[mp] Discovery start failed: {e}")
+            discovery = None
+    if MTTMenu is not None:
+        try:
+            menu = MTTMenu(SCREEN_WIDTH, SCREEN_HEIGHT)
+            if discovery:
+                menu.set_discovery(discovery)
+            print("[mp] Menu (TAB) ready — Save / Multiplayer / Quit")
+        except Exception as e:
+            print(f"[mp] Menu init failed: {e}")
+            menu = None
+
+    def _is_host():
+        return host_session is not None and getattr(host_session, "is_running", lambda: False)()
+
+    def _is_client():
+        return client_session is not None and getattr(client_session, "is_connected", lambda: False)()
+
+    def _is_multiplayer():
+        return _is_host() or _is_client()
 
     running = True
     while running:
         dt = clock.tick(30) / 1000.0
         # --- INPUT (events) ---
+        # Handle menu first (it may consume events)
         for event in pygame.event.get():
+            # let menu handle Tab/ESC/mouse when open
+            if menu is not None and menu.handle_event(event):
+                continue
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_TAB:
+                    if menu is not None:
+                        menu.toggle()
+                        if menu:
+                            menu.set_sessions(host_session, client_session)
+                    continue
+                if menu is not None and menu.is_open:
+                    # menu open: ignore other keys (except Tab handled)
+                    continue
                 if event.key == pygame.K_ESCAPE:
+                    # If in MP client, ESC shouldn't quit? Keep quit for now but allow menu to handle
                     running = False
                 elif event.key == pygame.K_F3:
                     show_debug = not show_debug
@@ -743,9 +845,16 @@ def main():
                         minimap.enabled = not minimap.enabled
                         print(f"[ascii] Minimap {'ON' if minimap.enabled else 'OFF'} (M)")
                 elif event.key == pygame.K_f:
-                    if minimap is not None:
-                        minimap.fog_enabled = not minimap.fog_enabled
-                        print(f"[ascii] Fog {'ON' if minimap.fog_enabled else 'OFF'} (F) radius={minimap.fog_radius}")
+                    # Fog toggle only when debug enabled per spec
+                    if not cfg.get("debug", False):
+                        if debug:
+                            print("[ascii] Fog toggle blocked — debug is off (enable <debug>true</debug> in config.xml)")
+                    else:
+                        if player_fog is not None:
+                            player_fog.toggle()
+                            print(f"[ascii] Fog {'ON' if player_fog.enabled else 'OFF'} (F) radius={player_fog.radius}")
+                        elif debug:
+                            print("[ascii] PlayerFog unavailable")
                 elif event.key in (pygame.K_EQUALS, pygame.K_PLUS, pygame.K_KP_PLUS):
                     new_zoom = min(4.0, round(zoom + 0.25, 2))
                     if new_zoom != zoom:
@@ -775,13 +884,19 @@ def main():
                     zoom = cfg.get("zoom", 1.0)
                     debug = cfg.get("debug", True)
                     print(f"[ascii] Reloaded generation.xml — {len(_tg.get_biomes())} biomes active. Config mode={mode} zoom={zoom:.2f}")
-                    # Reapply minimap/hud config live
+                    # Reapply minimap + fog config live
                     if minimap is not None:
                         try:
                             minimap.apply_config(cfg)
-                            print(f"[ascii] Minimap config reloaded: enabled={minimap.enabled} fog={minimap.fog_enabled} radius={minimap.fog_radius} persist={minimap.fog_persist}")
+                            print(f"[ascii] Minimap config reloaded: enabled={minimap.enabled}")
                         except Exception as e:
                             print(f"[ascii] Minimap apply_config failed: {e}")
+                    if player_fog is not None:
+                        try:
+                            player_fog.apply_config(cfg)
+                            print(f"[ascii] PlayerFog config reloaded: enabled={player_fog.enabled} radius={player_fog.radius} dim={player_fog.dim_factor}")
+                        except Exception as e:
+                            print(f"[ascii] PlayerFog apply_config failed: {e}")
                     eff_tile_check = max(8, int(tile_size * zoom)) if mode == 2 else max(8, int(FONT_SIZE * zoom))
                     cur_eff = tile_w
                     if mode != old_mode or zoom != old_zoom or eff_tile_check != cur_eff:
@@ -790,21 +905,228 @@ def main():
                         viewport_cols = SCREEN_WIDTH // tile_w
                         viewport_rows = (SCREEN_HEIGHT - 30) // tile_h
 
-        # --- FREE MOVEMENT (smooth, not grid-locked) ---
-        import pygame as _pygame
-        keys = _pygame.key.get_pressed()
-        controller.handle_pygame_input(keys)
-        player.update(dt, world)
-
-        # --- UPDATE CHUNKS (float position) ---
-        world.update_loaded_chunks(player.x, player.y)
-
-        # --- FOG DISCOVERY ---
-        if minimap is not None and minimap.fog_enabled:
+        # --- MENU ACTIONS (consume pending from PauseMenu) ---
+        if menu is not None:
+            # ensure menu knows current sessions for display
             try:
-                minimap.update_discovery(player.x, player.y, _tg.CHUNK_SIZE)
+                menu.set_sessions(host_session, client_session)
             except Exception:
                 pass
+            act = menu.consume_action()
+            if act:
+                if act == "save":
+                    if _is_client():
+                        print("[mp] Save blocked — clients don't save (host only)")
+                    else:
+                        print("[menu] Saving…")
+                        world.save_all()
+                        player.save_player_xml()
+                        if player_fog is not None:
+                            try:
+                                player_fog.save(_tg.SAVE_DIR)
+                            except Exception:
+                                pass
+                        print("[menu] Save complete")
+                elif act == "quit":
+                    running = False
+                elif act == "host":
+                    # toggle host
+                    if _is_host():
+                        try:
+                            host_session.stop()
+                        except Exception:
+                            pass
+                        host_session = None
+                        # remove remote players from registry keep only local
+                        try:
+                            keep = {player.player_id: player}
+                            mp_registry.players = keep
+                        except Exception:
+                            pass
+                        print("[mp] Stopped hosting")
+                    elif _is_client():
+                        print("[mp] Disconnect client before hosting")
+                    else:
+                        try:
+                            if HostSession is None:
+                                raise ImportError("HostSession not available")
+                            host_session = HostSession(world, player)
+                            host_session.start()
+                            # registry already has host
+                            lip = get_local_ip() if get_local_ip else "?"
+                            print(f"[mp] Hosting on {lip}:{host_session.tcp_port}")
+                        except Exception as e:
+                            print(f"[mp] Host start failed: {e}")
+                            host_session = None
+                    if menu:
+                        menu.set_sessions(host_session, client_session)
+                elif act.startswith("join:"):
+                    # act is join:ip:port
+                    try:
+                        _, jip, jport_s = act.split(":")
+                        jport = int(jport_s)
+                    except Exception:
+                        jip, jport = None, None
+                    if jip:
+                        if _is_host():
+                            print("[mp] Stop host before joining as client")
+                        elif _is_client():
+                            try:
+                                client_session.disconnect()
+                            except Exception:
+                                pass
+                            client_session = None
+                        try:
+                            if ClientSession is None:
+                                raise ImportError("ClientSession not available")
+                            cs = ClientSession(jip, jport, player, player_name="Player")
+                            ok = cs.connect(timeout=4.0)
+                            if ok:
+                                client_session = cs
+                                # reset registry to local + will be filled via state
+                                try:
+                                    mp_registry.players = {player.player_id: player}
+                                except Exception:
+                                    pass
+                                print(f"[mp] Joined {jip}:{jport} as {cs.my_id}")
+                            else:
+                                print(f"[mp] Join failed {jip}:{jport}")
+                                client_session = None
+                        except Exception as e:
+                            print(f"[mp] Join error: {e}")
+                            client_session = None
+                        if menu:
+                            menu.set_sessions(host_session, client_session)
+
+        # --- FREE MOVEMENT + MULTIPLAYER TICK ---
+        import pygame as _pygame
+        # If menu open, pause movement
+        is_paused = menu is not None and menu.is_open
+        if not is_paused:
+            keys = _pygame.key.get_pressed()
+            inp = controller.handle_pygame_input(keys)  # returns dx,dy
+            # Client: send input to server
+            if _is_client() and client_session is not None:
+                try:
+                    client_session.send_input(float(inp.get("dx", 0)), float(inp.get("dy", 0)))
+                except Exception:
+                    pass
+            # Singleplayer or Host: update local player directly
+            if not _is_client():
+                player.update(dt, world)
+        else:
+            # when paused, stop movement
+            player.stop()
+
+        # Host authoritative: apply remote inputs + update remote players + broadcast
+        if _is_host() and host_session is not None:
+            try:
+                inputs = host_session.consume_inputs()
+                for pid, info in inputs.items():
+                    p = info.get("player_obj")
+                    if p is None:
+                        continue
+                    # register if not in registry
+                    if pid not in mp_registry.players:
+                        mp_registry.players[pid] = p
+                    # apply input
+                    try:
+                        p.set_input(float(info.get("dx", 0)), float(info.get("dy", 0)))
+                    except Exception:
+                        pass
+                    # simulate remote players
+                    if not is_paused:
+                        p.update(dt, world)
+                # Now build authoritative state snapshot for all players
+                all_state = {}
+                for pid, p in mp_registry.players.items():
+                    try:
+                        all_state[pid] = {"x": float(p.x), "y": float(p.y), "vx": float(p.vx), "vy": float(p.vy)}
+                    except Exception:
+                        pass
+                host_session.broadcast_state(all_state)
+            except Exception as e:
+                if debug:
+                    print(f"[mp] host tick error: {e}")
+        elif _is_client() and client_session is not None:
+            # Client: poll authoritative state
+            try:
+                st = client_session.poll_state()
+                if st and "players" in st:
+                    # apply to registry
+                    for pid, pdata in st["players"].items():
+                        if pid == player.player_id:
+                            # authoritative correction for local (interpolate lightly)
+                            try:
+                                player.x = float(pdata.get("x", player.x))
+                                player.y = float(pdata.get("y", player.y))
+                                player.vx = float(pdata.get("vx", player.vx))
+                                player.vy = float(pdata.get("vy", player.vy))
+                            except Exception:
+                                pass
+                        else:
+                            # remote (including host)
+                            if pid not in mp_registry.players:
+                                try:
+                                    from player import Player as _P
+                                except Exception:
+                                    try:
+                                        from core.renderer.Ascii1.player import Player as _P
+                                    except Exception:
+                                        _P = None
+                                if _P:
+                                    np = _P(player_id=pid, x=float(pdata.get("x", 0)), y=float(pdata.get("y", 0)))
+                                    mp_registry.players[pid] = np
+                            if pid in mp_registry.players:
+                                try:
+                                    mp_registry.players[pid].apply_network_state(pdata)
+                                except Exception:
+                                    pass
+                    # remove disconnected players
+                    state_ids = set(st["players"].keys())
+                    for pid in list(mp_registry.players.keys()):
+                        if pid not in state_ids and pid != player.player_id:
+                            # keep for now? Remove if not in state for a while - simple immediate
+                            pass
+                # Detect disconnect
+                if not client_session.is_connected():
+                    print("[mp] Disconnected from host")
+                    client_session = None
+                    if menu:
+                        menu.set_sessions(host_session, client_session)
+                    # keep only local in registry
+                    try:
+                        mp_registry.players = {player.player_id: player}
+                    except Exception:
+                        pass
+            except Exception as e:
+                if debug:
+                    print(f"[mp] client tick error: {e}")
+
+        # --- UPDATE CHUNKS (float position) ---
+        # Clients don't save (host authoritative)
+        try:
+            world.save_enabled = not _is_client()
+        except Exception:
+            pass
+        # Host: cover all players; client/single: local + remotes for visibility
+        try:
+            # always around local
+            world.update_loaded_chunks(player.x, player.y)
+            # also around remotes when in MP
+            if _is_multiplayer():
+                for pid, rp in list(mp_registry.players.items()):
+                    if pid == player.player_id:
+                        continue
+                    try:
+                        world.update_loaded_chunks(float(rp.x), float(rp.y))
+                    except Exception:
+                        pass
+        except Exception:
+            world.update_loaded_chunks(player.x, player.y)
+
+        # Player fog memory is updated during render via get_display(); no separate discovery step needed.
+        # Keep this hook in case PlayerFog needs periodic priming (currently handled lazily).
 
         # --- CAMERA PLACEMENT (float, smooth) ---
         cam_x = player.x - viewport_cols / 2
@@ -818,6 +1140,19 @@ def main():
         cam_frac_x = cam_x - cam_floor_x
         cam_frac_y = cam_y - cam_floor_y
 
+        # Precompute fog overlay for sprites (single surface reused)
+        fog_overlay = None
+        fog_overlay_alpha = 0
+        if player_fog is not None and player_fog.enabled and mode == 2:
+            fog_overlay_alpha = int((1.0 - player_fog.dim_factor) * 170)
+            fog_overlay_alpha = max(0, min(255, fog_overlay_alpha))
+            if fog_overlay_alpha > 0:
+                try:
+                    fog_overlay = pygame.Surface((tile_w, tile_h), pygame.SRCALPHA)
+                    fog_overlay.fill((0, 0, 0, fog_overlay_alpha))
+                except Exception:
+                    fog_overlay = None
+
         if mode == 1:
             for r in range(viewport_rows + 1):
                 wy = cam_floor_y + r
@@ -825,15 +1160,37 @@ def main():
                     wx = cam_floor_x + c
                     tile = world.get_tile(wx, wy)
                     if tile:
+                        # Fog: darken + memory
+                        if player_fog is not None and player_fog.enabled:
+                            disp_char, disp_color, _disp_biome, _is_mem = player_fog.get_display(wx, wy, tile, player.x, player.y)
+                        else:
+                            disp_char, disp_color = tile.char, tile.color
                         screen_x = (c - cam_frac_x) * tile_w
                         screen_y = (r - cam_frac_y) * tile_h
                         if -tile_w < screen_x < SCREEN_WIDTH and -tile_h < screen_y < SCREEN_HEIGHT:
-                            char_surf = font.render(tile.char, True, tile.color)
+                            char_surf = font.render(disp_char, True, disp_color)
                             screen.blit(char_surf, (screen_x, screen_y))
+            # local player
             p_screen_x = (player.x - cam_x) * tile_w - tile_w / 2
             p_screen_y = (player.y - cam_y) * tile_h - tile_h / 2
             p_surf = font.render(GLYPHS['player'], True, COLOR_PLAYER)
             screen.blit(p_surf, (p_screen_x, p_screen_y))
+            # remote players (MP)
+            if _is_multiplayer():
+                try:
+                    for pid, rp in list(mp_registry.players.items()):
+                        if pid == player.player_id:
+                            continue
+                        rx = (rp.x - cam_x) * tile_w - tile_w / 2
+                        ry = (rp.y - cam_y) * tile_h - tile_h / 2
+                        # cull off-screen
+                        if -tile_w <= rx <= SCREEN_WIDTH and -tile_h <= ry <= SCREEN_HEIGHT:
+                            # simple fog cull: don't draw remote if outside local fog radius and no memory? Keep visible always for MP fairness (see others even in fog?)
+                            # We'll draw but dim if fogged? For now always draw
+                            rsurf = font.render(GLYPHS.get('player','@'), True, (255, 100, 100))
+                            screen.blit(rsurf, (rx, ry))
+                except Exception:
+                    pass
         else:
             for r in range(viewport_rows + 1):
                 wy = cam_floor_y + r
@@ -841,28 +1198,106 @@ def main():
                     wx = cam_floor_x + c
                     tile = world.get_tile(wx, wy)
                     if tile:
-                        biome = getattr(tile, "biome", "")
-                        if not biome:
-                            for bid, col in _tg.COLORS.items():
-                                if col == tile.color:
-                                    biome = bid
-                                    break
-                        surf = _pick_variant_sprite(biome, wx, wy)
+                        disp_biome = getattr(tile, "biome", "")
+                        is_mem = False
+                        disp_color_for_unseen = None
+                        if player_fog is not None and player_fog.enabled:
+                            _disp_char, disp_col, _disp_biome_mem, is_mem = player_fog.get_display(wx, wy, tile, player.x, player.y)
+                            disp_biome = _disp_biome_mem if _disp_biome_mem else disp_biome
+                            # Unseen fog (no memory) is encoded as color (12,12,16) with empty biome and is_mem True
+                            if is_mem and _disp_biome_mem == "" and disp_col == (12, 12, 16):
+                                # Draw solid fog tile
+                                screen_x = (c - cam_frac_x) * tile_w
+                                screen_y = (r - cam_frac_y) * tile_h
+                                if -tile_w < screen_x < SCREEN_WIDTH and -tile_h < screen_y < SCREEN_HEIGHT:
+                                    pygame.draw.rect(screen, (12, 12, 16), (screen_x, screen_y, tile_w, tile_h))
+                                continue
+                            # For remembered tiles, we want remembered biome sprite
+                            if not disp_biome:
+                                for bid, col in _tg.COLORS.items():
+                                    if col == tile.color:
+                                        disp_biome = bid
+                                        break
+                        else:
+                            if not disp_biome:
+                                for bid, col in _tg.COLORS.items():
+                                    if col == tile.color:
+                                        disp_biome = bid
+                                        break
+                        surf = _pick_variant_sprite(disp_biome, wx, wy) if disp_biome else None
+                        # Fallback to live biome if remembered lookup failed
+                        if surf is None and disp_biome:
+                            surf = SPRITES.get(disp_biome)
                         if surf:
                             screen_x = (c - cam_frac_x) * tile_w
                             screen_y = (r - cam_frac_y) * tile_h
                             if -tile_w < screen_x < SCREEN_WIDTH and -tile_h < screen_y < SCREEN_HEIGHT:
                                 screen.blit(surf, (screen_x, screen_y))
+                                if is_mem and fog_overlay is not None:
+                                    screen.blit(fog_overlay, (screen_x, screen_y))
             p_screen_x = (player.x - cam_x) * tile_w - tile_w / 2
             p_screen_y = (player.y - cam_y) * tile_h - tile_h / 2
             p_surf = sprites.get("player")
             if p_surf:
                 screen.blit(p_surf, (p_screen_x, p_screen_y))
+            # remote players sprites
+            if _is_multiplayer():
+                try:
+                    for pid, rp in list(mp_registry.players.items()):
+                        if pid == player.player_id:
+                            continue
+                        rx = (rp.x - cam_x) * tile_w - tile_w / 2
+                        ry = (rp.y - cam_y) * tile_h - tile_h / 2
+                        if -tile_w <= rx <= SCREEN_WIDTH and -tile_h <= ry <= SCREEN_HEIGHT:
+                            rs = sprites.get("player")
+                            if rs:
+                                # tint red for remote
+                                tint = rs.copy()
+                                try:
+                                    tint.fill((255, 80, 80, 90), special_flags=pygame.BLEND_RGBA_MULT)
+                                except Exception:
+                                    pass
+                                screen.blit(tint, (rx, ry))
+                            else:
+                                pygame.draw.rect(screen, (255,80,80), (rx, ry, tile_w, tile_h))
+                except Exception:
+                    pass
 
         # --- MINIMAP (detail A) ---
         if minimap is not None and minimap.enabled:
             try:
                 minimap.draw(screen, world, player, viewport_cols, viewport_rows, cam_x, cam_y, _tg.CHUNK_SIZE, SCREEN_WIDTH, SCREEN_HEIGHT)
+                # Draw remote players on minimap (small red dots)
+                if _is_multiplayer():
+                    try:
+                        import math as _mmath
+                        # reuse minimap panel geometry
+                        panel_x, panel_y, panel_w, panel_h = minimap._panel_rect(SCREEN_WIDTH, SCREEN_HEIGHT)
+                        inner_x = panel_x + 2
+                        inner_y = panel_y + 2
+                        inner_w = panel_w - 4
+                        inner_h = panel_h - 4
+                        center_px = inner_x + inner_w // 2
+                        center_py = inner_y + inner_h // 2
+                        tpx = minimap.tile_px
+                        p_tx = int(_mmath.floor(player.x))
+                        p_ty = int(_mmath.floor(player.y))
+                        for pid, rp in list(mp_registry.players.items()):
+                            if pid == player.player_id:
+                                continue
+                            dx = int(_mmath.floor(rp.x)) - p_tx
+                            dy = int(_mmath.floor(rp.y)) - p_ty
+                            dot_x = center_px + dx * tpx - tpx // 2 + tpx // 2
+                            dot_y = center_py + dy * tpx - tpx // 2 + tpx // 2
+                            # fractional
+                            frac_x = rp.x - _mmath.floor(rp.x) - 0.5
+                            frac_y = rp.y - _mmath.floor(rp.y) - 0.5
+                            dot_x += int(round(frac_x * tpx))
+                            dot_y += int(round(frac_y * tpx))
+                            if inner_x <= dot_x <= inner_x+inner_w and inner_y <= dot_y <= inner_y+inner_h:
+                                pygame.draw.circle(screen, (255,80,80), (dot_x, dot_y), 2)
+                    except Exception:
+                        pass
             except Exception as e:
                 if debug:
                     print(f"[minimap] draw failed: {e}")
@@ -870,9 +1305,8 @@ def main():
         # --- HUD (replaces old single-line status bar) ---
         if hud_enabled and draw_hud is not None:
             try:
-                # minimap fog flags for HUD
                 mm_on = minimap.enabled if minimap is not None else False
-                fog_on = minimap.fog_enabled if minimap is not None else False
+                fog_on = player_fog.enabled if player_fog is not None else False
                 draw_hud(screen, player, world, clock, tile_w, tile_h, viewport_cols, viewport_rows, font, mode, zoom, cfg, mm_on, fog_on, show_debug, dt, _tg.CHUNK_SIZE)
             except Exception as e:
                 if debug:
@@ -905,19 +1339,49 @@ def main():
             status_surf = status_font.render(status, True, COLOR_TEXT)
             screen.blit(status_surf, (10, SCREEN_HEIGHT - 25))
 
+        # --- MENU OVERLAY ---
+        if menu is not None and menu.is_open:
+            try:
+                # keep screen_w/h in sync if zoom changes
+                menu.screen_w, menu.screen_h = screen.get_size()
+                menu.draw(screen)
+            except Exception as e:
+                if debug:
+                    print(f"[menu] draw failed: {e}")
+
         pygame.display.flip()
 
-    # Clean Exit & Save
-    print("Saving world XMLs...")
-    world.save_all()
-    player.save_player_xml()
-    if minimap is not None:
-        try:
-            minimap.save(_tg.SAVE_DIR)
-            print(f"[minimap] Fog discovered: {len(minimap.discovered)} chunks saved")
-        except Exception as e:
-            print(f"[minimap] save failed: {e}")
-    print("Save Complete!")
+    # Clean Exit & Save (host only — clients don't save per spec)
+    is_client_at_exit = client_session is not None and getattr(client_session, "is_connected", lambda: False)()
+    if is_client_at_exit:
+        print("[mp] Client exit — not saving (host authoritative)")
+    else:
+        print("Saving world XMLs...")
+        world.save_all()
+        player.save_player_xml()
+        if player_fog is not None:
+            try:
+                player_fog.save(_tg.SAVE_DIR)
+                print(f"[fog] Memory saved: {len(player_fog.memory)} tiles")
+            except Exception as e:
+                print(f"[fog] save failed: {e}")
+        print("Save Complete!")
+    # cleanup MP
+    try:
+        if host_session:
+            host_session.stop()
+    except Exception:
+        pass
+    try:
+        if client_session:
+            client_session.disconnect()
+    except Exception:
+        pass
+    try:
+        if discovery:
+            discovery.stop()
+    except Exception:
+        pass
     pygame.quit()
     sys.exit()
 

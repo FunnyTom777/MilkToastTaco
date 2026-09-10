@@ -1,16 +1,12 @@
 """
-MTT Minimap — detail A (2px/tile) + fog-of-war
+MTT Minimap — detail A (2px/tile)
 
 Detail A: each world tile = minimap_tile_px (default 2) pixels.
 Centered on player, shows ~ size/tile_px tiles across (150/2=75).
 
-Fog-of-war (config-driven):
-  fog_enabled  — master switch (toggle F in-game)
-  fog_radius   — chunks around player that become revealed (0..10)
-  fog_persist  — true: discovered stays dimmed when you leave
-                 false: only currently-within-radius stays lit, rest snaps to fog
-  fog_dim_factor — 0.0..1.0 dim for visited-but-not-visible when persist true
-  fog_save     — persist discovered set to saves_world1/fog_discovered.xml
+Fog-of-war has been moved to the main viewport (PlayerFog in fog.py).
+The minimap now always shows true terrain without fog. Legacy fog config
+keys are still parsed for backwards compat but are ignored by the minimap.
 
 Minimap toggled with M, hot-reload with R picks up config changes.
 """
@@ -28,9 +24,8 @@ except ImportError:
     pygame = None  # type: ignore
 
 
-# fog colours — dark but not pure black so border still reads
-_FOG_COLOR = (10, 10, 14)
-_FOG_UNDISCOVERED = (18, 18, 22)
+# colours
+_FOG_UNDISCOVERED = (18, 18, 22)  # kept for legacy compat, not used in draw
 _BORDER_COLOR = (60, 60, 75)
 _BORDER_HI = (90, 90, 110)
 _VIEW_RECT_COLOR = (255, 255, 255)
@@ -38,22 +33,10 @@ _PLAYER_DOT = (255, 215, 0)
 _PLAYER_OUTLINE = (20, 20, 20)
 
 
-def _dim_color(color: Tuple[int, int, int], factor: float) -> Tuple[int, int, int]:
-    """Dim an RGB tuple toward dark. factor 1.0 = unchanged, 0.0 = near-black."""
-    factor = max(0.0, min(1.0, factor))
-    # blend toward _FOG_COLOR slightly so dim isn't just darker but fog-tinted
-    # simpler: just scale
-    return (
-        int(color[0] * factor),
-        int(color[1] * factor),
-        int(color[2] * factor),
-    )
-
-
 def _fog_save_path(save_dir: str | None = None) -> Path:
+    """Legacy path — minimap no longer saves fog, but keep helper for compat."""
     if save_dir:
         return Path(save_dir) / "fog_discovered.xml"
-    # try to resolve via terrain_generation SAVE_DIR
     try:
         from . import terrain_generation as _tg
         return Path(_tg.SAVE_DIR) / "fog_discovered.xml"
@@ -71,108 +54,66 @@ class Minimap:
         self.border: bool = bool(cfg.get("minimap_border", True))
         self.show_view_rect: bool = bool(cfg.get("minimap_show_view_rect", True))
 
+        # Legacy fog attributes kept for compat / HUD legacy reads, but minimap no longer uses fog.
         self.fog_enabled: bool = bool(cfg.get("fog_enabled", True))
-        self.fog_radius: int = int(cfg.get("fog_radius", 2))
+        self.fog_radius: int = int(cfg.get("fog_radius", 8))
         self.fog_persist: bool = bool(cfg.get("fog_persist", True))
         self.fog_dim_factor: float = float(cfg.get("fog_dim_factor", 0.45))
         self.fog_save: bool = bool(cfg.get("fog_save", True))
 
         self.pad: int = 10
-        # discovered chunks — shared across sessions if fog_save
+        # Legacy discovered set kept for compat (no longer used for minimap rendering)
         self.discovered: Set[Tuple[int, int]] = set()
         self._save_dir: str | None = None
-        # try to load
-        self._load()
+        # No longer loads fog — minimap is always clear. Keep _load as no-op for compat.
+        # self._load() intentionally not called; minimap fog removed.
 
     # ------------------------------------------------------------------ config
     def apply_config(self, cfg: dict):
-        """Hot-reload from new config (R key). Preserves discovered set."""
+        """Hot-reload from new config (R key). Fog keys are ignored for minimap now."""
         self.enabled = bool(cfg.get("minimap_enabled", self.enabled))
         self.size = int(cfg.get("minimap_size", self.size))
         self.tile_px = int(cfg.get("minimap_tile_px", self.tile_px))
         self.position = str(cfg.get("minimap_position", self.position))
         self.border = bool(cfg.get("minimap_border", self.border))
         self.show_view_rect = bool(cfg.get("minimap_show_view_rect", self.show_view_rect))
-        self.fog_enabled = bool(cfg.get("fog_enabled", self.fog_enabled))
-        self.fog_radius = int(cfg.get("fog_radius", self.fog_radius))
-        self.fog_persist = bool(cfg.get("fog_persist", self.fog_persist))
-        self.fog_dim_factor = float(cfg.get("fog_dim_factor", self.fog_dim_factor))
-        self.fog_save = bool(cfg.get("fog_save", self.fog_save))
+        # Keep legacy sync so external reads don't break, but minimap doesn't use them.
+        if "fog_enabled" in cfg:
+            self.fog_enabled = bool(cfg.get("fog_enabled", self.fog_enabled))
+        if "fog_radius" in cfg:
+            try:
+                self.fog_radius = int(cfg.get("fog_radius", self.fog_radius))
+            except Exception:
+                pass
+        if "fog_persist" in cfg:
+            self.fog_persist = bool(cfg.get("fog_persist", self.fog_persist))
+        if "fog_dim_factor" in cfg:
+            try:
+                self.fog_dim_factor = float(cfg.get("fog_dim_factor", self.fog_dim_factor))
+            except Exception:
+                pass
+        if "fog_save" in cfg:
+            self.fog_save = bool(cfg.get("fog_save", self.fog_save))
         # clamp
         self.size = max(80, min(400, self.size))
         self.tile_px = max(1, min(6, self.tile_px))
-        self.fog_radius = max(0, min(10, self.fog_radius))
-        self.fog_dim_factor = max(0.0, min(1.0, self.fog_dim_factor))
 
-    # ------------------------------------------------------------------ fog I/O
+    # ------------------------------------------------------------------ fog I/O (legacy no-op — real fog lives in fog.py)
     def _load(self):
-        if not self.fog_save:
-            return
-        path = _fog_save_path(self._save_dir)
-        if not path.is_file():
-            # also try absolute SAVE_DIR from terrain_generation
-            try:
-                from . import terrain_generation as _tg
-                alt = Path(_tg.SAVE_DIR) / "fog_discovered.xml"
-                if alt.is_file():
-                    path = alt
-                else:
-                    return
-            except Exception:
-                return
-        try:
-            tree = ET.parse(path)
-            root = tree.getroot()
-            for el in root.findall("Chunk"):
-                try:
-                    cx = int(el.get("cx", "0"))
-                    cy = int(el.get("cy", "0"))
-                    self.discovered.add((cx, cy))
-                except Exception:
-                    continue
-        except Exception:
-            pass
+        return
 
     def save(self, save_dir: str | None = None):
-        if not self.fog_save:
-            return
-        path = _fog_save_path(save_dir or self._save_dir)
-        try:
-            if not path.parent.exists():
-                path.parent.mkdir(parents=True, exist_ok=True)
-            root = ET.Element("Fog", version="1")
-            for cx, cy in sorted(self.discovered):
-                ET.SubElement(root, "Chunk", cx=str(cx), cy=str(cy))
-            ET.ElementTree(root).write(str(path), encoding="utf-8", xml_declaration=True)
-        except Exception as e:
-            print(f"[minimap] fog save failed: {e}")
+        return
 
     def set_save_dir(self, save_dir: str):
         self._save_dir = save_dir
-        # reload from new location if exists and we have nothing yet
-        if not self.discovered:
-            self._load()
 
-    # ------------------------------------------------------------------ discovery
+    # ------------------------------------------------------------------ discovery (legacy no-op)
     def update_discovery(self, player_x: float, player_y: float, chunk_size: int):
-        """Reveal chunks within fog_radius of player. No-op if fog disabled."""
-        if not self.fog_enabled:
-            return
-        # player chunk with floor handling for negatives
-        pcx = int(math.floor(player_x)) // chunk_size
-        pcy = int(math.floor(player_y)) // chunk_size
-        # Python // does floor for negatives, but floor(player_x) already
-        # so this is correct. Keep explicit for clarity using math.floor quotient
-        # The above works because int(math.floor()) is already exact.
-        r = self.fog_radius
-        for dy in range(-r, r + 1):
-            for dx in range(-r, r + 1):
-                # Chebyshev radius (square) — feels better for chunk grid than euclidean
-                # If you want circle, use dx*dx+dy*dy <= r*r
-                self.discovered.add((pcx + dx, pcy + dy))
+        return
 
     def _is_visible_now(self, cx: int, cy: int, player_cx: int, player_cy: int) -> bool:
-        return abs(cx - player_cx) <= self.fog_radius and abs(cy - player_cy) <= self.fog_radius
+        return True
 
     # ------------------------------------------------------------------ geometry
     def _panel_rect(self, screen_w: int, screen_h: int) -> Tuple[int, int, int, int]:
@@ -224,22 +165,14 @@ class Minimap:
         origin_wx = p_tx - half_tiles
         origin_wy = p_ty - half_tiles_y
 
-        # player chunk for fog visibility
-        p_cx = int(math.floor(player.x)) // chunk_size
-        p_cy = int(math.floor(player.y)) // chunk_size
-
-        # draw tiles row by row
+        # draw tiles row by row — always true terrain (no fog on minimap)
         tpx = self.tile_px
         # Iterate over tiles that land inside inner rect
         cols = inner_w // tpx
         rows = inner_h // tpx
-        # shift to exactly center (account for remainder)
-        # Recompute origin so player dot is exactly centered
         # Center pixel of panel
         center_px = inner_x + inner_w // 2
         center_py = inner_y + inner_h // 2
-        # Instead of origin method, compute each tile's screen pos as center + delta*tpx
-        # This keeps player dot pixel-perfect centered even with odd sizes.
         for dy in range(-half_tiles_y - 1, half_tiles_y + 2):
             wy = p_ty + dy
             for dx in range(-half_tiles - 1, half_tiles + 2):
@@ -261,28 +194,9 @@ class Minimap:
                     tile = None
 
                 if tile is None:
-                    # undiscovered void — fog
                     col = _FOG_UNDISCOVERED
                 else:
-                    base = tile.color
-                    if not self.fog_enabled:
-                        col = base
-                    else:
-                        # chunk for this tile
-                        cx = int(math.floor(wx)) // chunk_size
-                        cy = int(math.floor(wy)) // chunk_size
-                        discovered = (cx, cy) in self.discovered
-                        visible = self._is_visible_now(cx, cy, p_cx, p_cy)
-                        if not discovered:
-                            col = _FOG_UNDISCOVERED
-                        elif not visible:
-                            if self.fog_persist:
-                                # dimmed — already visited but not currently in radius
-                                col = _dim_color(base, self.fog_dim_factor)
-                            else:
-                                col = _FOG_UNDISCOVERED
-                        else:
-                            col = base
+                    col = tile.color
                 # draw tile pixel
                 # Clip to inner rect precise (avoid border overflow)
                 draw_x = max(sx, inner_x)
@@ -337,13 +251,10 @@ class Minimap:
         except Exception:
             pass
 
-        # small label "MAP" bottom center, and fog hint
+        # small label "MAP" bottom center (fog no longer shown here)
         try:
             font = pygame.font.SysFont("Courier", 10, bold=True)
             label = font.render("MAP", True, (200, 200, 200))
             screen.blit(label, (inner_x + inner_w // 2 - label.get_width() // 2, inner_y + inner_h - 11))
-            if self.fog_enabled:
-                fog_lbl = font.render(f"FOG:{self.fog_radius}", True, (150, 150, 160))
-                screen.blit(fog_lbl, (inner_x + 3, inner_y + inner_h - 11))
         except Exception:
             pass

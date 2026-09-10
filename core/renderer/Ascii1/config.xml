@@ -19,16 +19,14 @@
       tile_px = minimap pixels per world tile (1..4). Detail A is 2.
       Toggle in-game with M.
 
-    Fog-of-war:
-      <fog> reveals as you explore. When enabled, undiscovered tiles are dark.
-      - enabled: master switch (true/false). Toggle in-game with F (optional).
-      - radius: discovery radius in chunks around player (1..10). How far fog lifts.
-                Larger = more map revealed at once.
-      - persist: true = discovered stays visible dimmed when you leave (classic).
-                 false = only currently-within-radius is lit, rest snaps back to fog.
-      - dim_factor: 0.0..1.0 tint for previously-discovered but not-currently-visible.
-                    0.45 = dim, 1.0 = no dim.
-      - save: true = persist discovered across restarts to saves_world1/fog_discovered.xml
+    Fog-of-war (player-centered):
+      <fog> is for the main viewport, not the minimap. Beyond 8 tiles the world is
+            remembered dimmed — you see what you last saw there, not live updates.
+      - enabled: master switch (true/false). Toggle in-game with F, but only when <debug>true</debug>.
+      - radius: visible radius in tiles around player (0..32). Default 8. Fog starts beyond this.
+      - persist: true = visited tiles stay dimmed as memory when you leave; false = snaps to fog.
+      - dim_factor: 0.0..1.0 tint for remembered (fogged) tiles. 0.45 = dim, 1.0 = no dim.
+      - save: true = persist memory across restarts to saves_world1/fog_memory.xml
 
     HUD:
       <hud> tweaks the overlay.
@@ -53,8 +51,8 @@
 
     <fog>
         <enabled>true</enabled>
-        <radius>1</radius>
-        <persist>false</persist>
+        <radius>8</radius>
+        <persist>true</persist>
         <dim_factor>0.45</dim_factor>
         <save>true</save>
     </fog>

@@ -148,9 +148,9 @@ def draw_hud(
             hint_lines = []
             # compact single-line hint at top
             if style == "minimal":
-                hint = "WASD move  |  M map  F fog  F3 debug  R reload  +/- zoom  ESC save"
+                hint = "WASD move | M map F fog TAB menu F3 debug R reload +/- zoom ESC quit"
             else:
-                hint = "WASD move  |  M map  F fog  F3 debug  R reload  +/- zoom  ESC save"
+                hint = "WASD move | M map F fog TAB menu F3 debug R reload +/- zoom ESC quit"
             # Render hint with tiny bg when transparent style
             hf = small_font or base_font
             if hf:

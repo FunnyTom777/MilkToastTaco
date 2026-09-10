@@ -21,7 +21,7 @@
 
     <fog>
         <enabled>true</enabled>
-        <radius>2</radius>
+        <radius>8</radius>
         <persist>true</persist>
         <dim_factor>0.45</dim_factor>
         <save>true</save>
