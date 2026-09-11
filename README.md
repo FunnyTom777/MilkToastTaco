@@ -10,6 +10,76 @@ I honestly don't know how you found this... But your obviously here if your read
 So i might as well tell you about Milk Toast Taco!
 
 
+
+
+### Install Milk Toast Taco
+
+> **Note:** This guide is for **Windows only**. If you're using Mac or Linux, you'll have to work it out yourself, as I've never used Mac. If you're on Linux, I presume you already know how to use Python anyway. 🤣
+
+First, you'll need **Python 3.11 or newer** installed.
+
+You can get Python [here](https://www.python.org/downloads) if you don't already have it.
+
+Once Python is installed, go to the top of this page and find the big green **Code** button.
+
+<img width="586" height="65" alt="Screenshot 2026-09-11 104725" src="https://github.com/user-attachments/assets/443f9e5e-37e4-483b-8061-1ae7b51591f6" />
+
+
+Click the **Code** button and a dropdown menu will appear. At the very bottom, click **Download ZIP**.
+
+
+<img width="515" height="506" alt="Screenshot 2026-09-11 104903" src="https://github.com/user-attachments/assets/fdbe6fb8-83ad-4eb4-a098-db6a039768e4" />
+
+
+Clicking that will ask you where you want to save the MTT ZIP file.
+
+The file should be something like `MilkToastTaco-main.zip`, depending on which version of MTT you're downloading.
+
+You can save it pretty much anywhere you want. I normally put it on my Desktop, or leave it in Documents. Just make sure you can find it again. :D
+
+Once it's downloaded, open File Explorer and go to wherever you saved it.
+
+Find the MTT `.zip` file, which should look something like:
+
+`MilkToastTaco-main.zip`
+
+Right-click on the ZIP file and select **Extract All**.
+
+<img width="340" height="402" alt="Screenshot 2026-09-11 105555" src="https://github.com/user-attachments/assets/be93958b-20d6-417c-9ae6-729bc9bd85ee" />
+
+Click **Extract**.
+
+Windows will then extract MTT into a new folder. The folder will probably have the same name as the ZIP file.
+
+Open that new folder, and it should look something like this:
+
+<img width="765" height="857" alt="Screenshot 2026-09-11 105448" src="https://github.com/user-attachments/assets/f71ba70d-fb2d-4071-bcf9-3dccccaaab8e" />
+
+
+Now, right-click somewhere empty inside the folder and select **Open in Terminal**.
+
+A terminal window will open.
+
+From there, simply type:
+
+```text
+python main.py
+```
+
+Then hit **Enter**.
+
+The MTT launcher should pop up!
+
+**You're all done! 🎉**
+
+> **Note:** If you get an error such as `Python was not found` when trying to run `main.py`, it likely means either Python isn't installed correctly or it hasn't been added to your PATH. Just Google the error you get and you'll probably find the solution. :D
+
+
+
+
+
+
+
 ### Story...
 
 So lets rewind to 3 years ago...
