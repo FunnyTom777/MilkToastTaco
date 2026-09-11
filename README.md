@@ -1,4 +1,5 @@
-<img width="2367" height="488" alt="MilkToastTacoLogo2" src="https://github.com/user-attachments/assets/6ed3490e-0ab4-48c1-a514-6c66e4e49618" />
+<img width="2158" height="606" alt="MTT_Banner1" src="https://github.com/user-attachments/assets/d39e5e4d-90de-4570-aa64-61280af2994e" />
+
 
 Welcome to Milk Toast Taco!
 
