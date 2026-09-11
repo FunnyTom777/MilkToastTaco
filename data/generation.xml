@@ -14,6 +14,8 @@
       <noise>      Perlin noise parameters (requires `noise` lib, else fallback).
       <fallback>   Simple sin/cos noise when `noise` is absent.
       <terrain>    Ordered biome thresholds — first threshold_max >= noise wins.
+      <ground_detail> Second noise layer splitting ground into sub-biomes.
+      <mesa>       Rare large terracotta/dirt/gravel mask over ground.
       <variants>   Optional weighted glyph variants per biome (deterministic).
       <scatter>    Optional rare decor sprinkled over a biome (chance 0.0-1.0).
 
@@ -53,6 +55,47 @@
         trampled_chance="0.65"
         seed_offset="777"
         fallback_scale="0.10"
+    />
+
+    <!-- ================= GROUND DETAIL (sub-biomes) ================= -->
+    <!-- Second noise layer that splits base 'ground' into patches so the new
+         MTT tiles get real gameplay presence (own ASCII glyph + sprite).
+         Matched first threshold_max >= detail_value wins; 'ground' = keep plains.
+         Stumps are NOT a band (fields of stumps look wrong) — stump_chance rolls
+         a rare single stump tile on plains instead. Wheat still wins over all.
+         NOTE: terracotta is NOT listed here — it only spawns inside the mesa
+         mask below. dark_grass is retired (never generates). -->
+    <ground_detail
+        scale="0.11"
+        octaves="2"
+        persistence="0.5"
+        seed_offset="1234"
+        fallback_scale="0.13"
+        stump_chance="0.02"
+    >
+        <subbiome id="clay"       threshold_max="-0.45" char="c" color="205,102,29"  walkable="true" sprite="clay1.png"              name="Clay" />
+        <subbiome id="dirt"       threshold_max="-0.15" char="d" color="139,69,19"   walkable="true" sprite="dirt1.png"              name="Dirt" />
+        <subbiome id="ground"     threshold_max="0.30"  char="." color="34,139,34"   walkable="true" sprite="grass_plain1.png"       name="Plains" />
+        <subbiome id="dry_grass"  threshold_max="0.45"  char="y" color="189,183,107" walkable="true" sprite="dry_grass1.png"         name="Dry Grass" />
+        <subbiome id="muddy"      threshold_max="1.0"   char="m" color="121,85,58"   walkable="true" sprite="grass_muddy1.png"       name="Muddy Grass" />
+        <!-- stump overlay: sprite grass_plain_with_stump1.png, char 'o', chance above -->
+    </ground_detail>
+
+    <!-- ================= MESA / BADLANDS (big rare terracotta blobs) ================= -->
+    <!-- Low-frequency mask noise: where mask > threshold on base ground, tiles become
+         a terracotta/dirt/gravel mix instead of normal detail. scale 0.025 = blobs
+         ~40 tiles wide; threshold 0.35 = ~2% of land. Checked AFTER wheat (wheat wins)
+         but BEFORE ground detail (mesas stay solid). Weights = mix inside the mesa. -->
+    <mesa
+        scale="0.025"
+        octaves="2"
+        persistence="0.5"
+        threshold="0.35"
+        seed_offset="5555"
+        fallback_scale="0.03"
+        terracotta_weight="50"
+        dirt_weight="30"
+        gravel_weight="20"
     />
 
     <!-- ================= PALETTE (optional overrides) ================= -->

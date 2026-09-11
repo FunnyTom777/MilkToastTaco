@@ -376,6 +376,8 @@ def load_sprites(tile_size=None):
         tile_size = TILE_SIZE
     base = _get_assets_base() / "tiles" / "nature"
     # Mapping biome -> expected filename (user can rename/add)
+    # Ground detail sub-biomes each get their own tile so new MTT
+    # assets actually show up in sprite mode (not just ASCII glyphs).
     expected = {
         "water":  base / "water1.png",
         "sand":   base / "sand1.png",
@@ -385,6 +387,14 @@ def load_sprites(tile_size=None):
         "player": base / "player1.png",
         "wheat": base / "wheat1.png",
         "wheat_trampled": base / "wheat1_trampled.png",
+        "dark_grass": base / "dark_grass1.png",
+        "dirt": base / "dirt1.png",
+        "muddy": base / "grass_muddy1.png",
+        "dry_grass": base / "dry_grass1.png",
+        "clay": base / "clay1.png",
+        "terracotta": base / "brown_terracota1.png",
+        "gravel": base / "rocky_dirt1.png",
+        "stump": base / "grass_plain_with_stump1.png",
     }
     sprites = {}
     missing = []
@@ -429,6 +439,33 @@ def load_sprites(tile_size=None):
             (base / "grass_plain2.png", 30),
             (base / "grass_plain_with_flowers1.png", 18),
             (base / "grass_with_bush1.png", 12),
+        ],
+        # dark_grass retired from generation — entry kept so old save chunks
+        # with that biome still render instead of going blank.
+        "dark_grass": [
+            (base / "dark_grass1.png", 100),
+        ],
+        "dirt": [
+            (base / "dirt1.png", 70),
+            (base / "rocky_dirt1.png", 30),
+        ],
+        "muddy": [
+            (base / "grass_muddy1.png", 100),
+        ],
+        "dry_grass": [
+            (base / "dry_grass1.png", 100),
+        ],
+        "clay": [
+            (base / "clay1.png", 100),
+        ],
+        "terracotta": [
+            (base / "brown_terracota1.png", 100),
+        ],
+        "gravel": [
+            (base / "rocky_dirt1.png", 100),
+        ],
+        "stump": [
+            (base / "grass_plain_with_stump1.png", 100),
         ],
         "mountain": [
             (base / "mountain1.png", 60),

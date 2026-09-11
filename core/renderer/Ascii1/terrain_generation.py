@@ -81,12 +81,58 @@ class ScatterFeature:
     walkable: Optional[bool] = None  # None = keep biome walkable
 
 @dataclass
+class GroundDetailConfig:
+    """Second noise layer that splits base 'ground' into visual sub-biomes.
+
+    Sub-biomes are matched first threshold_max >= detail_value wins.
+    The 'plains' entry (id == 'ground') keeps the base look; other ids
+    become distinct biome_ids with their own ASCII glyph + sprite.
+    """
+    scale: float = 0.11
+    octaves: int = 2
+    persistence: float = 0.5
+    seed_offset: int = 1234
+    fallback_scale: float = 0.13
+    stump_chance: float = 0.02
+
+@dataclass
+class GroundSubBiome:
+    id: str
+    threshold_max: float
+    char: str
+    color: Tuple[int, int, int]
+    walkable: bool
+    sprite: str = ""
+    name: str = ""
+
+@dataclass
+class MesaConfig:
+    """Rare LARGE badlands mask on top of base 'ground'.
+
+    When the low-frequency mask noise exceeds `threshold`, the tile becomes
+    part of a big terracotta/dirt/gravel mesa instead of the normal ground
+    detail patch. Weights control the mix inside the mesa.
+    """
+    scale: float = 0.025
+    octaves: int = 2
+    persistence: float = 0.5
+    threshold: float = 0.35
+    seed_offset: int = 5555
+    fallback_scale: float = 0.03
+    terracotta_weight: float = 50.0
+    dirt_weight: float = 30.0
+    gravel_weight: float = 20.0
+
+@dataclass
 class GenerationConfig:
     chunk_size: int = 16
     seed: int = 0
     save_dir: str = "saves_world1"
     noise: NoiseConfig = field(default_factory=NoiseConfig)
     wheat: WheatFieldConfig = field(default_factory=WheatFieldConfig)
+    ground_detail: GroundDetailConfig = field(default_factory=GroundDetailConfig)
+    ground_subbiomes: List[GroundSubBiome] = field(default_factory=list)
+    mesa: MesaConfig = field(default_factory=MesaConfig)
     biomes: List[BiomeRule] = field(default_factory=list)
     variants: Dict[str, List[Variant]] = field(default_factory=dict)
     scatter: List[ScatterFeature] = field(default_factory=dict)
@@ -130,6 +176,26 @@ _DEFAULT_PALETTE: Dict[str, Tuple[int, int, int]] = {
     "text":      (220, 220, 220),
 }
 
+# Ground detail sub-biomes — all walkable, only spawn on base "ground".
+# Ordered by threshold_max ascending; detail noise is ~ -1..1, center band
+# is plains (dominant) so the world still reads as grassland.
+# NOTE: terracotta deliberately NOT here — it only spawns inside the rare
+# large mesa mask (see MesaConfig) so it stays rare but clustered.
+# dark_grass retired (never generates); sprite kept loaded for old saves.
+_DEFAULT_GROUND_SUBBIOMES: List["GroundSubBiome"] = [
+    GroundSubBiome("clay",        -0.45, "c", (205, 102, 29),  True, "clay1.png",        "Clay"),
+    GroundSubBiome("dirt",        -0.15, "d", (139, 69, 19),   True, "dirt1.png",        "Dirt"),
+    GroundSubBiome("ground",       0.30, ".", (34, 139, 34),   True, "grass_plain1.png", "Plains"),
+    GroundSubBiome("dry_grass",    0.45, "y", (189, 183, 107), True, "dry_grass1.png",   "Dry Grass"),
+    GroundSubBiome("muddy",        1.0,  "m", (121, 85, 58),   True, "grass_muddy1.png", "Muddy Grass"),
+]
+# Stump is a rare single-tile overlay on plains (not a noise band — fields
+# of stumps would look wrong). Sprite: grass_plain_with_stump1.png
+_DEFAULT_STUMP = GroundSubBiome("stump", 1.0, "o", (139, 69, 19), True, "grass_plain_with_stump1.png", "Old Stump")
+# Mesa (badlands) mix — only picked inside the mesa mask, never standalone.
+_DEFAULT_MESA_TERRACOTTA = GroundSubBiome("terracotta", 1.0, "r", (165, 42, 42), True, "brown_terracota1.png", "Terracotta")
+_DEFAULT_GRAVEL = GroundSubBiome("gravel", 1.0, "v", (150, 145, 135), True, "rocky_dirt1.png", "Gravel")
+
 _DEFAULT_NOISE = NoiseConfig()
 
 # ---------------------------------------------------------------------------
@@ -142,6 +208,9 @@ _CONFIG: GenerationConfig = GenerationConfig(
     save_dir="saves_world1",
     noise=NoiseConfig(),
     wheat=WheatFieldConfig(),
+    ground_detail=GroundDetailConfig(),
+    ground_subbiomes=list(_DEFAULT_GROUND_SUBBIOMES),
+    mesa=MesaConfig(),
     biomes=list(_DEFAULT_BIOMES),
     variants=dict(_DEFAULT_VARIANTS),
     scatter=list(_DEFAULT_SCATTER),
@@ -223,9 +292,23 @@ def _sync_module_globals():
     # Add wheat overlay biomes (not in threshold list) for sprite/ASCII mapping
     GLYPHS["wheat"] = "w"
     GLYPHS["wheat_trampled"] = "x"
+    # Ground detail sub-biomes (dirt, clay, ...) + mesa-only ones — also mappable
+    for sub in _CONFIG.ground_subbiomes:
+        GLYPHS[sub.id] = sub.char
+    GLYPHS["stump"] = _DEFAULT_STUMP.char
+    GLYPHS["terracotta"] = _DEFAULT_MESA_TERRACOTTA.char
+    GLYPHS["gravel"] = _DEFAULT_GRAVEL.char
+    # dark_grass retired from generation but kept mapped so old saves render
+    GLYPHS.setdefault("dark_grass", "g")
     COLORS = {b.id: b.color for b in _CONFIG.biomes}
     COLORS["wheat"] = (255, 215, 0)
     COLORS["wheat_trampled"] = (184, 134, 11)
+    for sub in _CONFIG.ground_subbiomes:
+        COLORS[sub.id] = sub.color
+    COLORS["stump"] = _DEFAULT_STUMP.color
+    COLORS["terracotta"] = _DEFAULT_MESA_TERRACOTTA.color
+    COLORS["gravel"] = _DEFAULT_GRAVEL.color
+    COLORS.setdefault("dark_grass", (34, 100, 34))
     PALETTE = dict(_CONFIG.palette)
 
     COLOR_BG = PALETTE.get("bg", (15, 15, 20))
@@ -322,6 +405,68 @@ def load_generation_config(path: Optional[str | Path] = None) -> GenerationConfi
         except Exception as e:
             print(f"[terrain_generation] wheat_fields parse warning: {e}")
     cfg.wheat = wheat_cfg
+
+    # -- ground detail (second noise layer splitting ground into sub-biomes) --
+    ground_cfg = GroundDetailConfig()
+    gd_elem = root.find("ground_detail")
+    if gd_elem is not None:
+        try:
+            ground_cfg.scale = float(gd_elem.get("scale", ground_cfg.scale))
+            ground_cfg.octaves = int(gd_elem.get("octaves", ground_cfg.octaves))
+            ground_cfg.persistence = float(gd_elem.get("persistence", ground_cfg.persistence))
+            ground_cfg.seed_offset = int(gd_elem.get("seed_offset", ground_cfg.seed_offset))
+            ground_cfg.stump_chance = float(gd_elem.get("stump_chance", ground_cfg.stump_chance))
+            fb_val = gd_elem.get("fallback_scale")
+            if fb_val is not None:
+                ground_cfg.fallback_scale = float(fb_val)
+        except Exception as e:
+            print(f"[terrain_generation] ground_detail parse warning: {e}")
+        subs: List[GroundSubBiome] = []
+        for s in gd_elem.findall("subbiome"):
+            try:
+                sid = s.get("id")
+                if not sid:
+                    continue
+                tmax = float(s.get("threshold_max", "1.0"))
+                ch = s.get("char", ".")
+                col = _parse_color(s.get("color", "255,255,255"))
+                w_raw = s.get("walkable", "true").lower()
+                walkable = w_raw in ("true", "1", "yes")
+                sprite = s.get("sprite", "")
+                name = s.get("name", sid)
+                subs.append(GroundSubBiome(sid, tmax, ch, col, walkable, sprite, name))
+            except Exception as e:
+                print(f"[terrain_generation] ground subbiome parse warning: {e}")
+        if subs:
+            subs.sort(key=lambda r: r.threshold_max)
+            cfg.ground_subbiomes = subs
+        else:
+            cfg.ground_subbiomes = list(_DEFAULT_GROUND_SUBBIOMES)
+    else:
+        cfg.ground_subbiomes = list(_DEFAULT_GROUND_SUBBIOMES)
+    cfg.ground_detail = ground_cfg
+
+    # -- mesa / badlands (rare large terracotta+dirt+gravel mask) --
+    mesa_cfg = MesaConfig()
+    mesa_elem = root.find("mesa")
+    if mesa_elem is None:
+        mesa_elem = root.find("mesa_biome")  # alias
+    if mesa_elem is not None:
+        try:
+            mesa_cfg.scale = float(mesa_elem.get("scale", mesa_cfg.scale))
+            mesa_cfg.octaves = int(mesa_elem.get("octaves", mesa_cfg.octaves))
+            mesa_cfg.persistence = float(mesa_elem.get("persistence", mesa_cfg.persistence))
+            mesa_cfg.threshold = float(mesa_elem.get("threshold", mesa_cfg.threshold))
+            mesa_cfg.seed_offset = int(mesa_elem.get("seed_offset", mesa_cfg.seed_offset))
+            mesa_cfg.terracotta_weight = float(mesa_elem.get("terracotta_weight", mesa_cfg.terracotta_weight))
+            mesa_cfg.dirt_weight = float(mesa_elem.get("dirt_weight", mesa_cfg.dirt_weight))
+            mesa_cfg.gravel_weight = float(mesa_elem.get("gravel_weight", mesa_cfg.gravel_weight))
+            fb_val = mesa_elem.get("fallback_scale")
+            if fb_val is not None:
+                mesa_cfg.fallback_scale = float(fb_val)
+        except Exception as e:
+            print(f"[terrain_generation] mesa parse warning: {e}")
+    cfg.mesa = mesa_cfg
 
     # -- palette --
     palette: Dict[str, Tuple[int, int, int]] = dict(_DEFAULT_PALETTE)
@@ -439,12 +584,24 @@ def get_biomes() -> List[BiomeRule]:
 
 def get_noise_config() -> NoiseConfig:
     return _CONFIG.noise
-
 def get_variants() -> Dict[str, List[Variant]]:
     return dict(_CONFIG.variants)
 
+
 def get_scatter() -> List[ScatterFeature]:
     return list(_CONFIG.scatter)
+
+
+def get_ground_subbiomes() -> List[GroundSubBiome]:
+    return list(_CONFIG.ground_subbiomes)
+
+
+def get_ground_detail_config() -> GroundDetailConfig:
+    return _CONFIG.ground_detail
+
+
+def get_mesa_config() -> MesaConfig:
+    return _CONFIG.mesa
 
 
 # ---------------------------------------------------------------------------
@@ -574,6 +731,93 @@ def _is_wheat_edge(wx: int, wy: int) -> bool:
     return False
 
 
+def _sample_ground_detail(wx: int, wy: int) -> float:
+    cfg = _CONFIG.ground_detail
+    if HAS_NOISE:
+        off = cfg.seed_offset + _CONFIG.seed
+        return noise.pnoise2(
+            (wx + off * 1000) * cfg.scale,
+            (wy + off * 1000) * cfg.scale,
+            octaves=cfg.octaves,
+            persistence=cfg.persistence,
+            lacunarity=2.0,
+        )
+    s = cfg.fallback_scale
+    return (math.sin((wx + _CONFIG.seed + cfg.seed_offset) * s) + math.cos((wy + _CONFIG.seed + cfg.seed_offset) * s)) / 2.0
+
+
+def _maybe_ground_detail(wx: int, wy: int) -> Optional[GroundSubBiome]:
+    """Pick a ground sub-biome via detail noise. None = keep base look.
+
+    Returns the 'ground' (plains) entry as None so callers keep existing
+    char/color/biome — only non-plains entries override.
+    """
+    subs = _CONFIG.ground_subbiomes
+    if not subs:
+        return None
+    val = _sample_ground_detail(wx, wy)
+    picked: Optional[GroundSubBiome] = None
+    for sub in subs:
+        if val <= sub.threshold_max:
+            picked = sub
+            break
+    if picked is None:
+        picked = subs[-1]
+    if picked.id == "ground":
+        # Rare stump overlay on plains — single tiles, not fields
+        chance = _CONFIG.ground_detail.stump_chance
+        if chance > 0 and _deterministic_rng(wx, wy, salt=55).random() < chance:
+            return _DEFAULT_STUMP
+        return None
+    if picked.id == "dark_grass":
+        # Retired tile — old configs may still list it; treat as plains.
+        # (Stump roll above already handled when band id is exactly ground.)
+        chance = _CONFIG.ground_detail.stump_chance
+        if chance > 0 and _deterministic_rng(wx, wy, salt=55).random() < chance:
+            return _DEFAULT_STUMP
+        return None
+    return picked
+
+
+def _sample_mesa_noise(wx: int, wy: int) -> float:
+    cfg = _CONFIG.mesa
+    if HAS_NOISE:
+        off = cfg.seed_offset + _CONFIG.seed
+        return noise.pnoise2(
+            (wx + off * 1000) * cfg.scale,
+            (wy + off * 1000) * cfg.scale,
+            octaves=cfg.octaves,
+            persistence=cfg.persistence,
+            lacunarity=2.0,
+        )
+    s = cfg.fallback_scale
+    return (math.sin((wx + _CONFIG.seed + cfg.seed_offset) * s) + math.cos((wy + _CONFIG.seed + cfg.seed_offset) * s)) / 2.0
+
+
+def _is_inside_mesa(wx: int, wy: int) -> bool:
+    return _sample_mesa_noise(wx, wy) > _CONFIG.mesa.threshold
+
+
+def _maybe_mesa_tile(wx: int, wy: int) -> Optional[GroundSubBiome]:
+    """Weighted terracotta/dirt/gravel pick inside a mesa. None = outside mesa."""
+    if not _is_inside_mesa(wx, wy):
+        return None
+    cfg = _CONFIG.mesa
+    total = cfg.terracotta_weight + cfg.dirt_weight + cfg.gravel_weight
+    if total <= 0:
+        return _DEFAULT_MESA_TERRACOTTA
+    r = _deterministic_rng(wx, wy, salt=58).random() * total
+    if r < cfg.terracotta_weight:
+        return _DEFAULT_MESA_TERRACOTTA
+    if r < cfg.terracotta_weight + cfg.dirt_weight:
+        # Mesa dirt reuses the normal dirt look
+        for sub in _CONFIG.ground_subbiomes:
+            if sub.id == "dirt":
+                return sub
+        return GroundSubBiome("dirt", 1.0, "d", (139, 69, 19), True, "dirt1.png", "Dirt")
+    return _DEFAULT_GRAVEL
+
+
 def get_terrain_with_biome(wx: int, wy: int) -> Tuple[str, Tuple[int, int, int], bool, str]:
     """
     Like get_terrain_type but also returns biome id.
@@ -611,6 +855,7 @@ def get_terrain_with_biome(wx: int, wy: int) -> Tuple[str, Tuple[int, int, int],
 
     # --- Wheat field clumps (only on ground) ---
     # Center = normal wheat "w" gold, edge ring = trampled "x" brown with chance
+    # Wheat wins over ground detail so fields stay visible.
     if biome_id == "ground" and _is_inside_wheat_field(wx, wy):
         is_edge = _is_wheat_edge(wx, wy)
         if is_edge and _deterministic_rng(wx, wy, salt=77).random() < _CONFIG.wheat.trampled_chance:
@@ -625,6 +870,21 @@ def get_terrain_with_biome(wx: int, wy: int) -> Tuple[str, Tuple[int, int, int],
             biome_id = "wheat"
             walkable = True
         return char, color, walkable, biome_id
+
+    # --- Mesa badlands (rare + LARGE terracotta/dirt/gravel blobs) ---
+    # Checked before ground detail so mesas stay solid instead of speckled.
+    if biome_id == "ground":
+        mesa_tile = _maybe_mesa_tile(wx, wy)
+        if mesa_tile is not None:
+            return mesa_tile.char, mesa_tile.color, mesa_tile.walkable, mesa_tile.id
+
+    # --- Ground detail sub-biomes (dirt, clay, dry grass, ...) ---
+    # Only applies to base ground; gives new tiles real gameplay presence
+    # with distinct ASCII glyphs + sprites. Deterministic per coord.
+    if biome_id == "ground":
+        sub = _maybe_ground_detail(wx, wy)
+        if sub is not None:
+            return sub.char, sub.color, sub.walkable, sub.id
 
     # Variant glyph (keeps color/walkable, not biome)
     var_char = _pick_variant(biome_id, wx, wy)
@@ -664,6 +924,14 @@ def _build_legacy_glyphs() -> Dict[str, str]:
     if "ground" not in base and "plains" in base:
         base["ground"] = base["plains"]
     base.setdefault("player", "@")
+    base["wheat"] = "w"
+    base["wheat_trampled"] = "x"
+    for sub in _CONFIG.ground_subbiomes:
+        base[sub.id] = sub.char
+    base["stump"] = _DEFAULT_STUMP.char
+    base["terracotta"] = _DEFAULT_MESA_TERRACOTTA.char
+    base["gravel"] = _DEFAULT_GRAVEL.char
+    base.setdefault("dark_grass", "g")  # retired; old saves only
     return base
 
 # Keep GLYPHS in sync after load (already done in _sync, but also ensure legacy aliases)
