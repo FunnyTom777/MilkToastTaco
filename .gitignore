@@ -1,7 +1,7 @@
 # MTT related
 logs/
 saves_world1/
-
+.mtt_prompt_history
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
