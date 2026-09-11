@@ -1,11 +1,10 @@
 <img width="2158" height="606" alt="MTT_Banner1" src="https://github.com/user-attachments/assets/d39e5e4d-90de-4570-aa64-61280af2994e" />
 
 
-Welcome to Milk Toast Taco!
-
+Welcome to Milk Toast Taco!      <a href="https://discord.gg/vtwvmmF9EW"><img width="200" alt="discord_badge1" src="https://github.com/user-attachments/assets/e88e3054-d5ef-4ba1-82e7-c31c637b44ae"/></a>
 
 **We have a Discord now! because nobody asked, but here you go!**
-[Milk Toast Taco Discord](https://discord.gg/vtwvmmF9EW)
+
 
 I honestly don't know how you found this... But your obviously here if your reading this!
 So i might as well tell you about Milk Toast Taco!
