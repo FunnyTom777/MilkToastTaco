@@ -1,4 +1,7 @@
-from state import get_player_stat
+try:
+    from core.systems.state import get_player_stat
+except ImportError:
+    from state import get_player_stat
 
 
 def player_wanted_check(player_id):
