@@ -318,6 +318,69 @@ def launch_dashboard_v2():
     Prompt.ask("[dim]Press Enter to return to main menu[/dim]", default="")
 
 
+def launch_dashboard_v5():
+    show_header()
+    console.print(
+        Panel(
+            "[bold green]Booting Dashboard V5...[/bold green]",
+            border_style="green",
+        )
+    )
+
+    with console.status(
+        "[bold green]Loading command registry and prompt...", spinner="dots"
+    ):
+        time.sleep(0.6)
+
+    console.print("[bold cyan]>>> Launching Dashboard V5...[/bold cyan]")
+    console.print(
+        "[dim]Type 'exit' or 'launcher' (or Ctrl+C twice) to return to the launcher.[/dim]\n"
+    )
+
+    # Prefer subprocess so the Textual main loop + sys.exit() doesn't kill the launcher.
+    # Falls back to direct import if subprocess fails (e.g. in embedded test harnesses).
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "core.renderer.dashboard_v5.dashboardv5"]
+        )
+        if result.returncode == 0:
+            console.print("[green]Dashboard V5 closed cleanly.[/green]")
+        else:
+            console.print(
+                f"[yellow]Dashboard V5 exited with code {result.returncode}.[/yellow]"
+            )
+    except KeyboardInterrupt:
+        console.print("\n[yellow]Dashboard V5 interrupted by user.[/yellow]")
+    except Exception as exc:
+        console.print(
+            f"[red]Subprocess launch failed ({exc}), trying direct import...[/red]"
+        )
+        try:
+            from core.renderer.dashboard_v5.dashboardv5 import run as dashboard_v5_run
+
+            try:
+                dashboard_v5_run()
+            except SystemExit as se:
+                # dashboardv5.py calls sys.exit() on error — treat 0/None as success
+                code = se.code if se.code is not None else 0
+                if code == 0:
+                    console.print("[green]Dashboard V5 closed cleanly.[/green]")
+                else:
+                    console.print(
+                        f"[yellow]Dashboard V5 exited with code {code}.[/yellow]"
+                    )
+        except SystemExit:
+            pass
+        except Exception as exc2:
+            console.print(f"[red]Failed to launch Dashboard V5: {exc2}[/red]")
+            console.print(
+                "[dim]Tip: run manually with: python -m core.renderer.dashboard_v5.dashboardv5[/dim]"
+            )
+
+    console.print()
+    Prompt.ask("[dim]Press Enter to return to main menu[/dim]", default="")
+
+
 def show_tips():
     show_header()
 
@@ -346,6 +409,7 @@ def main():
             choices=[
                 Choice("Launch ASCII renderer", value="ascii"),
                 Choice("Launch Dashboard V2 (Soft Deprecated)", value="dashboard_v2"),
+                Choice("Launch Dashboard V5 (Command Prompt)", value="dashboard_v5"),
                 Choice("Tips", value="tips"),
                 Choice("Quit", value="quit"),
             ],
@@ -365,6 +429,8 @@ def main():
             launch_ascii_renderer()
         elif choice == "dashboard_v2":
             launch_dashboard_v2()
+        elif choice == "dashboard_v5":
+            launch_dashboard_v5()
         elif choice == "tips":
             show_tips()
         elif choice == "quit" or choice is None:

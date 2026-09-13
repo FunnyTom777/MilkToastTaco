@@ -30,6 +30,8 @@ web = ["Flask>=3"]
 xmb = ["pywebview>=5"]
 # Dashboard V4 — Native Desktop Hub (PyQt6).
 dashboard_v4 = ["PyQt6>=6.5"]
+# Dashboard V5 — Textual command prompt over the command registry.
+dashboard_v5 = ["textual>=8"]
 # Torsion3D engine — Panda3D rendering + DearPyGui debug overlay.
 torsion = ["panda3d>=1.10", "dearpygui>=1.10"]
 torsion_full = ["panda3d>=1.10", "dearpygui>=1.10", "gltf>=1.0"]
