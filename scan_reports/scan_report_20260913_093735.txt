@@ -1,0 +1,101 @@
+============================================================
+Python Project Scan Report - HIGH PRIORITY ERRORS ONLY
+Generated: 2026-09-13 09:37:35.123574
+============================================================
+
+FLAKE8 RESULTS (Syntax & Undefined Names):
+select=E999,E902,E911,F821,F822,F823,F831,F632,F633
+------------------------------------------------------------
+No critical issues found.
+
+
+PYLINT RESULTS (Errors Only):
+------------------------------------------------------------
+torsion\assets.py:49:4: E0202: An attribute defined in torsion.assets line 41 hides this method (method-hidden)
+torsion\renderer.py:139:12: E0213: Method '__init__' should have "self" as first argument (no-self-argument)
+
+[WARNING - import path, check PYTHONPATH / package imports]
+core\renderer\Ascii1\ascii.py:1377:40: E0401: Unable to import 'player' (import-error)
+core\renderer\Ascii1\multiplayer.py:85:16: E0401: Unable to import 'player' (import-error)
+core\renderer\Ascii1\player.py:45:8: E0401: Unable to import 'terrain_generation' (import-error)
+core\systems\economy\bank.py:578:8: E0401: Unable to import 'orchestrator' (import-error)
+core\systems\economy\bank.py:579:8: E0401: Unable to import 'orchestrator' (import-error)
+tests\test_torsion.py:7:8: E0401: Unable to import 'torsion3d' (import-error)
+tests\test_torsion_easy.py:55:8: E0401: Unable to import 'torsion3d' (import-error)
+
+
+MYPY RESULTS (Type Errors, noise filtered):
+------------------------------------------------------------
+torsion\debug.py:71: error: "None" has no attribute "set_value"  [attr-defined]
+torsion\debug.py:74: error: "None" has no attribute "render_dearpygui_frame"  [attr-defined]
+torsion\math.py:312: error: No overload variant of "__setitem__" of "list" matches argument types "int", "float"  [call-overload]
+torsion\math.py:318: error: No overload variant of "__setitem__" of "list" matches argument types "int", "float"  [call-overload]
+core\systems\orchestrator.py:89: error: Unsupported right operand type for in ("list[Any] | None")  [operator]
+core\systems\orchestrator.py:134: error: "bool" has no attribute "lower"  [attr-defined]
+core\systems\orchestrator.py:137: error: Argument 1 to "len" has incompatible type "bool"; expected "Sized"  [arg-type]
+core\systems\orchestrator.py:140: error: Argument 1 to "len" has incompatible type "bool"; expected "Sized"  [arg-type]
+core\renderer\Ascii1\terrain_generation.py:138: error: Argument "default_factory" to "field" has incompatible type "type[dict[_KT, _VT]]"; expected "Callable[[], list[ScatterFeature]]"  [arg-type]
+core\renderer\Ascii1\terrain_generation.py:404: error: Argument 1 to "float" has incompatible type "Element[str]"; expected "str | Buffer | SupportsFloat | SupportsIndex"  [arg-type]
+torsion\primitives.py:23: error: "Color" not callable  [operator]
+core\renderer\dashboard_v4\ui\main_window.py:131: error: "Callable[[], QStatusBar | None]" has no attribute "showMessage"  [attr-defined]
+core\renderer\dashboard_v4\ui\main_window.py:151: error: "Callable[[], QStatusBar | None]" has no attribute "showMessage"  [attr-defined]
+core\systems\economy\bank.py:474: error: Item "None" of "BankCard | None" has no attribute "card_id"  [union-attr]
+core\systems\economy\bank.py:479: error: Item "None" of "BankCard | None" has no attribute "type"  [union-attr]
+core\systems\economy\bank.py:480: error: Item "None" of "BankCard | None" has no attribute "balance"  [union-attr]
+core\systems\economy\bank.py:481: error: Item "None" of "BankCard | None" has no attribute "bank"  [union-attr]
+core\systems\economy\bank.py:481: error: Item "None" of "BankCard | None" has no attribute "balance"  [union-attr]
+core\systems\economy\bank.py:482: error: Item "None" of "BankCard | None" has no attribute "debit_limit"  [union-attr]
+core\systems\economy\bank.py:483: error: Item "None" of "BankCard | None" has no attribute "bank"  [union-attr]
+core\systems\economy\bank.py:483: error: Item "None" of "BankCard | None" has no attribute "debit_limit"  [union-attr]
+core\systems\economy\bank.py:485: error: Item "None" of "BankCard | None" has no attribute "credit_limit"  [union-attr]
+core\systems\economy\bank.py:485: error: Item "None" of "BankCard | None" has no attribute "debt"  [union-attr]
+core\systems\economy\bank.py:487: error: Item "None" of "BankCard | None" has no attribute "bank"  [union-attr]
+core\systems\economy\bank.py:487: error: Item "None" of "BankCard | None" has no attribute "credit_limit"  [union-attr]
+core\systems\economy\bank.py:487: error: Item "None" of "BankCard | None" has no attribute "debt"  [union-attr]
+core\systems\economy\bank.py:526: error: Item "None" of "BankCard | None" has no attribute "type"  [union-attr]
+core\systems\economy\bank.py:527: error: Item "None" of "BankCard | None" has no attribute "balance"  [union-attr]
+core\systems\economy\bank.py:529: error: Item "None" of "BankCard | None" has no attribute "debt"  [union-attr]
+core\systems\economy\bank.py:539: error: Item "None" of "BankCard | None" has no attribute "bank"  [union-attr]
+core\systems\economy\bank.py:539: error: Item "None" of "BankCard | None" has no attribute "type"  [union-attr]
+core\systems\economy\bank.py:547: error: Item "None" of "BankCard | None" has no attribute "bank"  [union-attr]
+core\systems\economy\bank.py:547: error: Item "None" of "BankCard | None" has no attribute "type"  [union-attr]
+core\systems\economy\bank.py:549: error: Item "None" of "BankCard | None" has no attribute "to_dict"  [union-attr]
+torsion\easy.py:147: error: "Color" not callable  [operator]
+core\renderer\dashboard_v3\dashboard_v3.py:354: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
+core\renderer\dashboard_v3\dashboard_v3.py:358: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
+core\renderer\dashboard_v3\dashboard_v3.py:364: error: Argument 1 to "len" has incompatible type "Any | list[Any] | None"; expected "Sized"  [arg-type]
+core\renderer\dashboard_v2\dashboard_v2.py:488: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
+core\renderer\dashboard_v2\dashboard_v2.py:492: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
+core\renderer\dashboard_v2\dashboard_v2.py:498: error: Argument 1 to "len" has incompatible type "Any | list[Any] | None"; expected "Sized"  [arg-type]
+core\renderer\Ascii1\ascii.py:1178: error: Function "get_local_ip" could always be true in boolean context  [truthy-function]
+
+[WARNING - annotation hygiene, fix when touching the file]
+torsion\math.py:303: error: List comprehension has incompatible type List[float]; expected List[int]  [misc]
+torsion\assets.py:48: error: Name "albedo" already defined on line 41  [no-redef]
+core\renderer\main_menu\xmb_settings.py:118: error: Incompatible types in assignment (expression has type "object", variable has type "str")  [assignment]
+core\systems\orchestrator.py:97: error: Incompatible types in assignment (expression has type "int", variable has type "bool")  [assignment]
+core\systems\orchestrator.py:116: error: Incompatible types in assignment (expression has type "float", variable has type "bool")  [assignment]
+core\systems\orchestrator.py:133: error: Incompatible types in assignment (expression has type "str", variable has type "bool")  [assignment]
+core\xml_loader.py:196: error: Incompatible types in assignment (expression has type "str", target has type "dict[str, str]")  [assignment]
+core\xml_loader.py:208: error: Incompatible types in assignment (expression has type "dict[str, Any]", target has type "list[Any]")  [assignment]
+core\xml_loader.py:211: error: Incompatible types in assignment (expression has type "dict[str, list[Any]]", target has type "dict[str, str]")  [assignment]
+core\renderer\Ascii1\terrain_generation.py:402: error: Incompatible types in assignment (expression has type "str | None", variable has type "Element[str] | None")  [assignment]
+core\renderer\Ascii1\terrain_generation.py:548: error: Incompatible types in assignment (expression has type "str | None", variable has type "str")  [assignment]
+core\renderer\Ascii1\terrain_generation.py:549: error: Name "walkable" already defined on line 434  [no-redef]
+torsion\scene.py:208: error: Incompatible types in assignment (expression has type "tuple[Any, float]", variable has type "None")  [assignment]
+torsion\renderer.py:151: error: Incompatible types in assignment (expression has type "_TorsionShowBase", variable has type "None")  [assignment]
+core\systems\economy\bank.py:317: error: Incompatible types in assignment (expression has type "str | None", variable has type "None")  [assignment]
+core\systems\economy\bank.py:579: error: Name "_orch2" already defined (by an import)  [no-redef]
+core\systems\economy\bank.py:583: error: Incompatible types in assignment (expression has type "None", variable has type Module)  [assignment]
+engine\torsion_bridge.py:16: error: Incompatible types in assignment (expression has type "None", variable has type Module)  [assignment]
+core\renderer\Ascii1\player.py:341: error: Incompatible types in assignment (expression has type "float", variable has type "int")  [assignment]
+core\renderer\Ascii1\player.py:352: error: Incompatible types in assignment (expression has type "float", variable has type "int")  [assignment]
+core\renderer\Ascii1\player.py:353: error: Incompatible types in assignment (expression has type "float", variable has type "int")  [assignment]
+core\renderer\Ascii1\player.py:356: error: Incompatible types in assignment (expression has type "float", variable has type "int")  [assignment]
+core\renderer\Ascii1\player.py:358: error: Incompatible types in assignment (expression has type "float", variable has type "int")  [assignment]
+core\renderer\Ascii1\player.py:360: error: Incompatible types in assignment (expression has type "float", variable has type "int")  [assignment]
+core\renderer\Ascii1\player.py:362: error: Incompatible types in assignment (expression has type "float", variable has type "int")  [assignment]
+core\renderer\Ascii1\ascii.py:85: error: Incompatible types in assignment (expression has type "None", variable has type "Callable[[int, int], tuple[str, tuple[int, int, int], bool, str]]")  [assignment]
+core\renderer\Ascii1\ascii.py:99: error: Incompatible types in assignment (expression has type "None", variable has type "Callable[[int, int], tuple[str, tuple[int, int, int], bool, str]]")  [assignment]
+core\renderer\Ascii1\ascii.py:102: error: Name "_tg" already defined (by an import)  [no-redef]
+core\renderer\Ascii1\ascii.py:113: error: Incompatible types in assignment (expression has type "None", variable has type "Callable[[int, int], tuple[str, tuple[int, int, int], bool, str]]")  [assignment]

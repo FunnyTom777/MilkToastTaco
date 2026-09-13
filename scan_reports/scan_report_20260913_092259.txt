@@ -1,0 +1,365 @@
+============================================================
+Python Project Scan Report - HIGH PRIORITY ERRORS ONLY
+Generated: 2026-09-13 09:22:59.110740
+============================================================
+
+FLAKE8 RESULTS (Syntax & Runtime Errors):
+------------------------------------------------------------
+.\core\output.py:157:13: F401 'os' imported but unused
+.\core\renderer\Ascii1\ascii.py:103:9: F401 'terrain_generation.get_generation_config' imported but unused
+.\core\renderer\Ascii1\ascii.py:103:9: F401 'terrain_generation.load_generation_config' imported but unused
+.\core\renderer\Ascii1\ascii.py:374:5: F824 `global PLAYER_SKINS` is unused: name is never assigned in scope
+.\core\renderer\Ascii1\ascii.py:867:19: F541 f-string is missing placeholders
+.\core\renderer\Ascii1\ascii.py:1464:9: F811 redefinition of unused '_math' from line 945
+.\core\renderer\Ascii1\ascii.py:1537:25: F841 local variable 'disp_color_for_unseen' is assigned to but never used
+.\core\renderer\Ascii1\hud.py:15:1: F401 'typing.Optional' imported but unused
+.\core\renderer\Ascii1\hud.py:148:13: F841 local variable 'hint_lines' is assigned to but never used
+.\core\renderer\Ascii1\menu.py:459:25: F841 local variable 'ip' is assigned to but never used
+.\core\renderer\Ascii1\menu.py:488:13: F841 local variable 'base_btns' is assigned to but never used
+.\core\renderer\Ascii1\minimap.py:16:1: F401 'os' imported but unused
+.\core\renderer\Ascii1\minimap.py:17:1: F401 'xml.etree.ElementTree as ET' imported but unused
+.\core\renderer\Ascii1\minimap.py:165:9: F841 local variable 'origin_wx' is assigned to but never used
+.\core\renderer\Ascii1\minimap.py:166:9: F841 local variable 'origin_wy' is assigned to but never used
+.\core\renderer\Ascii1\minimap.py:171:9: F841 local variable 'cols' is assigned to but never used
+.\core\renderer\Ascii1\minimap.py:172:9: F841 local variable 'rows' is assigned to but never used
+.\core\renderer\Ascii1\multiplayer.py:27:1: F401 'uuid' imported but unused
+.\core\renderer\Ascii1\multiplayer.py:29:1: F401 'typing.Tuple' imported but unused
+.\core\renderer\Ascii1\multiplayer.py:157:5: F841 local variable 'e' is assigned to but never used
+.\core\renderer\Ascii1\multiplayer.py:319:13: F841 local variable 'e' is assigned to but never used
+.\core\renderer\Ascii1\multiplayer.py:373:9: F841 local variable 'e' is assigned to but never used
+.\core\renderer\Ascii1\multiplayer.py:417:17: F841 local variable 'e' is assigned to but never used
+.\core\renderer\Ascii1\multiplayer.py:463:13: F841 local variable 'e' is assigned to but never used
+.\core\renderer\Ascii1\player.py:36:1: F401 'pathlib.Path' imported but unused
+.\core\renderer\Ascii1\terrain_generation.py:24:1: F401 'os' imported but unused
+.\core\renderer\dashboard\dashboard.py:19:1: F401 'json' imported but unused
+.\core\renderer\dashboard\dashboard.py:22:1: F401 'typing.List' imported but unused
+.\core\renderer\dashboard\dashboard.py:127:13: F401 'core.systems.save.manager.list_saves as _list' imported but unused
+.\core\renderer\dashboard_v2\dashboard_v2.py:111:13: F401 'core.systems.save.manager._sanitize_filename' imported but unused
+.\core\renderer\dashboard_v2\dashboard_v2.py:462:9: F841 local variable 're_details' is assigned to but never used
+.\core\renderer\dashboard_v2\dashboard_v2.py:645:13: F401 'core.systems.gametime.manager.get_scale_label' imported but unused
+.\core\renderer\dashboard_v2\dashboard_v2.py:669:13: F401 'core.systems.realestate.realestate.list_owned_properties' imported but unused
+.\core\renderer\dashboard_v3\dashboard_v3.py:561:13: F401 'core.systems.shop.vehicle_shop.get_categories' imported but unused
+.\core\renderer\dashboard_v4\dashboard_v4.py:13:1: F401 'typing.List' imported but unused
+.\core\renderer\dashboard_v4\theme.py:13:1: F401 'typing.Any' imported but unused
+.\core\renderer\dashboard_v4\ui\main_window.py:7:1: F401 'typing.Dict' imported but unused
+.\core\renderer\dashboard_v4\ui\main_window.py:8:1: F401 'PyQt6.QtCore.Qt' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\bank_tab.py:9:1: F401 'typing.Dict' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\bank_tab.py:9:1: F401 'typing.List' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\bank_tab.py:10:1: F401 'PyQt6.QtCore.Qt' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\bank_tab.py:11:1: F401 'PyQt6.QtWidgets.QSpinBox' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\bank_tab.py:11:1: F401 'PyQt6.QtWidgets.QMessageBox' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\bank_tab.py:260:13: F841 local variable 'res' is assigned to but never used
+.\core\renderer\dashboard_v4\ui\tabs\commands_tab.py:10:1: F401 'PyQt6.QtWidgets.QScrollArea' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\garage_tab.py:8:1: F401 'PyQt6.QtCore.Qt' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\home_tab.py:7:1: F401 'typing.Dict' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\home_tab.py:7:1: F401 'typing.List' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\home_tab.py:8:1: F401 'PyQt6.QtCore.Qt' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\home_tab.py:8:1: F401 'PyQt6.QtCore.QTimer' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\home_tab.py:193:9: F841 local variable 'houses_list' is assigned to but never used
+.\core\renderer\dashboard_v4\ui\tabs\home_tab.py:232:9: F841 local variable 'prop_id' is assigned to but never used
+.\core\renderer\dashboard_v4\ui\tabs\inventory_tab.py:7:1: F401 'typing.Dict' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\inventory_tab.py:7:1: F401 'typing.List' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\inventory_tab.py:8:1: F401 'PyQt6.QtCore.Qt' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\phone_tab.py:7:1: F401 'typing.Dict' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\phone_tab.py:7:1: F401 'typing.List' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\phone_tab.py:8:1: F401 'PyQt6.QtCore.Qt' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\player_tab.py:7:1: F401 'typing.Dict' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\player_tab.py:8:1: F401 'PyQt6.QtCore.Qt' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\player_tab.py:9:1: F401 'PyQt6.QtWidgets.QComboBox' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\player_tab.py:9:1: F401 'PyQt6.QtWidgets.QMessageBox' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\realestate_tab.py:8:1: F401 'PyQt6.QtCore.Qt' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\saves_tab.py:7:1: F401 'typing.Dict' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\saves_tab.py:7:1: F401 'typing.List' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\settings_tab.py:8:1: F401 'typing.Dict' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\settings_tab.py:8:1: F401 'typing.List' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\settings_tab.py:9:1: F401 'PyQt6.QtCore.Qt' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\settings_tab.py:10:1: F401 'PyQt6.QtWidgets.QHBoxLayout' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\settings_tab.py:10:1: F401 'PyQt6.QtWidgets.QPushButton' imported but unused
+.\core\renderer\dashboard_v4\ui\tabs\settings_tab.py:10:1: F401 'PyQt6.QtWidgets.QMessageBox' imported but unused
+.\core\systems\economy\finance_purchase.py:4:5: F401 'orchestrator.devmode' imported but unused
+.\core\systems\player\ownership.py:226:13: F401 'core.systems.shop.vehicle_shop._to_owned_dict' imported but unused
+.\core\systems\realestate\realestate.py:825:9: F401 'core.systems.economy.wallet.get_balance' imported but unused
+.\core\systems\shop\vehicle_shop.py:29:1: F401 'os' imported but unused
+.\core\systems\shop\vehicle_shop.py:348:17: F401 'core.systems.economy.bank.pay_debt' imported but unused
+.\core\systems\shop\vehicle_shop.py:398:13: F401 'core.systems.economy.wallet.get_balance' imported but unused
+.\core\tests\test_inventory.py:4:1: F401 'core.systems.inventory.loader.ItemDef' imported but unused
+.\core\tests\test_inventory.py:5:1: F401 'core.systems.inventory.manager.InventoryStack' imported but unused
+.\core\tests\test_inventory.py:5:1: F401 'core.systems.inventory.manager.DEFAULT_MAX_WEIGHT' imported but unused
+.\core\tests\test_xml_loader.py:15:1: F401 'pathlib.Path' imported but unused
+.\core\xml_loader_examples.py:182:9: F841 local variable 'root' is assigned to but never used
+.\core\xml_loader_examples.py:211:9: F841 local variable 'data_dict' is assigned to but never used
+.\test_all.py:2:1: F401 'sys' imported but unused
+.\test_all.py:4:1: F401 'pathlib.Path' imported but unused
+.\torsion\assets.py:19:1: F401 '.math.Vec3' imported but unused
+.\torsion\assets.py:49:5: F811 redefinition of unused 'albedo' from line 41
+.\torsion\easy.py:369:1: F811 redefinition of unused 'set_camera' from line 318
+
+PYLINT RESULTS (Errors Only):
+------------------------------------------------------------
+core\renderer\Ascii1\ascii.py:1377:40: E0401: Unable to import 'player' (import-error)
+core\renderer\Ascii1\multiplayer.py:85:16: E0401: Unable to import 'player' (import-error)
+core\renderer\Ascii1\player.py:45:8: E0401: Unable to import 'terrain_generation' (import-error)
+core\systems\economy\bank.py:578:8: E0401: Unable to import 'orchestrator' (import-error)
+core\systems\economy\bank.py:579:8: E0401: Unable to import 'orchestrator' (import-error)
+tests\test_torsion.py:7:8: E0401: Unable to import 'torsion3d' (import-error)
+tests\test_torsion_easy.py:55:8: E0401: Unable to import 'torsion3d' (import-error)
+
+MYPY RESULTS (Type Errors):
+------------------------------------------------------------
+core\renderer\3d\mtt_3d.py:1: error: Skipping analyzing "direct.gui.OnscreenText": module is installed, but missing library stubs or py.typed marker  [import-untyped]
+core\renderer\3d\mtt_3d.py:1: note: See https://mypy.readthedocs.io/en/stable/running_mypy.html#missing-imports
+core\renderer\3d\mtt_3d.py:2: error: Skipping analyzing "direct.showbase.ShowBase": module is installed, but missing library stubs or py.typed marker  [import-untyped]
+core\renderer\3d\mtt_3d.py:3: error: Skipping analyzing "panda3d.core": module is installed, but missing library stubs or py.typed marker  [import-untyped]
+torsion\debug.py:71: error: "None" has no attribute "set_value"  [attr-defined]
+torsion\debug.py:74: error: "None" has no attribute "render_dearpygui_frame"  [attr-defined]
+torsion\math.py:226: error: "type[Color]" has no attribute "WHITE"  [attr-defined]
+torsion\math.py:227: error: "type[Color]" has no attribute "BLACK"  [attr-defined]
+torsion\math.py:228: error: "type[Color]" has no attribute "RED"  [attr-defined]
+torsion\math.py:229: error: "type[Color]" has no attribute "GREEN"  [attr-defined]
+torsion\math.py:230: error: "type[Color]" has no attribute "BLUE"  [attr-defined]
+torsion\math.py:231: error: "type[Color]" has no attribute "SKY"  [attr-defined]
+torsion\math.py:303: error: List comprehension has incompatible type List[float]; expected List[int]  [misc]
+torsion\math.py:312: error: No overload variant of "__setitem__" of "list" matches argument types "int", "float"  [call-overload]
+torsion\math.py:312: note: Possible overload variants:
+torsion\math.py:312: note:     def __setitem__(self, SupportsIndex, int, /) -> None
+torsion\math.py:312: note:     def __setitem__(self, slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None], Iterable[int], /) -> None
+torsion\math.py:318: error: No overload variant of "__setitem__" of "list" matches argument types "int", "float"  [call-overload]
+torsion\math.py:318: note: Possible overload variants:
+torsion\math.py:318: note:     def __setitem__(self, SupportsIndex, int, /) -> None
+torsion\math.py:318: note:     def __setitem__(self, slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None], Iterable[int], /) -> None
+torsion\assets.py:48: error: Name "albedo" already defined on line 41  [no-redef]
+core\renderer\main_menu\xmb_settings.py:118: error: Incompatible types in assignment (expression has type "object", variable has type "str")  [assignment]
+core\systems\orchestrator.py:89: error: Unsupported right operand type for in ("list[Any] | None")  [operator]
+core\systems\orchestrator.py:97: error: Incompatible types in assignment (expression has type "int", variable has type "bool")  [assignment]
+core\systems\orchestrator.py:116: error: Incompatible types in assignment (expression has type "float", variable has type "bool")  [assignment]
+core\systems\orchestrator.py:133: error: Incompatible types in assignment (expression has type "str", variable has type "bool")  [assignment]
+core\systems\orchestrator.py:134: error: "bool" has no attribute "lower"  [attr-defined]
+core\systems\orchestrator.py:137: error: Argument 1 to "len" has incompatible type "bool"; expected "Sized"  [arg-type]
+core\systems\orchestrator.py:140: error: Argument 1 to "len" has incompatible type "bool"; expected "Sized"  [arg-type]
+torsion\light.py:18: error: "type[Color]" has no attribute "WHITE"  [attr-defined]
+torsion\light.py:35: error: "type[Color]" has no attribute "WHITE"  [attr-defined]
+torsion\light.py:59: error: "type[Color]" has no attribute "WHITE"  [attr-defined]
+torsion\light.py:86: error: "type[Color]" has no attribute "WHITE"  [attr-defined]
+core\xml_loader.py:196: error: Incompatible types in assignment (expression has type "str", target has type "dict[str, str]")  [assignment]
+core\xml_loader.py:199: error: Need type annotation for "children" (hint: "children: dict[<type>, <type>] = ...")  [var-annotated]
+core\xml_loader.py:208: error: Incompatible types in assignment (expression has type "dict[str, Any]", target has type "list[Any]")  [assignment]
+core\xml_loader.py:211: error: Incompatible types in assignment (expression has type "dict[str, list[Any]]", target has type "dict[str, str]")  [assignment]
+core\xml_loader.py:266: error: Need type annotation for "results" (hint: "results: dict[<type>, <type>] = ...")  [var-annotated]
+core\systems\phone\phone.py:4: error: Cannot find implementation or library stub for module named "orchestrator"  [import-not-found]
+core\systems\phone\phone.py:4: error: Name "display_phone_ui" already defined (possibly by an import)  [no-redef]
+core\systems\phone\phone.py:4: error: Name "warning" already defined (possibly by an import)  [no-redef]
+core\systems\phone\phone.py:4: error: Name "thisdoesnothing" already defined (possibly by an import)  [no-redef]
+core\systems\phone\phone.py:9: error: All conditional function variants must have identical signatures  [misc]
+core\systems\phone\phone.py:9: note: Original:
+core\systems\phone\phone.py:9: note:     def command(name: str, help_text: str = ..., category: str = ...) -> Any
+core\systems\phone\phone.py:9: note: Redefinition:
+core\systems\phone\phone.py:9: note:     def _command(*a: Any, **k: Any) -> Any
+core\systems\phone\phone.py:16: error: Need type annotation for "contacts_list" (hint: "contacts_list: dict[<type>, <type>] = ...")  [var-annotated]
+core\systems\economy\finance_purchase.py:4: error: Cannot find implementation or library stub for module named "orchestrator"  [import-not-found]
+core\systems\economy\finance_purchase.py:4: error: Name "devmode" already defined (possibly by an import)  [no-redef]
+core\systems\economy\finance_purchase.py:4: error: Name "debug_mode" already defined (possibly by an import)  [no-redef]
+core\systems\economy\finance_purchase.py:4: error: Name "request_player_input" already defined (possibly by an import)  [no-redef]
+core\systems\economy\finance_purchase.py:4: error: Name "warning" already defined (possibly by an import)  [no-redef]
+core\renderer\Ascii1\terrain_generation.py:138: error: Argument "default_factory" to "field" has incompatible type "type[dict[_KT, _VT]]"; expected "Callable[[], list[ScatterFeature]]"  [arg-type]
+core\renderer\Ascii1\terrain_generation.py:402: error: Incompatible types in assignment (expression has type "str | None", variable has type "Element[str] | None")  [assignment]
+core\renderer\Ascii1\terrain_generation.py:404: error: Argument 1 to "float" has incompatible type "Element[str]"; expected "str | Buffer | SupportsFloat | SupportsIndex"  [arg-type]
+core\renderer\Ascii1\terrain_generation.py:548: error: Incompatible types in assignment (expression has type "str | None", variable has type "str")  [assignment]
+core\renderer\Ascii1\terrain_generation.py:549: error: Name "walkable" already defined on line 434  [no-redef]
+torsion\scene.py:208: error: Incompatible types in assignment (expression has type "tuple[Any, float]", variable has type "None")  [assignment]
+core\systems\vehicles\data\license_plates.py:8: error: Cannot find implementation or library stub for module named "orchestrator"  [import-not-found]
+core\systems\vehicles\data\license_plates.py:8: error: Name "warning" already defined (possibly by an import)  [no-redef]
+core\systems\vehicles\data\license_plates.py:10: error: All conditional function variants must have identical signatures  [misc]
+core\systems\vehicles\data\license_plates.py:10: note: Original:
+core\systems\vehicles\data\license_plates.py:10: note:     def warning(warning_note: Any) -> Any
+core\systems\vehicles\data\license_plates.py:10: note: Redefinition:
+core\systems\vehicles\data\license_plates.py:10: note:     def warning(*a: Any, **k: Any) -> Any
+core\systems\vehicles\data\license_plates.py:14: error: Need type annotation for "registered_license_plates" (hint: "registered_license_plates: list[<type>] = ...")  [var-annotated]
+core\renderer\dashboard_v4\ui\tabs\realestate_tab.py:97: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+core\renderer\dashboard_v4\ui\tabs\garage_tab.py:91: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+core\renderer\dashboard_v4\ui\tabs\commands_tab.py:201: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+torsion\renderer.py:151: error: Incompatible types in assignment (expression has type "_TorsionShowBase", variable has type "None")  [assignment]
+torsion\primitives.py:23: error: "Color" not callable  [operator]
+core\systems\inventory\manager.py:19: error: All conditional function variants must have identical signatures  [misc]
+core\systems\inventory\manager.py:19: note: Original:
+core\systems\inventory\manager.py:19: note:     def command(name: str, help_text: str = ..., category: str = ...) -> Any
+core\systems\inventory\manager.py:19: note: Redefinition:
+core\systems\inventory\manager.py:19: note:     def _command(*a: Any, **k: Any) -> Any
+core\systems\police\police.py:4: error: Cannot find implementation or library stub for module named "state"  [import-not-found]
+core\systems\police\police.py:4: note: Did you mean "stat"?
+core\systems\police\police.py:4: error: Name "get_player_stat" already defined (possibly by an import)  [no-redef]
+core\renderer\dashboard_v4\ui\main_window.py:131: error: "Callable[[], QStatusBar | None]" has no attribute "showMessage"  [attr-defined]
+core\renderer\dashboard_v4\ui\main_window.py:151: error: "Callable[[], QStatusBar | None]" has no attribute "showMessage"  [attr-defined]
+core\systems\player_manager.py:24: error: All conditional function variants must have identical signatures  [misc]
+core\systems\player_manager.py:24: note: Original:
+core\systems\player_manager.py:24: note:     def command(name: str, help_text: str = ..., category: str = ...) -> Any
+core\systems\player_manager.py:24: note: Redefinition:
+core\systems\player_manager.py:24: note:     def _command(*a: Any, **k: Any) -> Any
+core\systems\economy\bank.py:317: error: Incompatible types in assignment (expression has type "str | None", variable has type "None")  [assignment]
+core\systems\economy\bank.py:474: error: Item "None" of "BankCard | None" has no attribute "card_id"  [union-attr]
+core\systems\economy\bank.py:479: error: Item "None" of "BankCard | None" has no attribute "type"  [union-attr]
+core\systems\economy\bank.py:480: error: Item "None" of "BankCard | None" has no attribute "balance"  [union-attr]
+core\systems\economy\bank.py:481: error: Item "None" of "BankCard | None" has no attribute "bank"  [union-attr]
+core\systems\economy\bank.py:481: error: Item "None" of "BankCard | None" has no attribute "balance"  [union-attr]
+core\systems\economy\bank.py:482: error: Item "None" of "BankCard | None" has no attribute "debit_limit"  [union-attr]
+core\systems\economy\bank.py:483: error: Item "None" of "BankCard | None" has no attribute "bank"  [union-attr]
+core\systems\economy\bank.py:483: error: Item "None" of "BankCard | None" has no attribute "debit_limit"  [union-attr]
+core\systems\economy\bank.py:485: error: Item "None" of "BankCard | None" has no attribute "credit_limit"  [union-attr]
+core\systems\economy\bank.py:485: error: Item "None" of "BankCard | None" has no attribute "debt"  [union-attr]
+core\systems\economy\bank.py:487: error: Item "None" of "BankCard | None" has no attribute "bank"  [union-attr]
+core\systems\economy\bank.py:487: error: Item "None" of "BankCard | None" has no attribute "credit_limit"  [union-attr]
+core\systems\economy\bank.py:487: error: Item "None" of "BankCard | None" has no attribute "debt"  [union-attr]
+core\systems\economy\bank.py:526: error: Item "None" of "BankCard | None" has no attribute "type"  [union-attr]
+core\systems\economy\bank.py:527: error: Item "None" of "BankCard | None" has no attribute "balance"  [union-attr]
+core\systems\economy\bank.py:529: error: Item "None" of "BankCard | None" has no attribute "debt"  [union-attr]
+core\systems\economy\bank.py:539: error: Item "None" of "BankCard | None" has no attribute "bank"  [union-attr]
+core\systems\economy\bank.py:539: error: Item "None" of "BankCard | None" has no attribute "type"  [union-attr]
+core\systems\economy\bank.py:547: error: Item "None" of "BankCard | None" has no attribute "bank"  [union-attr]
+core\systems\economy\bank.py:547: error: Item "None" of "BankCard | None" has no attribute "type"  [union-attr]
+core\systems\economy\bank.py:549: error: Item "None" of "BankCard | None" has no attribute "to_dict"  [union-attr]
+core\systems\economy\bank.py:569: error: All conditional function variants must have identical signatures  [misc]
+core\systems\economy\bank.py:569: note: Original:
+core\systems\economy\bank.py:569: note:     def command(name: str, help_text: str = ..., category: str = ...) -> Any
+core\systems\economy\bank.py:569: note: Redefinition:
+core\systems\economy\bank.py:569: note:     def _command(*a: Any, **k: Any) -> Any
+core\systems\economy\bank.py:578: error: Cannot find implementation or library stub for module named "orchestrator"  [import-not-found]
+core\systems\economy\bank.py:578: error: Name "_infp" already defined (possibly by an import)  [no-redef]
+core\systems\economy\bank.py:578: error: Name "_warn2" already defined (possibly by an import)  [no-redef]
+core\systems\economy\bank.py:579: error: Name "_orch2" already defined (by an import)  [no-redef]
+core\systems\economy\bank.py:583: error: Incompatible types in assignment (expression has type "None", variable has type Module)  [assignment]
+core\systems\economy\bank.py:725: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+torsion\easy.py:66: error: "type[Color]" has no attribute "WHITE"  [attr-defined]
+torsion\easy.py:67: error: "type[Color]" has no attribute "BLACK"  [attr-defined]
+torsion\easy.py:68: error: "type[Color]" has no attribute "RED"  [attr-defined]
+torsion\easy.py:69: error: "type[Color]" has no attribute "GREEN"  [attr-defined]
+torsion\easy.py:70: error: "type[Color]" has no attribute "BLUE"  [attr-defined]
+torsion\easy.py:71: error: "type[Color]" has no attribute "SKY"  [attr-defined]
+torsion\easy.py:72: error: "type[Color]" has no attribute "SKY"  [attr-defined]
+torsion\easy.py:147: error: "Color" not callable  [operator]
+torsion\easy.py:272: error: "type[Color]" has no attribute "WHITE"  [attr-defined]
+torsion\easy.py:279: error: "type[Color]" has no attribute "WHITE"  [attr-defined]
+torsion\easy.py:288: error: "type[Color]" has no attribute "WHITE"  [attr-defined]
+core\systems\shop\vehicle_shop.py:45: error: All conditional function variants must have identical signatures  [misc]
+core\systems\shop\vehicle_shop.py:45: note: Original:
+core\systems\shop\vehicle_shop.py:45: note:     def print_to_user(text: str, level: str = ..., channel: str = ..., source: str = ..., **meta: Any) -> dict[str, Any]
+core\systems\shop\vehicle_shop.py:45: note: Redefinition:
+core\systems\shop\vehicle_shop.py:45: note:     def _ptu(msg: Any, **k: Any) -> Any
+core\systems\shop\vehicle_shop.py:46: error: All conditional function variants must have identical signatures  [misc]
+core\systems\shop\vehicle_shop.py:46: note: Original:
+core\systems\shop\vehicle_shop.py:46: note:     def success(text: str, channel: str = ..., source: str = ..., **meta: Any) -> dict[str, Any]
+core\systems\shop\vehicle_shop.py:46: note: Redefinition:
+core\systems\shop\vehicle_shop.py:46: note:     def _success(msg: Any, **k: Any) -> Any
+core\systems\shop\vehicle_shop.py:47: error: All conditional function variants must have identical signatures  [misc]
+core\systems\shop\vehicle_shop.py:47: note: Original:
+core\systems\shop\vehicle_shop.py:47: note:     def warning(text: str, channel: str = ..., source: str = ..., **meta: Any) -> dict[str, Any]
+core\systems\shop\vehicle_shop.py:47: note: Redefinition:
+core\systems\shop\vehicle_shop.py:47: note:     def _out_warn(msg: Any, **k: Any) -> Any
+core\systems\shop\vehicle_shop.py:48: error: All conditional function variants must have identical signatures  [misc]
+core\systems\shop\vehicle_shop.py:48: note: Original:
+core\systems\shop\vehicle_shop.py:48: note:     def error(text: str, channel: str = ..., source: str = ..., **meta: Any) -> dict[str, Any]
+core\systems\shop\vehicle_shop.py:48: note: Redefinition:
+core\systems\shop\vehicle_shop.py:48: note:     def _err(msg: Any, **k: Any) -> Any
+core\systems\player\ownership.py:28: error: All conditional function variants must have identical signatures  [misc]
+core\systems\player\ownership.py:28: note: Original:
+core\systems\player\ownership.py:28: note:     def print_to_user(text: str, level: str = ..., channel: str = ..., source: str = ..., **meta: Any) -> dict[str, Any]
+core\systems\player\ownership.py:28: note: Redefinition:
+core\systems\player\ownership.py:28: note:     def _ptu(*a: Any, **k: Any) -> Any
+core\systems\player\ownership.py:29: error: All conditional function variants must have identical signatures  [misc]
+core\systems\player\ownership.py:29: note: Original:
+core\systems\player\ownership.py:29: note:     def warning(text: str, channel: str = ..., source: str = ..., **meta: Any) -> dict[str, Any]
+core\systems\player\ownership.py:29: note: Redefinition:
+core\systems\player\ownership.py:29: note:     def _out_warn(*a: Any, **k: Any) -> Any
+core\systems\player\ownership.py:30: error: All conditional function variants must have identical signatures  [misc]
+core\systems\player\ownership.py:30: note: Original:
+core\systems\player\ownership.py:30: note:     def success(text: str, channel: str = ..., source: str = ..., **meta: Any) -> dict[str, Any]
+core\systems\player\ownership.py:30: note: Redefinition:
+core\systems\player\ownership.py:30: note:     def _success(*a: Any, **k: Any) -> Any
+core\systems\realestate\realestate.py:59: error: All conditional function variants must have identical signatures  [misc]
+core\systems\realestate\realestate.py:59: note: Original:
+core\systems\realestate\realestate.py:59: note:     def print_to_user(text: str, level: str = ..., channel: str = ..., source: str = ..., **meta: Any) -> dict[str, Any]
+core\systems\realestate\realestate.py:59: note: Redefinition:
+core\systems\realestate\realestate.py:59: note:     def _ptu(msg: Any, **k: Any) -> Any
+core\systems\realestate\realestate.py:60: error: All conditional function variants must have identical signatures  [misc]
+core\systems\realestate\realestate.py:60: note: Original:
+core\systems\realestate\realestate.py:60: note:     def success(text: str, channel: str = ..., source: str = ..., **meta: Any) -> dict[str, Any]
+core\systems\realestate\realestate.py:60: note: Redefinition:
+core\systems\realestate\realestate.py:60: note:     def _success(msg: Any, **k: Any) -> Any
+core\systems\realestate\realestate.py:61: error: All conditional function variants must have identical signatures  [misc]
+core\systems\realestate\realestate.py:61: note: Original:
+core\systems\realestate\realestate.py:61: note:     def warning(text: str, channel: str = ..., source: str = ..., **meta: Any) -> dict[str, Any]
+core\systems\realestate\realestate.py:61: note: Redefinition:
+core\systems\realestate\realestate.py:61: note:     def _out_warn(msg: Any, **k: Any) -> Any
+core\systems\realestate\realestate.py:62: error: All conditional function variants must have identical signatures  [misc]
+core\systems\realestate\realestate.py:62: note: Original:
+core\systems\realestate\realestate.py:62: note:     def error(text: str, channel: str = ..., source: str = ..., **meta: Any) -> dict[str, Any]
+core\systems\realestate\realestate.py:62: note: Redefinition:
+core\systems\realestate\realestate.py:62: note:     def _err(msg: Any, **k: Any) -> Any
+engine\torsion_bridge.py:16: error: Incompatible types in assignment (expression has type "None", variable has type Module)  [assignment]
+tests\test_torsion_easy.py:55: error: Cannot find implementation or library stub for module named "torsion3d"  [import-not-found]
+tests\test_torsion.py:7: error: Cannot find implementation or library stub for module named "torsion3d"  [import-not-found]
+core\renderer\dashboard_v3\dashboard_v3.py:51: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+core\renderer\dashboard_v3\dashboard_v3.py:52: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+core\renderer\dashboard_v3\dashboard_v3.py:107: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+core\renderer\dashboard_v3\dashboard_v3.py:354: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
+core\renderer\dashboard_v3\dashboard_v3.py:358: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
+core\renderer\dashboard_v3\dashboard_v3.py:364: error: Argument 1 to "len" has incompatible type "Any | list[Any] | None"; expected "Sized"  [arg-type]
+core\renderer\dashboard_v3\dashboard_v3.py:610: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+core\renderer\dashboard_v2\dashboard_v2.py:54: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+core\renderer\dashboard_v2\dashboard_v2.py:55: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+core\renderer\dashboard_v2\dashboard_v2.py:488: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
+core\renderer\dashboard_v2\dashboard_v2.py:492: error: Item "None" of "Any | dict[Any, Any] | None" has no attribute "get"  [union-attr]
+core\renderer\dashboard_v2\dashboard_v2.py:498: error: Argument 1 to "len" has incompatible type "Any | list[Any] | None"; expected "Sized"  [arg-type]
+core\renderer\dashboard_v5\systems\command_prompt.py:119: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+core\renderer\Ascii1\player.py:341: error: Incompatible types in assignment (expression has type "float", variable has type "int")  [assignment]
+core\renderer\Ascii1\player.py:352: error: Incompatible types in assignment (expression has type "float", variable has type "int")  [assignment]
+core\renderer\Ascii1\player.py:353: error: Incompatible types in assignment (expression has type "float", variable has type "int")  [assignment]
+core\renderer\Ascii1\player.py:356: error: Incompatible types in assignment (expression has type "float", variable has type "int")  [assignment]
+core\renderer\Ascii1\player.py:358: error: Incompatible types in assignment (expression has type "float", variable has type "int")  [assignment]
+core\renderer\Ascii1\player.py:360: error: Incompatible types in assignment (expression has type "float", variable has type "int")  [assignment]
+core\renderer\Ascii1\player.py:362: error: Incompatible types in assignment (expression has type "float", variable has type "int")  [assignment]
+core\renderer\Ascii1\player.py:385: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+core\renderer\Ascii1\hud.py:148: error: Need type annotation for "hint_lines" (hint: "hint_lines: list[<type>] = ...")  [var-annotated]
+core\renderer\Ascii1\multiplayer.py:195: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+core\renderer\Ascii1\multiplayer.py:197: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+core\renderer\Ascii1\multiplayer.py:198: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+core\renderer\Ascii1\menu.py:40: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+core\renderer\Ascii1\menu.py:45: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+core\renderer\Ascii1\menu.py:51: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+core\renderer\Ascii1\menu.py:53: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+core\renderer\Ascii1\menu.py:55: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+core\renderer\Ascii1\menu.py:56: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+core\renderer\Ascii1\menu.py:57: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+core\renderer\Ascii1\menu.py:455: error: Cannot find implementation or library stub for module named "multiplayer"  [import-not-found]
+core\renderer\Ascii1\ascii.py:16: error: Cannot find implementation or library stub for module named "minimap"  [import-not-found]
+core\renderer\Ascii1\ascii.py:16: error: Name "Minimap" already defined (possibly by an import)  [no-redef]
+core\renderer\Ascii1\ascii.py:27: error: Cannot find implementation or library stub for module named "fog"  [import-not-found]
+core\renderer\Ascii1\ascii.py:27: error: Name "PlayerFog" already defined (possibly by an import)  [no-redef]
+core\renderer\Ascii1\ascii.py:38: error: Cannot find implementation or library stub for module named "hud"  [import-not-found]
+core\renderer\Ascii1\ascii.py:38: error: Name "draw_hud" already defined (possibly by an import)  [no-redef]
+core\renderer\Ascii1\ascii.py:50: error: Cannot find implementation or library stub for module named "multiplayer"  [import-not-found]
+core\renderer\Ascii1\ascii.py:50: error: Name "Discovery" already defined (possibly by an import)  [no-redef]
+core\renderer\Ascii1\ascii.py:50: error: Name "HostSession" already defined (possibly by an import)  [no-redef]
+core\renderer\Ascii1\ascii.py:50: error: Name "ClientSession" already defined (possibly by an import)  [no-redef]
+core\renderer\Ascii1\ascii.py:50: error: Name "get_local_ip" already defined (possibly by an import)  [no-redef]
+core\renderer\Ascii1\ascii.py:61: error: Cannot find implementation or library stub for module named "menu"  [import-not-found]
+core\renderer\Ascii1\ascii.py:61: error: Name "MTTMenu" already defined (possibly by an import)  [no-redef]
+core\renderer\Ascii1\ascii.py:85: error: Incompatible types in assignment (expression has type "None", variable has type "Callable[[int, int], tuple[str, tuple[int, int, int], bool, str]]")  [assignment]
+core\renderer\Ascii1\ascii.py:99: error: Incompatible types in assignment (expression has type "None", variable has type "Callable[[int, int], tuple[str, tuple[int, int, int], bool, str]]")  [assignment]
+core\renderer\Ascii1\ascii.py:102: error: Cannot find implementation or library stub for module named "terrain_generation"  [import-not-found]
+core\renderer\Ascii1\ascii.py:102: error: Name "_tg" already defined (by an import)  [no-redef]
+core\renderer\Ascii1\ascii.py:103: error: Name "Tile" already defined (possibly by an import)  [no-redef]
+core\renderer\Ascii1\ascii.py:103: error: Name "get_terrain_type" already defined (possibly by an import)  [no-redef]
+core\renderer\Ascii1\ascii.py:103: error: Name "get_generation_config" already defined (possibly by an import)  [no-redef]
+core\renderer\Ascii1\ascii.py:103: error: Name "reload_generation_config" already defined (possibly by an import)  [no-redef]
+core\renderer\Ascii1\ascii.py:103: error: Name "load_generation_config" already defined (possibly by an import)  [no-redef]
+core\renderer\Ascii1\ascii.py:111: error: Name "get_terrain_with_biome" already defined (possibly by an import)  [no-redef]
+core\renderer\Ascii1\ascii.py:113: error: Incompatible types in assignment (expression has type "None", variable has type "Callable[[int, int], tuple[str, tuple[int, int, int], bool, str]]")  [assignment]
+core\renderer\Ascii1\ascii.py:187: error: Need type annotation for "SPRITES" (hint: "SPRITES: dict[<type>, <type>] = ...")  [var-annotated]
+core\renderer\Ascii1\ascii.py:188: error: Need type annotation for "MISSING_SPRITES" (hint: "MISSING_SPRITES: list[<type>] = ...")  [var-annotated]
+core\renderer\Ascii1\ascii.py:355: error: Need type annotation for "SPRITE_VARIANTS" (hint: "SPRITE_VARIANTS: dict[<type>, <type>] = ...")  [var-annotated]
+core\renderer\Ascii1\ascii.py:356: error: Need type annotation for "PLAYER_SKINS" (hint: "PLAYER_SKINS: dict[<type>, <type>] = ...")  [var-annotated]
+core\renderer\Ascii1\ascii.py:587: error: Need type annotation for "_NAMETAG_FONTS" (hint: "_NAMETAG_FONTS: dict[<type>, <type>] = ...")  [var-annotated]
+core\renderer\Ascii1\ascii.py:740: error: Need type annotation for "loaded_chunks" (hint: "loaded_chunks: dict[<type>, <type>] = ...")  [var-annotated]
+core\renderer\Ascii1\ascii.py:883: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+core\renderer\Ascii1\ascii.py:1178: error: Function "get_local_ip" could always be true in boolean context  [truthy-function]
+Found 160 errors in 33 files (checked 106 source files)
+
