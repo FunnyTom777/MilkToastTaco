@@ -22,6 +22,7 @@ And that's all i can think of now... But i will add some more to this eventually
 First, you'll need **Python 3.11 or newer** installed.
 
 You can get Python [here](https://www.python.org/downloads) if you don't already have it.
+> You can check if you already have it installed by running `python --version` in your terminal.
 
 Once Python is installed, go to the top of this page and find the big green **Code** button.
 
