@@ -1,4 +1,4 @@
-<img width="2158" height="606" alt="MTT_Banner1" src="https://github.com/user-attachments/assets/d39e5e4d-90de-4570-aa64-61280af2994e" />
+<a href="#"><img width="2158" height="606" alt="MTT_Banner1" src="https://github.com/user-attachments/assets/d39e5e4d-90de-4570-aa64-61280af2994e" /></a>
 
 Welcome to Milk Toast Taco!
 
@@ -25,11 +25,11 @@ You can get Python [here](https://www.python.org/downloads) if you don't already
 
 Once Python is installed, go to the top of this page and find the big green **Code** button.
 
-<img width="586" height="65" alt="Screenshot 2026-09-11 104725" src="https://github.com/user-attachments/assets/443f9e5e-37e4-483b-8061-1ae7b51591f6" />
+<a href="#"><img width="586" height="65" alt="Screenshot 2026-09-11 104725" src="https://github.com/user-attachments/assets/443f9e5e-37e4-483b-8061-1ae7b51591f6" /></a>
 
 Click the **Code** button and a dropdown menu will appear. At the very bottom, click **Download ZIP**.
 
-<img width="515" height="506" alt="Screenshot 2026-09-11 104903" src="https://github.com/user-attachments/assets/fdbe6fb8-83ad-4eb4-a098-db6a039768e4" />
+<a href="#"><img width="515" height="506" alt="Screenshot 2026-09-11 104903" src="https://github.com/user-attachments/assets/fdbe6fb8-83ad-4eb4-a098-db6a039768e4" /></a>
 
 Clicking that will ask you where you want to save the MTT ZIP file.
 
@@ -45,7 +45,7 @@ Find the MTT `.zip` file, which should look something like:
 
 Right-click on the ZIP file and select **Extract All**.
 
-<img width="340" height="402" alt="Screenshot 2026-09-11 105555" src="https://github.com/user-attachments/assets/be93958b-20d6-417c-9ae6-729bc9bd85ee" />
+<a href="#"><img width="340" height="402" alt="Screenshot 2026-09-11 105555" src="https://github.com/user-attachments/assets/be93958b-20d6-417c-9ae6-729bc9bd85ee" /></a>
 
 Click **Extract**.
 
@@ -53,7 +53,7 @@ Windows will then extract MTT into a new folder. The folder will probably have t
 
 Open that new folder, and it should look something like this:
 
-<img width="765" height="857" alt="Screenshot 2026-09-11 105448" src="https://github.com/user-attachments/assets/f71ba70d-fb2d-4071-bcf9-3dccccaaab8e" />
+<a href="#"><img width="765" height="857" alt="Screenshot 2026-09-11 105448" src="https://github.com/user-attachments/assets/f71ba70d-fb2d-4071-bcf9-3dccccaaab8e" /></a>
 
 Now, right-click somewhere empty inside the folder and select **Open in Terminal**.
 
@@ -72,6 +72,14 @@ The MTT launcher should pop up!
 **You're all done! 🎉**
 
 > **Note:** If you get an error such as `Python was not found` when trying to run `main.py`, it likely means either Python isn't installed correctly or it hasn't been added to your PATH. Just Google the error you get and you'll probably find the solution. :D
+
+<br>
+<br>
+<br>
+
+<p align="center">
+  <a href="#"><img width="400" alt="MTT_Banner1StoryTime" src="https://github.com/user-attachments/assets/7e1952cf-27da-428d-a6b5-4c596406f726" /></a>
+</p>
 
 ### Story...
 
