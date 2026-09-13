@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<vehicles>
+    <vehicle vehicle_id="1">
+        <vehicle_title>Template Vehicle</vehicle_title>
+        <vehicle_name>template_vehicle</vehicle_name>
+        <vehicle_default_price>3000</vehicle_default_price>
+    </vehicle>
+</vehicles>
