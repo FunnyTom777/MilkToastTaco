@@ -21,3 +21,4 @@
 - [ ] **Forestry/Logging** Players can run a Logging bussiness. `🟩 lp` `🟥 ni`
 - [ ] **Fishing System** Players can do hobby fishing, or comercial fishing `🟥 ni` `🟩 lp`
 - [ ] **Job/Contract system** Job/Contract system for earning money. `🟥 ni` `🟩 lp`
+- [ ] **Animal System** Detailed Animal System `🟩 lp` [details](ideas/animal-system.md)

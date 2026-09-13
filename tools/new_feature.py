@@ -22,6 +22,7 @@ console = Console()
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 FEATURE_FILE = REPO_ROOT / "FEATURE_IDEAS.md"
+IDEAS_DIR = REPO_ROOT / "ideas"
 
 MAX_NAME_LEN = 20
 MAX_DESC_LEN = 50
@@ -62,8 +63,10 @@ def validate_description(desc: str) -> bool | str:
     return True
 
 
-def build_line(name: str, description: str, tag_keys: list[str]) -> str:
-    """Build a `- [ ] **Name** description `tags`` markdown line."""
+def build_line(
+    name: str, description: str, tag_keys: list[str], details_rel: str | None = None
+) -> str:
+    """Build a `- [ ] **Name** description `tags` [details](...)` markdown line."""
     name = name.strip()
     description = description.strip()
     tags_part = " ".join(f"`{TAGS[k][0]} {k}`" for k in tag_keys if k in TAGS)
@@ -72,7 +75,69 @@ def build_line(name: str, description: str, tag_keys: list[str]) -> str:
         line += f" {description}"
     if tags_part:
         line += f" {tags_part}"
+    if details_rel:
+        # Forward slashes so the link works on GitHub + Windows checkouts.
+        rel = details_rel.replace("\\", "/")
+        line += f" [details]({rel})"
     return line
+
+
+def slugify(name: str) -> str:
+    """Turn 'Fishing System!' -> 'fishing-system' for use as ideas/<slug>.md."""
+    slug = re.sub(r"[^a-z0-9]+", "-", name.strip().lower())
+    slug = slug.strip("-")
+    return slug or "idea"
+
+
+def unique_idea_path(name: str) -> tuple[Path, str]:
+    """Return (absolute path, repo-relative posix path), bumping -2, -3 on clash."""
+    base = slugify(name)
+    candidate = IDEAS_DIR / f"{base}.md"
+    counter = 2
+    while candidate.exists():
+        candidate = IDEAS_DIR / f"{base}-{counter}.md"
+        counter += 1
+    rel = f"ideas/{candidate.name}"
+    return candidate, rel
+
+
+def prompt_extended_description() -> str | None:
+    """Collect unlimited multiline input. Single '.' on its own line finishes."""
+    console.print()
+    console.print("[bold]Extended description[/bold] [dim](unlimited, markdown OK)[/dim]")
+    console.print(
+        "[dim]Write as many lines as you want — blank lines are fine.\n"
+        "Finish with a single [bold].[/bold] on its own line, then Enter.[/dim]"
+    )
+    lines: list[str] = []
+    while True:
+        try:
+            line = input()
+        except EOFError:
+            break
+        if line.strip() == ".":
+            break
+        lines.append(line.rstrip())
+    text = "\n".join(lines).strip()
+    return text or None
+
+
+def write_idea_file(
+    path: Path, name: str, description: str, tag_keys: list[str], extended: str
+) -> None:
+    """Write ideas/<slug>.md with short desc + tags + full writeup."""
+    tags_part = " ".join(f"`{TAGS[k][0]} {k}`" for k in tag_keys if k in TAGS)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    content = (
+        f"# {name.strip()}\n\n"
+        f"> {description.strip()}\n\n"
+        f"Tags: {tags_part}\n\n"
+        f"## Details\n\n"
+        f"{extended.strip()}\n\n"
+        f"---\n"
+        f"*Back to [FEATURE_IDEAS.md](../FEATURE_IDEAS.md)*\n"
+    )
+    path.write_text(content, encoding="utf-8")
 
 
 def feature_name_exists(content: str, name: str) -> bool:
@@ -110,6 +175,7 @@ def main() -> int:
             f"• [bold]Name[/bold]: bold text in **...**, max [cyan]{MAX_NAME_LEN}[/cyan] chars\n"
             f"• [bold]Description[/bold]: short one-liner, max [cyan]{MAX_DESC_LEN}[/cyan] chars\n"
             "• [bold]Tags[/bold]: pick any of wip / od / ac / ni / hp / lp / lt\n"
+            "• [bold]Extended[/bold] (optional): unlimited writeup saved to [cyan]ideas/&lt;slug&gt;.md[/cyan]\n"
             "[dim]Press Ctrl+C at any time to cancel.[/dim]",
             title="How it works",
             border_style="magenta",
@@ -150,11 +216,33 @@ def main() -> int:
             console.print("[yellow]Cancelled — no tags selected.[/yellow]")
             return 1
 
-        line = build_line(name, description, tag_keys)
+        want_extended: bool | None = questionary.confirm(
+            "Add an extended description? (saves to ideas/<slug>.md + links it)",
+            default=False,
+        ).ask()
+        extended: str | None = None
+        idea_path: Path | None = None
+        details_rel: str | None = None
+        if want_extended:
+            extended = prompt_extended_description()
+            if not extended:
+                console.print(
+                    "[yellow]No extended text given — continuing without details file.[/yellow]"
+                )
+                extended = None
+            else:
+                idea_path, details_rel = unique_idea_path(name)
+
+        line = build_line(name, description, tag_keys, details_rel)
 
         console.print()
         console.print(Rule("[bold]Preview[/bold]"))
         console.print(Panel(line, title="FEATURE_IDEAS.md entry", border_style="green"))
+        if extended and idea_path is not None:
+            preview_body = extended if len(extended) <= 800 else extended[:800] + "\n…(truncated)"
+            console.print(
+                Panel(preview_body, title=f"{details_rel} preview", border_style="cyan")
+            )
         console.print(
             f"[dim]Name:[/dim] {len(name)}/{MAX_NAME_LEN}  "
             f"[dim]Description:[/dim] {len(description)}/{MAX_DESC_LEN}  "
@@ -178,9 +266,13 @@ def main() -> int:
             return 1
 
         append_to_feature_file(line)
+        done_text = f"[green]✔ Added to [bold]FEATURE_IDEAS.md[/bold]![/green]\n{line}"
+        if extended and idea_path is not None:
+            write_idea_file(idea_path, name, description, tag_keys, extended)
+            done_text += f"\n[green]✔ Saved extended writeup to [bold]{details_rel}[/bold]![/green]"
         console.print(
             Panel(
-                f"[green]✔ Added to [bold]FEATURE_IDEAS.md[/bold]![/green]\n{line}",
+                done_text,
                 title="Done 🎉",
                 border_style="green",
             )
