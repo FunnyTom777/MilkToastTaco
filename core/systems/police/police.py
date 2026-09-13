@@ -1,7 +1,7 @@
 try:
-    from core.systems.state import get_player_stat, update_player_wanted_level
+    from core.systems.state import get_player_stat
 except ImportError:
-    from state import get_player_stat, update_player_wanted_level
+    from state import get_player_stat
 
 
 from orchestrator import offense_severity
