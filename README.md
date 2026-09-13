@@ -5,7 +5,7 @@ Welcome to Milk Toast Taco!
 I honestly don't know how you found this... But your obviously here if your reading this!
 So i might as well tell you about Milk Toast Taco!
 
-### Roadmap!
+### Roadmap! (This is pretty basic, view the [FEATURE_IDEAS.md](FEATURE_IDEAS.md) file for a detailed ideas list)
 
 As i said below in the story _(which you should 100% read by the way :D)_, i don't know if i have a definitive goal for MTT per say, but i do have a few ideas of what i'd like to accomplish eventually:
 
@@ -22,6 +22,7 @@ And that's all i can think of now... But i will add some more to this eventually
 First, you'll need **Python 3.11 or newer** installed.
 
 You can get Python [here](https://www.python.org/downloads) if you don't already have it.
+> You can check if you already have it installed by running `python --version` in your terminal.
 
 Once Python is installed, go to the top of this page and find the big green **Code** button.
 
