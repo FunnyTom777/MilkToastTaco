@@ -2,14 +2,21 @@
 <jobs>
     <job job_id="1">
         <job_title>Example Job!</job_title>
-        <job_issued_by>Example Job Boss Guy Mr</job_issued_by>
-        <job_description>For this example job you have to do somthing... who knows..</job_description>
-        <job_payment>300</job_payment> <!-- Player would get '300' added to there account. Can also be 'none', which indicates the job has no payment.-->
-        <job_special_rewards>none</job_special_rewards> <!-- Jobs can have special rewards, like unlocking a new Military Campain in the Military Campains game mode, or a new item, etc-->
+        <job_issued_by>Mr Example Job Boss Guy</job_issued_by>
+        <job_description
+        >For this example job you have to do somthing... who knows..</job_description>
+        <job_payment
+        >300</job_payment> <!-- Player would get '300' added to there account. Can also be 'none', which indicates the job has no payment.-->
+        <job_special_rewards
+        >none</job_special_rewards> <!-- Jobs can have special rewards, like unlocking a new Military Campain in the Military Campains game mode, or a new item, etc-->
         <job_completion_trigger>somthing...</job_completion_trigger>
-        <job_timeframe>none</job_timeframe> <!--Job Timeframe in minutes. Can also be 'none' to indicate no time limit.-->
-        <job_xp_reward>500</job_xp_reward> <!--Reward given to player after completion. Can also be 'none'.-->
-        <job_deposit>100</job_deposit><!-- defines the ammount given to the player before the job is complete, can also be 'none'. If the job is abandoned/not completed before the time limit runs out, Reputation points will be deducted.-->
-        <job_reputation_points>500</job_reputation_points><!--The ammount of reputation points on the line when accepting the job-->
+        <job_timeframe
+        >none</job_timeframe> <!--Job Timeframe in minutes. Can also be 'none' to indicate no time limit.-->
+        <job_xp_reward
+        >500</job_xp_reward> <!--Reward given to player after completion. Can also be 'none'.-->
+        <job_deposit
+        >100</job_deposit><!-- defines the ammount given to the player before the job is complete, can also be 'none'. If the job is abandoned/not completed before the time limit runs out, Reputation points will be deducted.-->
+        <job_reputation_points
+        >500</job_reputation_points><!--The ammount of reputation points on the line when accepting the job-->
     </job>
 </jobs>
