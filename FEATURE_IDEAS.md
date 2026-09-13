@@ -20,3 +20,4 @@
 - [ ] **Proper 3D rendering** (Via Panda3D or maybe a Rust based renderer?) `🟧 lt`
 - [ ] **Forestry/Logging** Players can run a Logging bussiness. `🟩 lp` `🟥 ni`
 - [ ] **Fishing System** Players can do hobby fishing, or comercial fishing `🟥 ni` `🟩 lp`
+- [ ] **Job/Contract system** Job/Contract system for earning money. `🟥 ni` `🟩 lp`
