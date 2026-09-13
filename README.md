@@ -1,10 +1,9 @@
 <a href="#"><img width="2158" height="606" alt="MTT_Banner1" src="https://github.com/user-attachments/assets/d39e5e4d-90de-4570-aa64-61280af2994e" /></a>
-
-Welcome to Milk Toast Taco!
 <p align="center">
-  <a href="#"><img width="300" alt="no pull requests will be accepted at this time." src="https://github.com/user-attachments/assets/8c8fc3c8-67ff-4758-81d4-1eae7e9da115" /></a>
+  <a href="#"><img width="450" alt="No Pull Requests will be accepted at this time notice." src="https://github.com/user-attachments/assets/a197dfe8-66b0-4bc6-96e2-1febaf3342e9" /></a>
 </p>
 
+Welcome to Milk Toast Taco!
 
 
 I honestly don't know how you found this... But your obviously here if your reading this!
