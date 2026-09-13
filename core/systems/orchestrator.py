@@ -226,8 +226,8 @@ def offense_severity(offense_name):
     """
     This is just a simple placeholder function that handles checking offence severity. Should eventually check it against a offences.xml file instead of hardcoded.
     """
-    if offense_name in offences:
-        offence_severity = offences[offense_name]
+    if offense_name in offenses:
+        offence_severity = offenses[offense_name]
         return offence_severity
-    elif offense_name not in offences:
+    elif offense_name not in offenses:
         warning("offence_name provided is not a valid offence. action aborted.")
