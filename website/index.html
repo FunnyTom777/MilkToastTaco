@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Milk Toast Taco — Heavily Work In Progress</title>
+    <meta
+      name="description"
+      content="Milk Toast Taco is a heavily work-in-progress Python simulation project. Mostly not playable yet."
+    />
+    <link rel="stylesheet" href="styles/main.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap nav">
+        <a class="brand" href="index.html">
+          <span class="brand-mark">🌮</span>
+          <span>Milk Toast Taco<small>HEAVILY WORK IN PROGRESS</small></span>
+        </a>
+        <nav class="nav-links">
+          <a class="active" href="index.html">Home</a>
+          <a href="doc.html?doc=install_guide.md">Install Guide</a>
+          <a href="doc.html?doc=feature-ideas.md">Feature Ideas</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section class="hero">
+        <span class="pill">● Heavily work in progress — mostly not playable yet</span>
+        <h1>Welcome to Milk Toast Taco…<br /><span class="accent">honestly don't know how you found this :D</span></h1>
+        <p class="lead">
+          Milk Toast Taco is a heavily work-in-progress Python simulation thing,
+          with no definitive goal yet. Think Dwarf Fortress-style ideas and
+          Farming Sim inspiration, after about 3 years of engine-shopping right
+          back to Python. Mostly not playable in its current state — but feel
+          free to poke around.
+        </p>
+        <div class="actions">
+          <a class="btn btn-primary" href="doc.html?doc=install_guide.md">→ Read the Install Guide</a>
+          <a class="btn btn-ghost" href="doc.html?doc=feature-ideas.md">View feature ideas</a>
+        </div>
+      </section>
+
+      <section class="grid cols-2">
+        <article class="card">
+          <div class="icon">📦</div>
+          <h2>Try it anyway (if you're brave)</h2>
+          <p>
+            Windows + Python 3.11+, download the ZIP, run
+            <code>python main.py</code> and the launcher should pop up.
+            Don't expect much yet — it's early, broken in places, and
+            very much still being figured out.
+          </p>
+          <a class="card-link" href="doc.html?doc=install_guide.md">Open INSTALL_GUIDE.md →</a>
+          <ul class="meta">
+            <li>windows-only guide</li>
+            <li>python 3.11+</li>
+            <li>expect bugs</li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <div class="icon">💡</div>
+          <h2>Ideas for eventually</h2>
+          <p>
+            Long-term thoughts only: proper 3D rendering, a modding framework,
+            forestry, fishing, jobs/contracts. Nothing soon — browse the list
+            and open a GitHub issue if you have a suggestion :D
+          </p>
+          <a class="card-link" href="doc.html?doc=feature-ideas.md">Open feature ideas →</a>
+          <ul class="meta">
+            <li>long-term</li>
+            <li>suggestions welcome</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="grid cols-3">
+        <article class="card">
+          <div class="icon">🚧</div>
+          <h3>Very early</h3>
+          <p>Mostly placeholders and half-finished systems. If it runs at all, that's a win.</p>
+        </article>
+        <article class="card">
+          <div class="icon">❓</div>
+          <h3>No definitive goal</h3>
+          <p>No timeline, no promises — just systems I'd like eventually. See the README for the full ramble.</p>
+        </article>
+        <article class="card">
+          <div class="icon">🐍</div>
+          <h3>Python, because it's what I know</h3>
+          <p>If it's easy for me, it's easy for others to tinker with. Haters gonna hate :D</p>
+        </article>
+      </section>
+
+      <p class="notice">
+        Docs are read straight from <code>docs/</code> — to browse locally, run
+        <code>python -m http.server 8000</code> in the <code>MilkToastTaco/</code> folder, then open
+        <code>http://localhost:8000/website/</code>.
+      </p>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <span>© 2026 FunnyTom777 · Milk Toast Taco</span>
+        <span class="spacer"></span>
+        <a href="doc.html?doc=install_guide.md">Install</a>
+        <a href="doc.html?doc=feature-ideas.md">Ideas</a>
+      </div>
+    </footer>
+  </body>
+</html>

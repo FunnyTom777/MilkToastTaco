@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Docs — Milk Toast Taco</title>
+    <meta name="description" content="Milk Toast Taco docs, rendered locally from Markdown." />
+    <link rel="stylesheet" href="styles/main.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap nav">
+        <a class="brand" href="index.html">
+          <span class="brand-mark">🌮</span>
+          <span>Milk Toast Taco<small>HEAVILY WORK IN PROGRESS</small></span>
+        </a>
+        <nav class="nav-links">
+          <a href="index.html">Home</a>
+          <a id="nav-install" href="doc.html?doc=install_guide.md">Install Guide</a>
+          <a id="nav-ideas" href="doc.html?doc=feature-ideas.md">Feature Ideas</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="wrap doc-shell">
+      <div class="crumb">
+        <a href="index.html">← Home</a>
+        <span>/</span>
+        <span id="crumb-name">docs</span>
+      </div>
+
+      <div class="doc-card">
+        <div class="doc-bar">
+          <span class="dot"></span>
+          <strong id="doc-title">Loading…</strong>
+          <code id="doc-source"></code>
+        </div>
+        <div class="doc-body">
+          <article id="doc-content" class="md">
+            <p>Brewing your doc… ☕</p>
+          </article>
+        </div>
+      </div>
+
+      <p class="notice">
+        Docs live in <code>docs/</code> (plus <code>FEATURE_IDEAS.md</code> in the repo root) —
+        edit one and refresh, no copies. Opening via double-click? Browsers block
+        <code>fetch()</code> on <code>file://</code>, so run
+        <code>python -m http.server 8000</code> in the <code>MilkToastTaco/</code> folder and open
+        <code>http://localhost:8000/website/doc.html?doc=install</code>.
+      </p>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <span>© 2026 FunnyTom777 · Milk Toast Taco</span>
+        <span class="spacer"></span>
+        <a href="index.html">Home</a>
+      </div>
+    </footer>
+
+    <script src="assets/js/markdown.js"></script>
+    <script>
+      (function () {
+        // Single source of truth: the repo's docs/ folder (+ FEATURE_IDEAS.md
+        // in the repo root). Paths are relative to website/doc.html, so serve
+        // from the repo root: `python -m http.server` in MilkToastTaco/.
+        var DOCS = {
+          "install_guide.md": { file: "../docs/INSTALL_GUIDE.md", title: "Install Guide" },
+          "install-guide": { file: "../docs/INSTALL_GUIDE.md", title: "Install Guide" },
+          "install": { file: "../docs/INSTALL_GUIDE.md", title: "Install Guide" },
+          "INSTALL_GUIDE.md": { file: "../docs/INSTALL_GUIDE.md", title: "Install Guide" },
+          "feature-ideas.md": { file: "../FEATURE_IDEAS.md", title: "Feature Ideas" },
+          "feature-ideas": { file: "../FEATURE_IDEAS.md", title: "Feature Ideas" },
+          "features": { file: "../FEATURE_IDEAS.md", title: "Feature Ideas" },
+          "FEATURE_IDEAS.md": { file: "../FEATURE_IDEAS.md", title: "Feature Ideas" },
+          "TEST_ALL_GUIDE.md": { file: "../docs/TEST_ALL_GUIDE.md", title: "Test-All Guide" },
+          "test-all-guide": { file: "../docs/TEST_ALL_GUIDE.md", title: "Test-All Guide" },
+          "XML_LOADER_GUIDE.md": { file: "../docs/XML_LOADER_GUIDE.md", title: "XML Loader Guide" },
+          "xml-loader-guide": { file: "../docs/XML_LOADER_GUIDE.md", title: "XML Loader Guide" },
+          "dashboard_plan.md": { file: "../docs/dashboard_plan.md", title: "Dashboard Plan" },
+          "dashboard-plan": { file: "../docs/dashboard_plan.md", title: "Dashboard Plan" }
+        };
+
+        function getParam(name) {
+          try {
+            return new URLSearchParams(window.location.search).get(name) || "";
+          } catch (e) {
+            return "";
+          }
+        }
+
+        var key = (getParam("doc") || "install_guide.md").trim();
+        var entry = DOCS[key] || DOCS[key.toLowerCase()];
+        var contentEl = document.getElementById("doc-content");
+        var titleEl = document.getElementById("doc-title");
+        var sourceEl = document.getElementById("doc-source");
+        var crumbEl = document.getElementById("crumb-name");
+
+        function prettyTitle(key, file) {
+          if (entry) return entry.title;
+          return file.split("/").pop().replace(/\.md$/i, "").replace(/[-_]+/g, " ");
+        }
+
+        if (!entry) {
+          // Only allow plain .md filenames (no paths, no traversal) — they
+          // resolve into the repo's docs/ folder.
+          if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]*\.md$/.test(key)) {
+            titleEl.textContent = "Unknown doc";
+            contentEl.innerHTML =
+              '<div class="md-error"><strong>Unknown doc:</strong> "' +
+              key.replace(/</g, "&lt;") +
+              '". Try <a href="doc.html?doc=install">install</a>, ' +
+              '<a href="doc.html?doc=features">features</a>, ' +
+              '<a href="doc.html?doc=test-all-guide">test-all-guide</a> or ' +
+              '<a href="doc.html?doc=xml-loader-guide">xml-loader-guide</a>.</div>';
+            return;
+          }
+          entry = { file: "../docs/" + key, title: prettyTitle(key) };
+        }
+
+        titleEl.textContent = entry.title;
+        crumbEl.textContent = entry.title;
+        sourceEl.textContent = entry.file;
+        document.title = entry.title + " — Milk Toast Taco";
+
+        // Highlight active nav
+        if (/install/i.test(entry.file)) document.getElementById("nav-install").classList.add("active");
+        if (/feature/i.test(entry.file)) document.getElementById("nav-ideas").classList.add("active");
+
+        fetch(entry.file, { cache: "no-cache" })
+          .then(function (res) {
+            if (!res.ok) throw new Error("HTTP " + res.status + " for " + entry.file);
+            return res.text();
+          })
+          .then(function (md) {
+            contentEl.innerHTML = window.MttMarkdown.render(md);
+          })
+          .catch(function (err) {
+            contentEl.innerHTML =
+              '<div class="md-error"><strong>Couldn\'t load</strong> <code>' +
+              String(entry.file).replace(/</g, "&lt;") +
+              "</code><br />" +
+              String((err && err.message) || err).replace(/</g, "&lt;") +
+              "<br /><br />If you opened this with a double-click (<code>file://</code>), browsers block " +
+              "loading <code>.md</code> files. Run:<br /><code>python -m http.server 8000</code> " +
+              "in the <code>MilkToastTaco/</code> folder (repo root), then open " +
+              "<code>http://localhost:8000/website/doc.html?doc=" +
+              String(key).replace(/</g, "&lt;") +
+              "</code></div>";
+          });
+      })();
+    </script>
+  </body>
+</html>
