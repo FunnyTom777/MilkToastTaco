@@ -1,9 +1,13 @@
 import datetime
 import os
 
-devmode = True  # This should eventually be loaded from a config.xml, but hardcoded for now.
+devmode = (
+    True  # This should eventually be loaded from a config.xml, but hardcoded for now.
+)
 debug_mode = True  # Enables Debug Printing across MTT!
-current_bank_member = None  # Placeholder - None means no membership, otherwise bank name string
+current_bank_member = (
+    None  # Placeholder - None means no membership, otherwise bank name string
+)
 
 bank_names = ["bank1"]
 
@@ -40,7 +44,9 @@ def request_player_input(
     valid_types = {"string", "str", "int", "integer", "float", "bool", "boolean"}
     normalized_type = input_type.lower().strip()
     if normalized_type not in valid_types:
-        warning(f"request_player_input called with unknown input_type '{input_type}', defaulting to 'string'")
+        warning(
+            f"request_player_input called with unknown input_type '{input_type}', defaulting to 'string'"
+        )
         normalized_type = "string"
 
     # Normalize type aliases
@@ -71,17 +77,24 @@ def request_player_input(
         if normalized_type == "bool":
             lowered = raw.strip().lower()
             bool_map = {
-                "true": True, "false": False,
-                "yes": True, "no": False,
-                "y": True, "n": False,
-                "1": True, "0": False,
-                "abort": True, "cancel": True,  # for bank membership prompt compatibility
+                "true": True,
+                "false": False,
+                "yes": True,
+                "no": False,
+                "y": True,
+                "n": False,
+                "1": True,
+                "0": False,
+                "abort": True,
+                "cancel": True,  # for bank membership prompt compatibility
                 "cancle": True,  # common typo tolerance
             }
             if lowered in bool_map:
                 value = bool_map[lowered]
             else:
-                inform_player("Please enter a boolean value (yes/no, true/false, y/n, 1/0).")
+                inform_player(
+                    "Please enter a boolean value (yes/no, true/false, y/n, 1/0)."
+                )
                 continue
 
             if allowed_normalized is not None:
@@ -156,6 +169,7 @@ def inform_player(text):
     # Route through universal output bus so dashboards/game see it (also prints fallback)
     try:
         from core.output import print_to_user as _ptu
+
         _ptu(str(text), level="info", channel="general", source="orchestrator")
         return
     except Exception:
@@ -163,10 +177,13 @@ def inform_player(text):
     print(text)
 
 
-def warning(warning_note):  # Should also eventually save it to a log.txt, with timestamp :D
+def warning(
+    warning_note,
+):  # Should also eventually save it to a log.txt, with timestamp :D
     # Route through universal output bus (handles buffer + file + dashboard poll)
     try:
         from core.output import warning as _out_warn
+
         _out_warn(str(warning_note), channel="general", source="orchestrator")
         return
     except Exception:
@@ -176,7 +193,11 @@ def warning(warning_note):  # Should also eventually save it to a log.txt, with 
     print(msg)
     # Append to log file
     try:
-        log_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "logs", "log.txt")
+        log_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+            "logs",
+            "log.txt",
+        )
         # Fallback: if logs dir doesn't exist, try relative
         os.makedirs(os.path.dirname(log_path), exist_ok=True)
         with open(log_path, "a", encoding="utf-8") as f:
@@ -187,12 +208,26 @@ def warning(warning_note):  # Should also eventually save it to a log.txt, with 
             print(f"DEBUG: Failed to write warning to log.txt: {e}")
 
 
-
-
 def display_phone_ui():
     print("*Displayed Phone UI* This dosent exist yet though....")
 
 
-
 def thisdoesnothing():
     warning("This does nothing yet...")
+
+
+# Offence Data:
+offenses = {
+    "example_offence": 5  # Severity between 1-50.
+}
+
+
+def offense_severity(offense_name):
+    """
+    This is just a simple placeholder function that handles checking offence severity. Should eventually check it against a offences.xml file instead of hardcoded.
+    """
+    if offense_name in offences:
+        offence_severity = offences[offense_name]
+        return offence_severity
+    elif offense_name not in offences:
+        warning("offence_name provided is not a valid offence. action aborted.")
